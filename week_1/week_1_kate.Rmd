@@ -1,0 +1,78 @@
+---
+title: "week_1_content_rcourse"
+author: "Kate Collingridge and Kathrin Vossen"
+date: "16/11/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Basic data wrangling
+
+(already covered how to import data)
+
+changing formats/class
+column names
+toupper tolower
+formatting dates
+selecting columns and rows
+number of rows
+getting unique values adn detecting duplicates
+sorting
+long and wide format and how to convert between them. na issues
+janitor package - to compare across datasets.
+cbind, rbind, merge - use data collected at smartbuoys as an example?
+filtering/subsetting
+summary queries - group by
+assign one column based on another. qc - flagging data
+Summing across rows and columns
+converting to spatial formats? or reading in spatial data
+
+json? netcdf etc (maybe for second week)
+
+
+
+```{r cars}
+summary(cars)
+```
+
+## Basic data visualisation
+
+ggplot etc, including how to export for publications, leaflet
+histogram - in base plot and ggplot
+basic scatter plot - in base plot and ggplot
+adding labels etc
+adding lines
+grouping by factors
+adding trendlines
+saving plots
+interactivity with plotly
+cowplot for panels
+sizing, formatting etc.
+
+plotting spatial data - with ggplot, and with leaflet.
+animations - basic gif
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+## Accessibility
+https://www.jumpingrivers.com/blog/accessible-shiny-standards-wcag/
+standards, why it is important
+how to add alt text to plots and tables
+labels
+colour ramps - continuous and discrete data
+https://stackoverflow.com/questions/57153428/r-plot-color-combinations-that-are-colorblind-accessible
+color blindness
+using symbols etc so color isn't the only way to convey info.
+text size
+html tags
+screen readers
+
+further reading - gov digital service, w3c
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
