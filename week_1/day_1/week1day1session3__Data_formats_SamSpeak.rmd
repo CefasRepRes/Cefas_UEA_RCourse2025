@@ -23,7 +23,7 @@ class()
 
 ### Numeric
 
-In this format values are read as numeric values these can be whole numbers or decimals (floats). i.e 10, 22.5, 10000, pi
+In this format values are read as numeric values these can be whole numbers or decimals (floats). i.e 10, 22.5, 10000, π
 
 ```{r Numeric}
 n <- pi
@@ -123,9 +123,10 @@ k <- 2^3
 k
 
 class(k)
+
 ```
 
-### Task 1 (5 minutes)
+### Task 1 (5 mins)
 
 Try this for yourself:
 
@@ -183,19 +184,33 @@ If we wanted to add quotes to a character string we find a problem
 
 ```{r Escape Character}
 
-
+Roosevelt <- "It is always good to learn new things we should "Do one thing every day that scares you. " like learning R"  
 
 ```
 
-So we need to use the escape character `\`  when adding quotation marks. 
+This gives us an error as the quotation marks break up the sentence. So we need to use the escape character `\` when adding quotation marks.
 
 ```{r Escape Character}
 
+Roosevelt <- "It is always good to learn new things we should \"Do one thing every day that scares you.\" like learning R" 
 
-
+Roosevelt
 ```
 
-### Logical (Boolean)
+There are multiple escape characters that we can use when inputting text.
+
+| R code | Result          |
+|--------|-----------------|
+| \\"    | Quotation marks |
+| \\\\   | Backslash       |
+| \\n    | New line        |
+| \\r    | Return carriage |
+| \\t    | Tab             |
+| \\b    | Backspace       |
+
+### Logical/Boolean
+
+We often need to check if values are `TRUE` or `FALSE` these are known as a Boolean or Logical value.
 
 ```{r Logical}
 l <- TRUE
@@ -205,11 +220,44 @@ l
 class(l)
 ```
 
-#### Try it for yourself here:
+You can compare two values, R will then inform you of the logical answer.
 
-##### Make a variable for Numeric, integer, complex, character and logical.
+```{r Logical questions}
 
-```{r Try making data types}
+100 > 10 
+
+100 == 10
+
+100 < 10
+
+#### You can also save the result of a question as a bool value 
+a <- 20
+q <- 100 > a
+
+q
+
+##### These values do not automatically update
+a <- 400
+q <- 100 > a
+
+q
+
+class(q)
+
+```
+### Task 2 (5 mins)
+
+Try it for yourself here:
+
+Make a variable of each class: Numeric
+                               Integer
+                               Complex
+                               Character
+                               Logical.
+
+
+
+```{r Task 2}
 
 
 
@@ -220,19 +268,59 @@ class(l)
 
 ### Vectors
 
+#### Creating vectors 
+
+#### Acessing values 
+
+#### Changing values
+
+#### Sequences
+
+```{r }
+
+```
+
 ### Lists
+
+```{r }
+
+```
 
 ### Data frames
 
+```{r }
+
+```
+
 ### Array
+
+```{r }
+
+```
 
 ### Matrix
 
+```{r }
+
+```
+
 ### Factors
+
+```{r }
+
+```
 
 ## Changing data format
 
+```{r }
+
+```
+
 ## Importing data
+
+```{r }
+
+```
 
 ## Exploring data
 
