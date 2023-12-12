@@ -1,0 +1,276 @@
+---
+title: "Data formats"
+author: "Sam Speak"
+date: "2023-12-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Data format
+
+In this session we will explore the different types of data we might come across. How they are formatted in R, as well as how we can import and export our own data.
+
+## Types of Data
+
+We can check what type of data class a variable is using the command `class()`
+
+```{r check class}
+class()
+```
+
+### Numeric
+
+In this format values are read as numeric values these can be whole numbers or decimals (floats). i.e 10, 22.5, 10000, pi
+
+```{r Numeric}
+n <- pi
+
+n
+
+class(n)
+```
+
+### Integers
+
+Integers this is numeric data formed of whole numbers, without any decimals. You should use this class of data when you are sure that you will not create a variable with any decimals.
+
+To create this type of data you must follow the value with a letter `L`.
+
+```{r Interger}
+I <- 30
+
+I
+
+class(I)
+
+i <- 30L
+
+i
+
+class(i)
+
+```
+
+### Complex
+
+```{r Complex}
+c <- 3 + 9i
+
+c
+
+class(c)
+```
+
+#### Some quick maths
+
+This means that we can use R for maths. We can add `+`, subtract `-`, times `*` and divide `/`.
+
+```{r Maths}
+
+#### We can make numeric variables by adding numbers together
+n <- 3 + 4
+
+#### Or we can take them away from each other 
+m <- 7 - 4
+
+#### This can be done with integers (remember to put the L after the numbers)
+u <- 30L - 3L
+
+u
+
+class(u)
+
+#### As well as with complex values
+a <- 4 + 3i
+b <- 7i 
+
+c <- a + b
+
+c
+
+class(c)
+
+#### We can multiply variables together
+x <- n * m
+
+x
+
+class(x)
+
+#### We can divide variables by numbers
+y <- x/2
+
+y
+
+class(y)
+
+#### Or by other numeric variables 
+π <- pi 
+
+t <- π/y 
+
+t
+
+class(t)
+
+#### We can also raise to the power 
+
+k <- 2^3
+
+k
+
+class(k)
+```
+
+### Task 1 (5 minutes)
+
+Try this for yourself:
+
+```{r Maths task}
+
+{type your own maths here}
+
+```
+
+### Characters/Strings
+
+Text that is kept as text it should be inputted with `""` or `''` around the values. Either work but they need to be used together.
+
+i.e "Hello World" == 'Hello World'
+
+```{r Character}
+ch <- "R is my favourite language"
+
+ch
+
+class(ch)
+```
+
+Characters can be combined together
+
+```{r Character}
+part_a <- "What is your favourite food?"
+
+part_b <- 'Mine would have to be Lasanga!' 
+  
+whole <- paste(part_a,part_b)
+
+print(whole)
+
+class(whole)
+```
+
+We can check the length of characters using the function `nchar()`
+
+```{r Character}
+
+book_1 <- "Mr and Mrs Dursley, of number four, Privet Drive, were proud to say that they were perfectly normal, thank you very much. They were the last people you’d expect to be involved in anything strange or mysterious, because they just didn’t hold with such nonsense."
+
+nchar(book_1)
+
+seq_1 <- "AACCGTAGCTCAGTCGATCGATGCTAGAACTAGCCATG"
+
+nchar(seq_1)
+
+```
+
+#### Escape characters
+
+If we wanted to add quotes to a character string we find a problem
+
+```{r Escape Character}
+
+
+
+```
+
+So we need to use the escape character `\`  when adding quotation marks. 
+
+```{r Escape Character}
+
+
+
+```
+
+### Logical (Boolean)
+
+```{r Logical}
+l <- TRUE
+
+l
+
+class(l)
+```
+
+#### Try it for yourself here:
+
+##### Make a variable for Numeric, integer, complex, character and logical.
+
+```{r Try making data types}
+
+
+
+
+```
+
+## Data Structures
+
+### Vectors
+
+### Lists
+
+### Data frames
+
+### Array
+
+### Matrix
+
+### Factors
+
+## Changing data format
+
+## Importing data
+
+## Exploring data
+
+```{r heads}
+head(cars)
+```
+
+```{r tail}
+tail(cars)
+```
+
+#### Task
+
+What are the top 20 lines ?
+
+#### Answer :
+
+```{r Answer}
+
+
+```
+
+When we load in a data frame we can also see a quick summary of the statistics.
+
+We can see this for every column in the data frame :
+
+```{r summary}
+summary(cars)
+
+```
+
+Or we can see it for just one column :
+
+```{r summary}
+summary(cars$speed)
+
+```
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
