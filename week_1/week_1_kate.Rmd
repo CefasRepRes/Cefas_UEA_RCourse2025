@@ -16,30 +16,9 @@ What has already been covered in previous sessions:
 - how to load packages
 - how to check your data -- format/classes etc (Sam's session)
 
-<<<<<<< HEAD
-In this session, we will take a look at functions and packages that will help you do some basic data exploration. We will be using the 
-=======
 
-
-changing formats/class
-column names
-toupper tolower
-formatting dates
-selecting columns and rows
-number of rows
-getting unique values adn detecting duplicates
-sorting
-long and wide format and how to convert between them. na issues
-janitor package - to compare across datasets.
-cbind, rbind, merge - use data collected at smartbuoys as an example?
-filtering/subsetting
-summary queries - group by
-assign one column based on another. qc - flagging data
-Summing across rows and columns
-converting to spatial formats? or reading in spatial data
 
 In this session, we will take a look at functions and packages that will help you do some basic data exploration
->>>>>>> b935c784c31f95ba37db60f3855777bbcdcfb5de
 
 
 ### Investigating your data
