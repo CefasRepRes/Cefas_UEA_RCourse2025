@@ -16,10 +16,10 @@ What has already been covered in previous sessions:
 - how to load packages
 - how to check your data -- format/classes etc (Sam's session)
 
-In this session, we will take a look at functions and packages that will help you do some basic data exploration
+In this session, we will take a look at functions and packages that will help you do some basic data exploration. We will be using the 
 
 ### Investigating your data
-- structure of your data
+- structure of your data -- Sam covers summary()
 - number of rows, columns; getting the sum of a column
 - unique values
 - checking for duplicates
@@ -40,6 +40,8 @@ In this session, we will take a look at functions and packages that will help yo
 - 
 
 ### Merging datasets
+Before we can merge or join two datasets together, we need to check that they are compatible. The tidyverse comes with a few functions that allow us to join two datasets even if they are not fully matching. Let's explore...
+
 - janitor package -- comparing two datasets before merging
 - cbind
 - rbind
@@ -57,6 +59,7 @@ In this session, we will take a look at functions and packages that will help yo
 ### Dealing with spatial data
 
 - converting to spatial formats? or reading in spatial data
+- R built in dataset 'quakes' could be good one here - gives the location of earthquakes off Fiji
 
 ### Other -- For Kate to check
 
@@ -76,20 +79,20 @@ summary(cars)
 
 ## Basic data visualisation
 
-ggplot etc, including how to export for publications, leaflet
-histogram - in base plot and ggplot
-basic scatter plot - in base plot and ggplot
-adding labels etc
-adding lines
-grouping by factors
-adding trendlines
-saving plots
-interactivity with plotly
-cowplot for panels
-sizing, formatting etc.
-
-plotting spatial data - with ggplot, and with leaflet.
-animations - basic gif
+Let's visualise our data. This can also be a great way to explore your data, for example by plotting a simple histogram or boxplot. You have already heard of the package 'ggplot2'. This is a very powerful package to create great looking plots very quickly. However, sometimes base R code is perfectly sufficient and therefore we will also cover some base R functions as well.
+- ggplot etc, including how to export for publications, leaflet
+- histogram - in base plot and ggplot
+- basic scatter plot - in base plot and ggplot
+- adding labels etc
+- adding lines
+- grouping by factors
+- adding trendlines
+- saving plots
+- interactivity with plotly
+- cowplot for panels
+- sizing, formatting etc.
+- plotting spatial data - with ggplot, and with leaflet.
+- animations - basic gif
 
 
 ## Accessibility
