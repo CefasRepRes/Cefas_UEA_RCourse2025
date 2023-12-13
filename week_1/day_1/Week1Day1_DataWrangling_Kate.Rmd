@@ -1,0 +1,114 @@
+---
+title: "week_1_content_rcourse"
+author: "Kate Collingridge and Kathrin Vossen"
+date: "`r format(Sys.time(), '%d/%m/%y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Basic data wrangling
+What has already been covered in previous sessions:
+
+- how to import data
+- how to load packages
+- how to check your data -- format/classes etc (Sam's session)
+
+
+In this session, we will take a look at functions and packages that will help you do some basic data exploration. We will investigate some example data, take a look at pivoting data, learn how to merge two datasets and create subsets of data. All the data we will be using are example datasets that are built into R, so there is no need to import external datasets.
+
+
+### Investigating your data
+- structure of your data -- Sam covers summary()
+- number of rows, columns; getting the sum of a column
+- unique values
+- checking for duplicates
+- how to change column names
+- how to set column names and values to all lower or all upper case
+- how to sort vectors (using base R sort function)
+
+### What is wide and long format and how to we change between the two?
+
+- pivoting datasets
+- dealing with the introduced NAs
+
+### Expanding vs reducing your datasets
+
+- adding new columns
+- summing across rows and columns
+- creating subsets: filtering and subsetting using conditional statements (aka base R functions)
+- 
+
+### Merging datasets
+Before we can merge or join two datasets together, we need to check that they are compatible. The tidyverse comes with a few functions that allow us to join two datasets even if they are not fully matching. Let's explore...
+
+- janitor package -- comparing two datasets before merging
+- cbind
+- rbind
+- merge - use data collected at smartbuoys as an example?
+
+
+### Dealing with dates
+
+- how to check what format a date column is in
+- how to set a date
+- how to extract information such as the year and month from a date
+
+
+
+### Dealing with spatial data
+
+- converting to spatial formats? or reading in spatial data
+- R built in dataset 'quakes' could be good one here - gives the location of earthquakes off Fiji
+
+### Other -- For Kate to check
+
+- json? netcdf etc (maybe for second week)
+- assign one column based on another. qc - flagging data
+
+### potential overlap with tidyverse session:
+- duplicates/distinct
+- selecting columns and rows -- easiest done as part of a pipeline
+- filtering and subsetting
+- pivoting to/from long and wide formats
+- group by
+
+```{r cars}
+summary(cars)
+```
+
+## Basic data visualisation
+
+Let's visualise our data. This can also be a great way to explore your data, for example by plotting a simple histogram or boxplot. You have already heard of the package 'ggplot2'. This is a very powerful package to create great looking plots very quickly. However, sometimes base R code is perfectly sufficient and therefore we will also cover some base R functions as well.
+- ggplot etc, including how to export for publications, leaflet
+- histogram - in base plot and ggplot
+- basic scatter plot - in base plot and ggplot
+- adding labels etc
+- adding lines
+- grouping by factors
+- adding trendlines
+- saving plots
+- interactivity with plotly
+- cowplot for panels
+- sizing, formatting etc.
+- plotting spatial data - with ggplot, and with leaflet.
+- animations - basic gif
+
+
+## Accessibility
+https://www.jumpingrivers.com/blog/accessible-shiny-standards-wcag/
+standards, why it is important
+how to add alt text to plots and tables
+labels
+colour ramps - continuous and discrete data
+https://stackoverflow.com/questions/57153428/r-plot-color-combinations-that-are-colorblind-accessible
+color blindness
+using symbols etc so color isn't the only way to convey info.
+text size
+html tags
+screen readers
+
+further reading - gov digital service, w3c
+
