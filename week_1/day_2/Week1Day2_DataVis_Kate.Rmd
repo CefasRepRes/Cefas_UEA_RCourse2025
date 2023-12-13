@@ -1,0 +1,41 @@
+---
+title: "Week1, Day2: Basic Data Visualisation"
+author: "Kate Collingridge and Kathrin Vossen"
+date: "`r format(Sys.time(), '%d/%m/%y')`"
+output: html_document
+---
+
+
+## Basic data visualisation
+
+Let's visualise our data. This can also be a great way to explore your data, for example by plotting a simple histogram or boxplot. You have already heard of the package 'ggplot2'. This is a very powerful package to create great looking plots very quickly. However, sometimes base R code is perfectly sufficient and therefore we will also cover some base R functions as well.
+
+- ggplot etc, including how to export for publications, leaflet
+- histogram - in base plot and ggplot
+- basic scatter plot - in base plot and ggplot
+- adding labels etc
+- adding lines
+- grouping by factors
+- adding trendlines
+- saving plots
+- interactivity with plotly
+- cowplot for panels
+- sizing, formatting etc.
+- plotting spatial data - with ggplot, and with leaflet.
+- animations - basic gif
+
+
+## Accessibility
+https://www.jumpingrivers.com/blog/accessible-shiny-standards-wcag/
+standards, why it is important
+how to add alt text to plots and tables
+labels
+colour ramps - continuous and discrete data
+https://stackoverflow.com/questions/57153428/r-plot-color-combinations-that-are-colorblind-accessible
+color blindness
+using symbols etc so color isn't the only way to convey info.
+text size
+html tags
+screen readers
+
+further reading - gov digital service, w3c
