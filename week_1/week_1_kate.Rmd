@@ -1,7 +1,7 @@
 ---
 title: "week_1_content_rcourse"
 author: "Kate Collingridge and Kathrin Vossen"
-date: "16/11/2023"
+date: "`r format(Sys.time(), '%d/%m/%y')`"
 output: html_document
 ---
 
@@ -10,29 +10,65 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Basic data wrangling
+What has already been covered in previous sessions:
 
-(already covered how to import data)
+- how to import data
+- how to load packages
+- how to check your data -- format/classes etc (Sam's session)
 
-changing formats/class
-column names
-toupper tolower
-formatting dates
-selecting columns and rows
-number of rows
-getting unique values adn detecting duplicates
-sorting
-long and wide format and how to convert between them. na issues
-janitor package - to compare across datasets.
-cbind, rbind, merge - use data collected at smartbuoys as an example?
-filtering/subsetting
-summary queries - group by
-assign one column based on another. qc - flagging data
-Summing across rows and columns
-converting to spatial formats? or reading in spatial data
+In this session, we will take a look at functions and packages that will help you do some basic data exploration
 
-json? netcdf etc (maybe for second week)
+### Investigating your data
+- structure of your data
+- number of rows, columns; getting the sum of a column
+- unique values
+- checking for duplicates
+- how to change column names
+- how to set column names and values to all lower or all upper case
+- how to sort vectors (using base R sort function)
+
+### What is wide and long format and how to we change between the two?
+
+- pivoting datasets
+- dealing with the introduced NAs
+
+### Expanding vs reducing your datasets
+
+- adding new columns
+- summing across rows and columns
+- creating subsets: filtering and subsetting using conditional statements (aka base R functions)
+- 
+
+### Merging datasets
+- janitor package -- comparing two datasets before merging
+- cbind
+- rbind
+- merge - use data collected at smartbuoys as an example?
 
 
+### Dealing with dates
+
+- how to check what format a date column is in
+- how to set a date
+- how to extract information such as the year and month from a date
+
+
+
+### Dealing with spatial data
+
+- converting to spatial formats? or reading in spatial data
+
+### Other -- For Kate to check
+
+- json? netcdf etc (maybe for second week)
+- assign one column based on another. qc - flagging data
+
+### potential overlap with tidyverse session:
+- duplicates/distinct
+- selecting columns and rows -- easiest done as part of a pipeline
+- filtering and subsetting
+- pivoting to/from long and wide formats
+- group by
 
 ```{r cars}
 summary(cars)
@@ -55,9 +91,6 @@ sizing, formatting etc.
 plotting spatial data - with ggplot, and with leaflet.
 animations - basic gif
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
 
 ## Accessibility
 https://www.jumpingrivers.com/blog/accessible-shiny-standards-wcag/
@@ -73,6 +106,4 @@ html tags
 screen readers
 
 further reading - gov digital service, w3c
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
+
