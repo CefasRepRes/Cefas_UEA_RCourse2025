@@ -17,8 +17,7 @@ What has already been covered in previous sessions:
 - how to check your data -- format/classes etc (Sam's session)
 
 
-
-In this session, we will take a look at functions and packages that will help you do some basic data exploration
+In this session, we will take a look at functions and packages that will help you do some basic data exploration. We will investigate some example data, take a look at pivoting data, learn how to merge two datasets and create subsets of data. All the data we will be using are example datasets that are built into R, so there is no need to import external datasets.
 
 
 ### Investigating your data
