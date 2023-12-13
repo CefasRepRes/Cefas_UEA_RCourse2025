@@ -1,5 +1,5 @@
 ---
-title: "week_1_content_rcourse"
+title: "Week 1, Day 1: Basic Data Wrangling"
 author: "Kate Collingridge and Kathrin Vossen"
 date: "`r format(Sys.time(), '%d/%m/%y')`"
 output: html_document
@@ -7,6 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(eval = FALSE) ## have set this to FALSE for now, might have to change that if we want to show outputs
 ```
 
 ## Basic data wrangling
@@ -19,8 +20,44 @@ What has already been covered in previous sessions:
 
 In this session, we will take a look at functions and packages that will help you do some basic data exploration. We will investigate some example data, take a look at pivoting data, learn how to merge two datasets and create subsets of data. All the data we will be using are example datasets that are built into R, so there is no need to import external datasets.
 
+We will need to make sure we have installed and loaded the following packages:
+
+```{r packages}
+library(tidyverse)
+```
+
 
 ### Investigating your data
+Let's start by taking a look at the `iris` dataset:
+
+```{r investigate1}
+data("iris")
+iris <- as.data.frame(iris)
+
+# let's get a first overview -- this will have been covered to some extend by Sam
+
+str(iris)
+
+# we can see that we have 4 columns containing numerical values and one column containing a factor with 3 levels
+
+summary(iris)
+head(iris)
+
+## let's take a closer look at the rows and columns in our dataset:
+
+ncol(iris) # we have 5 columns
+nrow(iris) # we have 150 rows
+
+# what are minimum and maximum values for our numerical columns?
+min(iris$Sepal.Length)
+max(iris$Sepal.Width)
+mean(iris$Petal.Length)
+
+## now we want to take a look at our factors - what are the three levels?
+unique(iris$Species)
+
+```
+
 - structure of your data -- Sam covers summary()
 - number of rows, columns; getting the sum of a column
 - unique values
@@ -29,17 +66,41 @@ In this session, we will take a look at functions and packages that will help yo
 - how to set column names and values to all lower or all upper case
 - how to sort vectors (using base R sort function)
 
-### What is wide and long format and how to we change between the two?
-
-- pivoting datasets
-- dealing with the introduced NAs
-
 ### Expanding vs reducing your datasets
+Now that we have explored the `iris` data a bit, let's try subsetting it based on different conditions. First, let's try making a new dataframe where we only select data for the species "setosa". There are two ways you can do this - using R base functions or using a Tidyverse pipeline
+
+Let's try a conditional statement using square brackets first:
+```{r subset1}
+setosa <- iris[iris$Species == "setosa",]
+```
+
+You can read this statement as: "assign an object called 'setosa' using the 'iris' dataset, selecting all rows where the factor Species has the value 'setosa', and selecting all columns". NOTE: explain this a bit more???
+
+Now let's try the same using a Tidyverse function:
+
+```{r subset2}
+setosa2 <- iris %>%
+  filter(Species == "setosa")
+```
+
+Hopefully you will see that both of our subsets have the same number of rows - a good indication that we have created two identical subsets.
+
+The next thing we want to try is expanding our dataset by adding a new column, Let's say we want to calculate the petal length to width ratio. We can do this calculation and automatically save this in a new column that we will call "LWRatio":
+
+```{r column1}
+iris$LWRatio <- iris$Petal.Length / iris$Petal.Width
+```
+
 
 - adding new columns
 - summing across rows and columns
 - creating subsets: filtering and subsetting using conditional statements (aka base R functions)
-- 
+
+### What is wide and long format and how to we change between the two?
+
+- use iris - pivot by species name
+- pivoting datasets
+- dealing with the introduced NAs
 
 ### Merging datasets
 Before we can merge or join two datasets together, we need to check that they are compatible. The tidyverse comes with a few functions that allow us to join two datasets even if they are not fully matching. Let's explore...
@@ -52,14 +113,15 @@ Before we can merge or join two datasets together, we need to check that they ar
 
 ### Dealing with dates
 
+- use airquality dataset for this? At least it includes month
 - how to check what format a date column is in
 - how to set a date
 - how to extract information such as the year and month from a date
 
 
-
 ### Dealing with spatial data
 
+- use island dataset?
 - converting to spatial formats? or reading in spatial data
 - R built in dataset 'quakes' could be good one here - gives the location of earthquakes off Fiji
 
@@ -75,40 +137,4 @@ Before we can merge or join two datasets together, we need to check that they ar
 - pivoting to/from long and wide formats
 - group by
 
-```{r cars}
-summary(cars)
-```
-
-## Basic data visualisation
-
-Let's visualise our data. This can also be a great way to explore your data, for example by plotting a simple histogram or boxplot. You have already heard of the package 'ggplot2'. This is a very powerful package to create great looking plots very quickly. However, sometimes base R code is perfectly sufficient and therefore we will also cover some base R functions as well.
-- ggplot etc, including how to export for publications, leaflet
-- histogram - in base plot and ggplot
-- basic scatter plot - in base plot and ggplot
-- adding labels etc
-- adding lines
-- grouping by factors
-- adding trendlines
-- saving plots
-- interactivity with plotly
-- cowplot for panels
-- sizing, formatting etc.
-- plotting spatial data - with ggplot, and with leaflet.
-- animations - basic gif
-
-
-## Accessibility
-https://www.jumpingrivers.com/blog/accessible-shiny-standards-wcag/
-standards, why it is important
-how to add alt text to plots and tables
-labels
-colour ramps - continuous and discrete data
-https://stackoverflow.com/questions/57153428/r-plot-color-combinations-that-are-colorblind-accessible
-color blindness
-using symbols etc so color isn't the only way to convey info.
-text size
-html tags
-screen readers
-
-further reading - gov digital service, w3c
 
