@@ -25,17 +25,61 @@ Let's visualise our data. This can also be a great way to explore your data, for
 - animations - basic gif
 
 
+
 ## Accessibility
-https://www.jumpingrivers.com/blog/accessible-shiny-standards-wcag/
-standards, why it is important
-how to add alt text to plots and tables
-labels
+Accessibility is essentially the ability to access or benefit from something. It focuses on making sure that content we produce can be used by as many people as possible, regardless of any disabilities they might have. For example, making sure that someone with impaired vision or colorblindness can access it.
+For those of us working for Cefas this is especially important as all public sector bodies have to meet the [2018 accessibility regulations](https://www.legislation.gov.uk/uksi/2018/852/contents/made), but it is good practice for everyone to make an effort to make their content accessible, so that barriers are removed as far as possible and no one is excluded from using something on the basis of a disability. There is a [government accessibility blog](https://accessibility.blog.gov.uk/2016/05/16/what-we-mean-when-we-talk-about-accessibility-2/) which goes into more detail on this subject.
+
+So, what does this mean practically for us as R coders creating content like maps and charts, or even markdown documents like this one?
+
+### Hyperlinks, html tags etc
+
+An accessible link is one which makes sense without any context. For example in the paragraph above I linked to a blog. Rather than just pasting the url or saying click [here](https://accessibility.blog.gov.uk/2016/05/16/what-we-mean-when-we-talk-about-accessibility-2/) for info, I hyperlinked it with the text ["government accessibility blog"](https://accessibility.blog.gov.uk/2016/05/16/what-we-mean-when-we-talk-about-accessibility-2/) so that it would be clear to anyone using a screen reader where the link is going to take them.
+
+### Alternative text
+When designing a figure, try to keep in mind that someone may be be looking at your figure in a document while using a screen reader, and cannot actually see it. As a starting point alt text should tell the person what the figure is. For example "the logo of Rstudio".
+
+![R studio logo](./RStudio-Logo-Flat.png)
+
+
+Where images are just there to fill space or look pretty it can be enough just to say "decorative image".
+
+![Decorative image showing some code on a computer screen](./code.jpg)
+(want to figure out how to make alt text separate to caption)
+
+However, much of the content we are producing with R is conveying information, and we need to be sure that information is as accessible as possible. A caption can provide some detail, for example "Figure 1: A bar chart showing favourite foods among participants." This is enough information for someone who can see the chart to understand what they are looking at, but is not detailed enough for alt text. Alt text might say "A bar chart showing favourite foods among participants. Pizza is the most popular food, preferred by 8/25 participants, closely followed by chocolate (6/25) and cheese (5/25). Several other food types were mentioned by one or two participants."
+
+how to add alt text to tables
+
+### Colour blindness
+One of the biggest issues with figures we are producing is the tendency to use colour to convey information. For example, in the following line plot, colour is used for the different series. This means that for someone who is unable to differentiate these it can be very difficult if not impossible to gain any information from.
+
+While colour is very useful for those of us who can see it, we should avoid using it as the only way to convey information. We could add labels to each line alongside the colour, now someone who can't distinguish the colours can still tell the series apart. Or we could use symbols.
+
+In some instances it can be much harder to avoid use of colour. For example, in this map showing satellite temperature records in the North Sea. We cannot add labels or symbols to each cell without the map becoming impossible to read. However, we can carefully chose colour ramps which are colour blind friendly.
+
+Show orginal example with a poor choice of colour ramp, inc what it looks like to someone with red-green colour blindness. Then show example with a better colour ramp.
+
+Fortunately we do not all need to become experts in colour blindness, there are colour ramps and R packages already out there which we can make use of.
+
 colour ramps - continuous and discrete data
 https://stackoverflow.com/questions/57153428/r-plot-color-combinations-that-are-colorblind-accessible
-color blindness
-using symbols etc so color isn't the only way to convey info.
+
+https://www.jumpingrivers.com/blog/accessible-shiny-standards-wcag/
+standards, why it is important
+
+labels
+
+## Exercise
+Give a few basic plots that are not accessible and ask them to make them into accessible ones.
+
+
+
 text size
 html tags
 screen readers
 
 further reading - gov digital service, w3c
+
+https://www.w3schools.com/accessibility/index.php
+"This is a tooltip :)"
