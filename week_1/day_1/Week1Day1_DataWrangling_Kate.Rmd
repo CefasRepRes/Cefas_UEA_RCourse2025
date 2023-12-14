@@ -6,6 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+library(knitr)
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(eval = FALSE) ## have set this to FALSE for now, might have to change that if we want to show outputs
 ```
@@ -24,6 +25,7 @@ We will need to make sure we have installed and loaded the following packages:
 
 ```{r packages}
 library(tidyverse)
+#we might need to explain here if teresa hasn't already what all the warnings you get when you load tidyverse are
 ```
 
 
@@ -71,10 +73,10 @@ Now that we have explored the `iris` data a bit, let's try subsetting it based o
 
 Let's try a conditional statement using square brackets first:
 ```{r subset1}
-setosa <- iris[iris$Species == "setosa",]
+setosa <- iris[iris$Species == "setosa",] 
 ```
 
-You can read this statement as: "assign an object called 'setosa' using the 'iris' dataset, selecting all rows where the factor Species has the value 'setosa', and selecting all columns". NOTE: explain this a bit more???
+You can read this statement as: "assign an object called 'setosa' using the 'iris' dataset, selecting all rows where the factor Species has the value 'setosa', and selecting all columns". NOTE: explain this a bit more??? # can you add explanation that subsetting by rows is before the comma, and after is by columns, and an example of that
 
 Now let's try the same using a Tidyverse function:
 
