@@ -34,7 +34,9 @@ Let's start by taking a look at the `iris` dataset:
 
 ```{r investigate1}
 data("iris")
-iris <- as.data.frame(iris)
+
+# it is good practice to make a copy of your dataset at regular intervals, or keep a master copy. That way, in case something goes wrong, you can go back to a previous version of your data
+iris1 <- as.data.frame(iris)
 
 # let's get a first overview -- this will have been covered to some extend by Sam
 
@@ -55,34 +57,94 @@ min(iris$Sepal.Length)
 max(iris$Sepal.Width)
 mean(iris$Petal.Length)
 
+# if we wanted we could calculate the sum of a column:
+sum(iris$Sepal.Length)
+
 ## now we want to take a look at our factors - what are the three levels?
 unique(iris$Species)
 
+# we can use this function on any column, but with numerical values we will just get more results:
+unique(iris$Sepal.Length)
+
+# do we have any duplicates in our dataset? Do we have any NAs?
+any(is.na(iris$Sepal.Length))
+table(is.na(iris$Sepal.Length))
+
+any(duplicated(iris$Sepal.Length))
+duplicated(iris$Sepal.Length)
+table(duplicated(iris$Sepal.Length))
+
+# in this case this is not very informative -- we expect to see 'duplicate' entries
 ```
 
-- structure of your data -- Sam covers summary()
-- number of rows, columns; getting the sum of a column
-- unique values
-- checking for duplicates
-- how to change column names
-- how to set column names and values to all lower or all upper case
-- how to sort vectors (using base R sort function)
+### Making basic changes to your data
+We can change things such as column names, or set them to all lower or upper case. This can be useful when we want to merge different datasets together.
+
+```{r change}
+# let's change a column name
+names(iris)[names(iris)=="Species"] <- "Type" 
+
+str(iris)
+
+# what if we want to change column names or rows to all upper or all lower case
+
+iris$Type <- toupper(iris$Type)
+str(iris)
+
+names(iris) <- toupper(names(iris))
+str(iris)
+
+# let's reverse these changes for now
+iris <- iris1
+
+```
+
+
+
+- structure of your data -- Sam covers summary() -- done
+- number of rows, columns; getting the sum of a column -- done
+- unique values -- done
+- how to change column names -- done
+- how to set column names and values to all lower or all upper case -- done
+- how to sort vectors (using base R sort function) -- **needs to be added**
 
 ### Expanding vs reducing your datasets
-Now that we have explored the `iris` data a bit, let's try subsetting it based on different conditions. First, let's try making a new dataframe where we only select data for the species "setosa". There are two ways you can do this - using R base functions or using a Tidyverse pipeline
+Now that we have explored the `iris` data a bit, let's try subsetting it based on different conditions. First, let's try making a new dataframe where we only select data for the species "setosa". There are two ways you can do this - using R base functions or using a Tidyverse pipeline.
 
 Let's try a conditional statement using square brackets first:
 ```{r subset1}
 setosa <- iris[iris$Species == "setosa",] 
 ```
 
-You can read this statement as: "assign an object called 'setosa' using the 'iris' dataset, selecting all rows where the factor Species has the value 'setosa', and selecting all columns". NOTE: explain this a bit more??? # can you add explanation that subsetting by rows is before the comma, and after is by columns, and an example of that
+You can read this statement as: "assign an object called 'setosa' using the 'iris' dataset, selecting all rows where the factor Species has the value 'setosa', and selecting all columns". We are selecting **rows** because our conditional statement is *before* the comma.
 
-Now let's try the same using a Tidyverse function:
+We can select **columns** if the conditional statement is *after* the comma. For example, we can only select two of the columns:
 
 ```{r subset2}
-setosa2 <- iris %>%
+# to select the first three columns:
+subset1 <- iris[,1:3]
+
+# or to select by column name:
+subset2 <- iris[,c("Sepal.Length", "Sepal.Width")]
+```
+
+Now let's try the same using a Tidyverse function. First, this is how to select specific **rows** based on a factor:
+
+```{r subset3}
+subset3 <- iris %>%
   filter(Species == "setosa")
+```
+
+And this is how to select specific **columns**:
+
+```{r subset4}
+# select first three columns:
+subset4 <- iris %>%
+  select(1:3)
+
+# select by column name:
+subset4 <- iris %>%
+  select(Sepal.Length, Sepal.Width)
 ```
 
 Hopefully you will see that both of our subsets have the same number of rows - a good indication that we have created two identical subsets.
@@ -93,10 +155,31 @@ The next thing we want to try is expanding our dataset by adding a new column, L
 iris$LWRatio <- iris$Petal.Length / iris$Petal.Width
 ```
 
+We saw before that we can check data for duplicate entries. In the case of the `iris` dataset, we expect to see duplicate entries when we look at individual columns -- we would assume that the same petal length or width will show up multiple times. However, sometimes we need to check if we have true duplicates in our data. We can do this by creating a 'unique identifier' and then using this column to check for duplicates.
 
-- adding new columns
-- summing across rows and columns
-- creating subsets: filtering and subsetting using conditional statements (aka base R functions)
+```{r duplicates}
+# let's create a unique identifier by pasting together information from the different rows:
+
+iris$UniqueID <- apply(iris[,1:6], 1, paste, collapse = "-")
+
+# now check
+table(duplicated(iris$UniqueID))
+
+# we have one duplicate entry
+# let's check that further
+
+ID <- iris$UniqueID[duplicated(iris$UniqueID) == TRUE]
+test <- iris[iris$UniqueID == ID,]
+
+# we can remove one of the two entries using the row number:
+iris <- iris[-143,]
+```
+
+
+- adding new columns -- done
+- checking for duplicates -- done
+- summing across rows and columns -- **do we want to include this?**
+- creating subsets: filtering and subsetting using conditional statements (aka base R functions) -- done
 
 ### What is wide and long format and how to we change between the two?
 
@@ -105,11 +188,46 @@ iris$LWRatio <- iris$Petal.Length / iris$Petal.Width
 - dealing with the introduced NAs
 
 ### Merging datasets
-Before we can merge or join two datasets together, we need to check that they are compatible. The tidyverse comes with a few functions that allow us to join two datasets even if they are not fully matching. Let's explore...
+Before we can merge or join two datasets together, we need to check that they are compatible. The `janitor` package allows us to compare columns between two datasets. Let's create an example by setting up two subsets of the `iris` dataset and renaming one column in one of the subsets to create a difference:
 
-- janitor package -- comparing two datasets before merging
-- cbind
-- rbind
+```{r janitor, eval = TRUE, warning=FALSE, message=FALSE}
+
+# iris <- iris1
+subset1 <- iris[iris$Species == "setosa",]
+subset2 <- iris[iris$Species == "virginica",]
+
+names(subset2)[names(subset2) == "Species"] <- "Type"
+
+library(janitor)
+
+janitor::compare_df_cols(subset1, subset2)
+```
+To join two datasets together, we have several options:
+
+- **cbind**: this function merges two dataframes by adding *columns* -- so the dataframe is expanded horizontally
+- **rbind**: this function merges two dataframes by adding *rows* -- so the dataframe is expanded vertically
+- **merge**: base R function within which you can specify different ways to merge two dataframes 
+- **Tidyverse options**:
+  - inner_join() corresponds to merge(X, Y) – only retain rows that match between X and Y.
+  - left_join() corresponds to merge(X, Y, all.x = T) – retain all rows from X, whether or not they match in Y.
+  - right_join() corresponds to merge(X, Y, all.y = T) – retain all rows from Y, whether or not they match in X.
+  - full_join() corresponds to merge(X, Y, all = T) – retain all rows from both X and Y, whether or not they match.
+
+Source and further info: https://bookdown.org/rwnahhas/IntroToR/merge-join.html
+
+An example:
+
+```{r merge}
+names(subset2)[names(subset2) == "Type"] <- "Species"
+
+fullDF <- rbind(subset1, subset2)
+
+```
+
+
+
+- janitor package -- comparing two datasets before merging -- done??
+- cbind + rbind -- done
 - merge - use data collected at smartbuoys as an example?
 
 
@@ -122,6 +240,7 @@ Before we can merge or join two datasets together, we need to check that they ar
 
 
 ### Dealing with spatial data
+R has become a very powerful tool to handle, process and map spatial data thanks to packages that have been developed over the years. Up until very recently, the packages most people were using to import and handle spatial data were `rgdal`, `rgeos` and `terra`. These packages are being retired and are being replaced by `sf` - Simple Features.
 
 - use island dataset?
 - converting to spatial formats? or reading in spatial data
