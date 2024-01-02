@@ -259,14 +259,23 @@ reshape2::dcast(ChickWeight, Chick + Diet ~ Time, value.var = "weight")
 #In dcast it does run but says "Aggregation function missing: defaulting to length", and you will see all but one cells have a length of 1.
 #If we add fun.aggregate = mean the error goes away and where there are duplicates it calculates an average
 
-dcast(ChickWeight, Chick + Diet ~ Time, value.var = "weight", fun.aggregate = mean)
+ChickWeight_wide <- dcast(ChickWeight, Chick + Diet ~ Time, value.var = "weight", fun.aggregate = mean)
 
 ```
-This method can also be used to do a group by query.
+This method can also be used to do a group by query which we will look at in more detail later.
 
-- use iris - pivot by species name
-- pivoting datasets
-- dealing with the introduced NAs
+There may also be situations where you want to go from wide to long format
+
+```{r wide to long}
+ChickWeight_long <- reshape2::melt(ChickWeight_wide, id = c("Chick", "Diet"), value.name = "weight", variable.name = "Time")
+```
+Now we have the data back in long form. However you may notice that there are now 600 observations, when there were originally 578. This is because each cell has been given a row regardless of whether there was a measurement in it, so there are 50 chicks * 12 times = 600 rows. As you may have noticed in the wide table, several of the chicks weren't measured every time step (let's imagine they escaped part way through the experiment), for example chick 16 was only weighed up to day 12. So by pivoting from wide to long format we have introduced some extra rows.
+
+```{r remove NAs}
+ChickWeight_long <- ChickWeight_long[!is.na(ChickWeight_long$weight),]
+```
+Now we are back to the orginal 578 rows.
+
 
 ### Merging datasets
 Before we can merge or join two datasets together, we need to check that they are compatible. The `janitor` package allows us to compare columns between two datasets. Let's create an example by setting up two subsets of the `iris` dataset and renaming one column in one of the subsets to create a difference:
@@ -299,17 +308,46 @@ Source and further info: https://bookdown.org/rwnahhas/IntroToR/merge-join.html
 An example:
 
 ```{r merge}
+#set the name back to species for subset 2
 names(subset2)[names(subset2) == "Type"] <- "Species"
 
 fullDF <- rbind(subset1, subset2)
 
 ```
 
+Now lets look at some made up data
+
+```{r schools}
+# Create some dataframes with random data.
+
+# Random ratings per school and city.
+schools <- data.frame(City=c('Lowestoft', 'Lowestoft', 'Beccles', 'Beccles', 'Norwich'),
+                      School=c('Pakefield', 'Kirkley', 'John Leman', 'Free School', 'Hewitt'),
+                      Rating=c('B', 'D', 'C', 'C', 'B'))
+
+# Town sizes.
+towns <- data.frame(Town=c('Lowestoft', 'Beccles', 'Norwich'),
+                    Population=c(30000, 10000, 270000))
+
+NewRating <- data.frame(NewRating=c('B', 'C', 'B', 'D', 'B'))
+
+#Add the information about population size to the schools table using merge
+schools2 <- merge(schools, towns, by.x = "City", by.y = "Town")
+#Note we had to specify the column to match by as it was called city in one table and town in another. If we change the column name to be town in both then the merge is simpler as it guesses that you want to join on that column.
+names(schools)[names(schools) == "City"] <- "Town"
+
+schools2 <- merge(schools, towns)
+
+# Suppose the schools have been rated again and we want to add the new ratings, we can use cbind
 
 
-- janitor package -- comparing two datasets before merging -- done??
-- cbind + rbind -- done
-- merge - use data collected at smartbuoys as an example?
+# Example of how to use cbind (column bind).
+schools3 <- cbind(schools2, NewRating)
+
+new.schools3<-new.schools1[, c("Town", "School",  "Rating", "Population", "NewRating", "NewRating")]
+```
+
+
 
 
 ### Dealing with dates
