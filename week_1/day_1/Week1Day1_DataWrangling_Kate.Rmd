@@ -8,7 +8,7 @@ output: html_document
 ```{r setup, include=FALSE}
 library(knitr)
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_chunk$set(eval = FALSE) ## have set this to FALSE for now, might have to change that if we want to show outputs
+knitr::opts_chunk$set(eval = TRUE) ## have set this to FALSE for now, might have to change that if we want to show outputs
 ```
 
 ## Basic data wrangling
@@ -211,7 +211,58 @@ nrow(iris) #we now have only 149 rows, we have lost the duplicate.
 - summing across rows and columns -- **do we want to include this?**
 - creating subsets: filtering and subsetting using conditional statements (aka base R functions) -- done
 
-### What is wide and long format and how to we change between the two?
+### Wide vs long format
+
+There are two main ways to store datasets - wide and long. Datasets are usually easier to work with in R in long format, but you may need to switch between them
+
+Long format is where you have data in an identifying column (or columns) which repeats, and then your response data all in one column. For example, let's look at the chick weight dataset.
+
+```{r long}
+#oad the chick weight dataset
+data("ChickWeight")
+ChickWeight <- as.data.frame(ChickWeight)
+str(ChickWeight)
+#reorder the columns into a more sensible order
+
+ChickWeight <- ChickWeight[, c("Chick", "Diet", "Time", "weight")] # leave the row index blank to keep all rows
+
+View(ChickWeight)
+nrow(ChickWeight)
+unique(ChickWeight$Chick)
+```
+
+You can see that this dataset has four columns. The first 3 contain identifying info (which chick is it and which diet is it on) and time of the measurement. The final column has the chick weight. Thus there are only 50 different chicks on 4 diets, but as they were weighed at different times and the data is in long format there are 578 rows in total. This is a good format for many r functions, but it does repeat information and is not so easy to read.
+
+The other way to store this data is in wide format, where each chick just has one row, and each time it is weighed goes in a separate column
+
+```{r wide}
+#In tidyverse
+ChickWeight %>% tidyr::spread(Time, weight)
+#In reshape2
+reshape2::dcast(ChickWeight, Chick + Diet ~ Time, value.var = "weight")
+```
+
+There are various terms for converting between these formats. The most common are melt or gather for wide>long, and cast or spread for long>wide.
+
+Casting a dataset is simple where each unique entity only has one of each measurement, but sometimes that isn't the case. Maybe it was a bit difficult to get the chicks to stay still for weighing and you actually had more than one measurement for each chick in order to take an average. If you tried to cast such a dataset then you would get an error, as it can't put more than one weight in each cell in the wide format table. In this case you might need to specify a function, usually average. 
+
+```{r wide2}
+ChickWeight
+
+#let's say chick 1 was being particularly difficult to weigh on day 6, so we have multiple measurements for that day
+ChickWeight <- ChickWeight %>% add_row(Chick = "1", Diet = "1", Time = 6, weight = 66)
+
+ChickWeight %>% tidyr::spread(Time, weight)
+#See how we get an error this time, because row 4 and 579 both contain weights for chick 1, diet 1, day 6.
+
+reshape2::dcast(ChickWeight, Chick + Diet ~ Time, value.var = "weight")
+#In dcast it does run but says "Aggregation function missing: defaulting to length", and you will see all but one cells have a length of 1.
+#If we add fun.aggregate = mean the error goes away and where there are duplicates it calculates an average
+
+dcast(ChickWeight, Chick + Diet ~ Time, value.var = "weight", fun.aggregate = mean)
+
+```
+This method can also be used to do a group by query.
 
 - use iris - pivot by species name
 - pivoting datasets
