@@ -5,14 +5,72 @@ date: "`r format(Sys.time(), '%d/%m/%y')`"
 output: html_document
 ---
 
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE)
+# knitr::opts_chunk$set(eval = FALSE) ## have set this to FALSE for now, might have to change that if we want to show outputs
+```
 
-## Basic data visualisation
+## Basic example plots
 
-Let's visualise our data. This can also be a great way to explore your data, for example by plotting a simple histogram or boxplot. You have already heard of the package 'ggplot2'. This is a very powerful package to create great looking plots very quickly. However, sometimes base R code is perfectly sufficient and therefore we will also cover some base R functions as well.
+Let's visualise our data using three different types of plots. This can also be a great way to explore your data, for example by plotting a simple histogram or boxplot. You have already heard of the package 'ggplot2'. This is a very powerful package to create great looking plots very quickly. However, sometimes base R code is perfectly sufficient - and may actually give you more flexibility to fully customise your plots - and therefore we will also cover some base R functions as well.
 
+First we will load the `ggplot2` package so we can compare base R functions with `ggplot` functions:
+
+```{r package, warning=FALSE, message=FALSE}
+library(ggplot2)
+```
+
+Now let's start with some simple examples for different types of plots. Using the `iris` example data, we can plot some simple histograms, boxplots and scatter plots which allow us to explore our data.
+
+<u>**Histogram**</u>
+
+```{r hist}
+## first we create our simple dataframe again:
+iris <- as.data.frame(iris)
+
+## then we can plot a histogram of petal lengths:
+hist(iris$Petal.Length)
+
+# to change width of bins
+#hist(iris$Petal.Length, breaks = seq(min(iris$Petal.Length), max(iris$Petal.Length), length.out = 15))
+
+## and the same using ggplot:
+ggplot(data = iris) +
+  geom_histogram(aes(x = Petal.Length))
+```
+
+<u>**Boxplot**</u>
+
+```{r box}
+## this is how a boxplot looks using base R functions:
+boxplot(iris$Petal.Length~iris$Species)
+
+## and this is how a boxplot looks using ggplot:
+ggplot(data = iris,aes(x = Species, y = Petal.Length)) +
+  stat_boxplot(geom = "errorbar", width = 0.15) +
+  geom_boxplot()
+```
+
+<u>**Scatterplot**</u>
+
+```{r scatter}
+## a scatterplot using base R -- note here a scatterplot is the default that R will return if we don't specify a specific plot and we are plotting two numerical variables
+plot(iris$Petal.Width~iris$Petal.Length)
+## alternative way of writing this:
+# plot(x = iris$Petal.Length, y = iris$Petal.Width)
+
+## this is how a scatterplot looks using ggplot:
+ggplot() +
+  geom_point(data = iris, aes(x = Petal.Length, y = Petal.Width))
+```
+
+<u>**So what's the difference?**</u>
+
+## Basic plot editing
 - ggplot etc, including how to export for publications, leaflet
-- histogram - in base plot and ggplot
-- basic scatter plot - in base plot and ggplot
+- histogram - in base plot and ggplot -- done
+- basic scatter plot - in base plot and ggplot -- done
 - adding labels etc
 - adding lines
 - grouping by factors
