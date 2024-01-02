@@ -35,8 +35,9 @@ Let's start by taking a look at the `iris` dataset:
 ```{r investigate1}
 data("iris")
 
-# it is good practice to make a copy of your dataset at regular intervals, or keep a master copy. That way, in case something goes wrong, you can go back to a previous version of your data
-iris1 <- as.data.frame(iris)
+#It can be useful to make a copy of your original dataset. That way, if something goes wrong, you can go back to a previous version of your data.
+
+iris_ori <- iris
 
 # let's get a first overview -- this will have been covered to some extend by Sam
 
@@ -83,19 +84,27 @@ We can change things such as column names, or set them to all lower or upper cas
 ```{r change}
 # let's change a column name
 names(iris)[names(iris)=="Species"] <- "Type" 
+str(iris)
 
+# let's replace dots in column names with underscores
+
+names(iris) <- gsub("\\.", "_", names(iris))
 str(iris)
 
 # what if we want to change column names or rows to all upper or all lower case
 
-iris$Type <- toupper(iris$Type)
-str(iris)
-
 names(iris) <- toupper(names(iris))
 str(iris)
 
+names(iris)[names(iris)=="TYPE"] <- tolower(names(iris)[names(iris)=="TYPE"])
+str(iris)
+
+#we can also change all values in a column
+iris$type <- toupper(iris$type)
+str(iris)
+
 # let's reverse these changes for now
-iris <- iris1
+iris <- iris_ori
 
 ```
 
@@ -113,7 +122,9 @@ Now that we have explored the `iris` data a bit, let's try subsetting it based o
 
 Let's try a conditional statement using square brackets first:
 ```{r subset1}
-setosa <- iris[iris$Species == "setosa",] 
+setosa <- iris[iris$Species == "setosa",]
+str(setosa)
+unique(setosa$Species) # Note R still knows there are 3 levels for this factor, but the dataset only includes 1
 ```
 
 You can read this statement as: "assign an object called 'setosa' using the 'iris' dataset, selecting all rows where the factor Species has the value 'setosa', and selecting all columns". We are selecting **rows** because our conditional statement is *before* the comma.
@@ -123,23 +134,25 @@ We can select **columns** if the conditional statement is *after* the comma. For
 ```{r subset2}
 # to select the first three columns:
 subset1 <- iris[,1:3]
-
+str(subset1)
 # or to select by column name:
 subset2 <- iris[,c("Sepal.Length", "Sepal.Width")]
+str(subset2)
 ```
 
 Now let's try the same using a Tidyverse function. First, this is how to select specific **rows** based on a factor:
 
 ```{r subset3}
-subset3 <- iris %>%
+setosa <- iris %>%
   filter(Species == "setosa")
+str(setosa)
 ```
 
 And this is how to select specific **columns**:
 
 ```{r subset4}
 # select first three columns:
-subset4 <- iris %>%
+subset3 <- iris %>%
   select(1:3)
 
 # select by column name:
@@ -147,7 +160,6 @@ subset4 <- iris %>%
   select(Sepal.Length, Sepal.Width)
 ```
 
-Hopefully you will see that both of our subsets have the same number of rows - a good indication that we have created two identical subsets.
 
 The next thing we want to try is expanding our dataset by adding a new column, Let's say we want to calculate the petal length to width ratio. We can do this calculation and automatically save this in a new column that we will call "LWRatio":
 
@@ -158,12 +170,13 @@ iris$LWRatio <- iris$Petal.Length / iris$Petal.Width
 We saw before that we can check data for duplicate entries. In the case of the `iris` dataset, we expect to see duplicate entries when we look at individual columns -- we would assume that the same petal length or width will show up multiple times. However, sometimes we need to check if we have true duplicates in our data. We can do this by creating a 'unique identifier' and then using this column to check for duplicates.
 
 ```{r duplicates}
-# let's create a unique identifier by pasting together information from the different rows:
+# let's create a unique identifier by pasting together information from the different rows: (KC think we could have a better example here)
 
 iris$UniqueID <- apply(iris[,1:6], 1, paste, collapse = "-")
-
+str(iris)
 # now check
 table(duplicated(iris$UniqueID))
+
 
 # we have one duplicate entry
 # let's check that further
@@ -173,11 +186,28 @@ test <- iris[iris$UniqueID == ID,]
 
 # we can remove one of the two entries using the row number:
 iris <- iris[-143,]
+
+#An alternative way to do this is by using dplyr package:
+
+dup <- iris %>%
+  group_by_all() %>%
+  filter(n()>1) %>%
+  ungroup()
+
+dup
+
+#Keep only the distinct rows (based on all columns)
+iris <- iris %>% distinct()
+nrow(iris) #we now have only 149 rows, we have lost the duplicate.
+
+
+#What about if you have a more complex dataset, where you might have duplicate samples and want to keep only one of them? For example, say you have combined two datasets, but they contain some of the same data and you only want one version of each sample.
+
 ```
 
 
 - adding new columns -- done
-- checking for duplicates -- done
+- checking for duplicates -- done, want to add more complex example though.
 - summing across rows and columns -- **do we want to include this?**
 - creating subsets: filtering and subsetting using conditional statements (aka base R functions) -- done
 
