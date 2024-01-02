@@ -55,6 +55,7 @@ class(i)
 ```
 
 ### Complex
+(KC comment - think we should remove all stuff about imaginary and complex numbers as too confusing a concept for those who don't already know about them and unlikely to be needed for the rest of the course)
 
 ```{r Complex}
 c <- 3 + 9i
@@ -129,6 +130,7 @@ class(k)
 ### Task 1 (5 mins)
 
 Try this for yourself:
+(KC comment - can you give them a specific task in words than they can then do in code)
 
 ```{r Maths task}
 
@@ -151,6 +153,8 @@ class(ch)
 ```
 
 Characters can be combined together
+
+(KC comment, can you include something about how to split up strings - for example to extract the characters with a year in a string, or to split using underscores)
 
 ```{r Character}
 part_a <- "What is your favourite food?"
