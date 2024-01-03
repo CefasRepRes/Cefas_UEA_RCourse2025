@@ -8,7 +8,9 @@ output: html_document
 ```{r setup, include=FALSE}
 library(knitr)
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_chunk$set(eval = TRUE) ## have set this to FALSE for now, might have to change that if we want to show outputs
+knitr::opts_chunk$set(eval = FALSE) ## have set this to FALSE for now, might have to change that if we want to show outputs
+Sys.setenv(tz="UTC") #set environment time zone to utc
+
 ```
 
 ## Basic data wrangling
@@ -25,6 +27,7 @@ We will need to make sure we have installed and loaded the following packages:
 
 ```{r packages}
 library(tidyverse)
+library(reshape2)
 #we might need to explain here if teresa hasn't already what all the warnings you get when you load tidyverse are
 ```
 
@@ -246,7 +249,7 @@ There are various terms for converting between these formats. The most common ar
 
 Casting a dataset is simple where each unique entity only has one of each measurement, but sometimes that isn't the case. Maybe it was a bit difficult to get the chicks to stay still for weighing and you actually had more than one measurement for each chick in order to take an average. If you tried to cast such a dataset then you would get an error, as it can't put more than one weight in each cell in the wide format table. In this case you might need to specify a function, usually average. 
 
-```{r wide2}
+```{r wide2, error = TRUE}
 ChickWeight
 
 #let's say chick 1 was being particularly difficult to weigh on day 6, so we have multiple measurements for that day
@@ -267,6 +270,7 @@ This method can also be used to do a group by query which we will look at in mor
 There may also be situations where you want to go from wide to long format
 
 ```{r wide to long}
+
 ChickWeight_long <- reshape2::melt(ChickWeight_wide, id = c("Chick", "Diet"), value.name = "weight", variable.name = "Time")
 ```
 Now we have the data back in long form. However you may notice that there are now 600 observations, when there were originally 578. This is because each cell has been given a row regardless of whether there was a measurement in it, so there are 50 chicks * 12 times = 600 rows. As you may have noticed in the wide table, several of the chicks weren't measured every time step (let's imagine they escaped part way through the experiment), for example chick 16 was only weighed up to day 12. So by pivoting from wide to long format we have introduced some extra rows.
@@ -344,13 +348,99 @@ schools2 <- merge(schools, towns)
 # Example of how to use cbind (column bind).
 schools3 <- cbind(schools2, NewRating)
 
-new.schools3<-new.schools1[, c("Town", "School",  "Rating", "Population", "NewRating", "NewRating")]
 ```
 
 
 
 
-### Dealing with dates
+### Dealing with dates and times
+
+Most data will come with a date and or time, but the formats can vary widely so it is important to understand how to deal with these in R. ["If you think dates and times are simple you haven't thought about it enough!"](https://gist.github.com/timvisee/fcda9bbdff88d45cc9061606b4b923ca)
+
+#### Time zones
+
+The first thing to get right is the time zone!
+You may have noticed that in the first setup chunk of code we set the timezone to UTC. This is the time zone at °0 longitude and does not use daylight saving time so it is always the same. As a default it is good to set this at the beginning of your script.
+
+```{r timezones}
+Sys.setenv(tz="UTC") #set environment time zone to utc
+#To view the timezone
+Sys.timezone()
+#To set a different timezone just add or subtract from UTC. For example if our data was from vanuatu we would do it like this. And if we didn't R would think the times are 11 hours out from what they actually are!
+Sys.setenv(tz="UTC +1") #set environment time zone to utc +11
+Sys.timezone()
+
+#Let's set it back to UTC for now
+Sys.setenv(tz="UTC") 
+Sys.timezone()
+
+#We can also get R to tell us the current date and time
+Sys.Date()
+Sys.time()
+#We can do this with the lubridate package too
+lubridate::today()
+lubridate::now()
+#We can even get it to tell us the time in a different zone, say if I want to know if it's a good time to call my kiwi relatives.
+lubridate::now(tzone = "NZ")
+
+```
+
+#### Daylight savings time
+
+One of the complications of time is that depending on the time zone and whether the data has been recorded in local time, it may inconveniently shift by an hour for part of the year. For example if your data was collected in the UK in the summer time it may be in British Summer Time, which is UTC+1. This gets further complicated if you have data that spans the clock change. But before we get into that let's learn how to format dates and times in R
+
+#### Formatting dates and times
+
+Your data may store this information in many different ways. Maybe you have years, days and months in separate columns, maybe months are in numbers, maybe in words, maybe in 3 letter abbreviations. Maybe your dates are in UK format, maybe American style with the day and month switched. Maybe your datetime is all in one column, maybe date and time are separate. Perhaps you have a separate column that tells you the timezone (if so, hallelujah someone thought to include this vital info!). Times may be in 12 or 24 hour format, and may or may not include seconds
+Here are some examples:
+
+08/01/2024
+2024/08/01
+01/08/24
+8th January 2024
+08/01/2024 14:03
+08/01/2024 02:03 PM
+8 Jan 2024 14 03 06
+8th January 2024
+202401081T140306Z
+integer number check what this should be (seconds since jan 01 1970)
+
+You can probably read and understand all of those (except the last one), but R needs to be told what they all are so it knows what datetime to associate with your data.
+
+Let's take a look at datetime classes. The main ones used are Date (a day stored as the number of days since 1970-01-01), and POSIXct (date and time in seconds with the number of seconds beginning at 1 January 1970)
+
+```{r date class}
+class(Sys.Date()) # Date class
+class(lubridate::now()) #POSIXct class
+
+data$DateTime <- as.POSIXct(as.character(data$DateTime), format="%Y-%m-%d %H:%M") #change format to reflect format of datetime
+
+```
+Now let's take some of the date formats above and tell R how to parse them
+
+```{r date parsing}
+date <- "2024/08/01"
+class(date) # we see that R just has this stored as a string
+date1 <- as.Date(date)
+str(date1) # now stored as a date
+#However, if we had give it a date like this
+date <- "01/08/2024"
+date1 <- as.Date(date)
+str(date1) #you can see something has gone wrong, it has confused the year and the day. This is because the format wasn't what it expected, so we need to specify the format.
+date1 <- as.Date(date, format = "%d/%m/%Y")
+str(date1) # now it is correct as we told it what to expect.
+
+#as.Date is a base R function, we can also use the very similar lubridate::as_date function
+
+```
+Exercise - can you take some of the date formats above and parse them so R understands them? Use [this guide](https://www.statology.org/r-date-format/) to understand how to specify the format
+
+```{r datetime parsing}
+
+
+```
+
+
 
 - use airquality dataset for this? At least it includes month
 - how to check what format a date column is in
