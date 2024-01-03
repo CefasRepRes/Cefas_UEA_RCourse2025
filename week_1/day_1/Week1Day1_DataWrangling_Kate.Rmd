@@ -510,12 +510,53 @@ course_dates$day <- format(course_dates$StartDateTime,"%d")
 
 
 
-### Dealing with spatial data
-R has become a very powerful tool to handle, process and map spatial data thanks to packages that have been developed over the years. Up until very recently, the packages most people were using to import and handle spatial data were `rgdal`, `rgeos` and `terra`. These packages are being retired and are being replaced by `sf` - Simple Features.
+## Exercise
 
-- use island dataset?
-- converting to spatial formats? or reading in spatial data
-- R built in dataset 'quakes' could be good one here - gives git sthe location of earthquakes off Fiji
+Read in the example dataset and create a posixct datetime field. Create a "Year" and "Month" column
+
+
+### Dealing with spatial data
+
+We now understand how to deal with temporal data, but most data we use is also spatial. 
+
+R has become a very powerful tool to handle, process and map spatial data thanks to packages that have been developed over the years. Up until very recently, the packages most people were using to import and handle spatial data were `rgdal`, `rgeos` and `terra`. These packages are being retired and are being replaced by [`sf` - Simple Features](https://r-spatial.github.io/sf/.
+
+
+```{r quakes}
+library(sf)
+#Let's use the quakes dataset, which contains the locations of earthquakes off Fiji
+data("quakes")
+str(quakes)
+#You can see this data includes latitude and longitude, so it is spatial, but these are just stored as numeric, R does not know they are coordinates.
+quakes_sf <- sf::st_as_sf(quakes, coords = c("long","lat")) # your x coordinate goes first, y second. Make sure to get this right or your data will be sideways!
+str(quakes_sf) # we can now see it has geometry
+plot(st_geometry(quakes_sf))
+
+
+```
+
+Similarly to timezones, with spatial data we have coordinate reference systems to deal with.
+
+```{r crs}
+#We can check the coordinate reference system of our spatial data like this
+st_crs(quakes_sf)
+#You will see that it is NA, so let's fix that
+st_crs(quakes_sf) <- st_crs(4326) #4326 is the EPSG code for WGS84. This is the most commonly used lat/lon projection
+st_crs(quakes_sf) 
+
+#The other most common CRS is the British National Grid which uses eastings and northings.
+
+# BNG example 
+
+```
+
+We will go into spatial data analysis in more detail in week 2.
+
+### Reading in spatial data
+
+You may also have data which is already in a spatial format, for example a shapefile. sf has functions to read these data types in.
+
+(include example)
 
 ### Other -- For Kate to check
 
