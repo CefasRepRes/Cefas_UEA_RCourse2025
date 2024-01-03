@@ -366,8 +366,8 @@ You may have noticed that in the first setup chunk of code we set the timezone t
 Sys.setenv(tz="UTC") #set environment time zone to utc
 #To view the timezone
 Sys.timezone()
-#To set a different timezone just add or subtract from UTC. For example if our data was from vanuatu we would do it like this. And if we didn't R would think the times are 11 hours out from what they actually are! THIS DOESNT WORK DOES ANYONE KNOW HOW TO DO IT?
-Sys.setenv(tz="UTC +11") #set environment time zone to utc +11
+#You can set a differnt timezone, e.g.
+Sys.setenv(tz="CET") #set environment time zone to central european time
 Sys.timezone()
 
 #Let's set it back to UTC for now
@@ -384,10 +384,17 @@ lubridate::now()
 lubridate::now(tzone = "NZ")
 
 ```
+OlsonNames() will show you all the timezone names.
+
 
 #### Daylight savings time
 
-One of the complications of time is that depending on the time zone and whether the data has been recorded in local time, it may inconveniently shift by an hour for part of the year. For example if your data was collected in the UK in the summer time it may be in British Summer Time, which is UTC+1. This gets further complicated if you have data that spans the clock change. But before we get into that let's learn how to format dates and times in R
+One of the complications of time is that depending on the time zone and whether the data has been recorded in local time, it may inconveniently shift by an hour for part of the year. For example if your data was collected in the UK in the summer time it may be in British Summer Time, which is UTC+1. This gets further complicated if you have data that spans the clock change. 
+[timeanddate.com](timeanddate.com) gives information about when daylight savings is used in each timezone e.g. [https://www.timeanddate.com/time/zones/cet](https://www.timeanddate.com/time/zones/cet)
+But I would recommend to always use UTC as your sys timezone!
+If you want a bit more info about timezones read this [R blog about timezone troubles](https://www.r-bloggers.com/2018/07/a-tour-of-timezones-troubles-in-r/)
+
+Now let's learn how to format dates and times in R
 
 #### Formatting dates and times
 
@@ -401,6 +408,7 @@ Here are some examples:
 08/01/2024 14:03
 08/01/2024 02:03 PM
 8 Jan 2024 14 03 06
+08/01/2024 15:03 CET
 8th January 2024
 202401081T140306Z
 1704722580
@@ -440,11 +448,12 @@ What about when we also have times?
 ```{r datetime parsing}
 datetime <- "08/01/2024 14:03:00"
 #parse this to posixct, specifying the format
-datetime1 <- as.POSIXct(datetime, format = "%d/%m/%Y %H:%M:%S")
+datetime1 <- as.POSIXct(datetime, format = "%d/%m/%Y %H:%M:%S", tz="UTC") #note we specify the timezone, always a good idea! But if you don't it will assume what you set as your sys.timezone
 str(datetime1)
 
+
 datetime <- "20240108T140306Z"
-datetime2 <- as.POSIXct(datetime, format = "%Y%m%dT%H%M%SZ")
+datetime2 <- as.POSIXct(datetime, format = "%Y%m%dT%H%M%SZ", tz="UTC")
 str(datetime2)
 
 #We can also see how this is stored as a number
@@ -469,16 +478,19 @@ str(datetime3)
 
 
 course_dates <- data.frame(Date = c("08/01/2024", "09/01/2024", "22/01/2024", "23/01/2024"),
-                    StartTime = c("09:30:00", "09:30:00", "09:30:00", "09:30:00"),
-                    EndTime = c("16:30:00", "16:30:00", "16:30:00", "16:30:00"))
+                    StartTime = c("09:00:00", "09:00:00", "09:00:00", "09:00:00"),
+                    EndTime = c("16:00:00", "16:00:00", "16:00:00", "15:00:00"),
+                    TimeZone = c("UTC", "UTC", "UTC", "UTC"), 
+                    Location = "Zicer", "Zicer", "", "")
 
-course_dates$StartDateTime <- as.POSIXct(paste(course_dates$Date, course_dates$StartTime, sep = " "), format = "%d/%m/%Y %H:%M:%S")
+course_dates$StartDateTime <- as.POSIXct(paste(course_dates$Date, course_dates$StartTime, sep = " "), format = "%d/%m/%Y %H:%M:%S", tz = "UTC")
 
 course_dates$EndDateTime <- as.POSIXct(paste(course_dates$Date, course_dates$EndTime, sep = " "), format = "%d/%m/%Y %H:%M:%S")
 course_dates$duration <- difftime( course_dates$EndDateTime, course_dates$StartDateTime)
 
 ```
 Exercise - Now we have the start and end date times, can you calculate how many hours each day is? Hint use the difftime function
+
 
 
 Once you have your dates parsed you can then extract info from them.
@@ -503,7 +515,7 @@ R has become a very powerful tool to handle, process and map spatial data thanks
 
 - use island dataset?
 - converting to spatial formats? or reading in spatial data
-- R built in dataset 'quakes' could be good one here - gives the location of earthquakes off Fiji
+- R built in dataset 'quakes' could be good one here - gives git sthe location of earthquakes off Fiji
 
 ### Other -- For Kate to check
 
