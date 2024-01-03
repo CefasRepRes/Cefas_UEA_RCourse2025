@@ -366,8 +366,8 @@ You may have noticed that in the first setup chunk of code we set the timezone t
 Sys.setenv(tz="UTC") #set environment time zone to utc
 #To view the timezone
 Sys.timezone()
-#To set a different timezone just add or subtract from UTC. For example if our data was from vanuatu we would do it like this. And if we didn't R would think the times are 11 hours out from what they actually are!
-Sys.setenv(tz="UTC +1") #set environment time zone to utc +11
+#To set a different timezone just add or subtract from UTC. For example if our data was from vanuatu we would do it like this. And if we didn't R would think the times are 11 hours out from what they actually are! THIS DOESNT WORK DOES ANYONE KNOW HOW TO DO IT?
+Sys.setenv(tz="UTC +11") #set environment time zone to utc +11
 Sys.timezone()
 
 #Let's set it back to UTC for now
@@ -403,9 +403,9 @@ Here are some examples:
 8 Jan 2024 14 03 06
 8th January 2024
 202401081T140306Z
-integer number check what this should be (seconds since jan 01 1970)
+1704722580
 
-You can probably read and understand all of those (except the last one), but R needs to be told what they all are so it knows what datetime to associate with your data.
+You can probably read and understand all of those (except the last one probably), but R needs to be told what they all are so it knows what datetime to associate with your data.
 
 Let's take a look at datetime classes. The main ones used are Date (a day stored as the number of days since 1970-01-01), and POSIXct (date and time in seconds with the number of seconds beginning at 1 January 1970)
 
@@ -425,27 +425,77 @@ date1 <- as.Date(date)
 str(date1) # now stored as a date
 #However, if we had give it a date like this
 date <- "01/08/2024"
-date1 <- as.Date(date)
-str(date1) #you can see something has gone wrong, it has confused the year and the day. This is because the format wasn't what it expected, so we need to specify the format.
-date1 <- as.Date(date, format = "%d/%m/%Y")
-str(date1) # now it is correct as we told it what to expect.
+date2 <- as.Date(date)
+str(date2) #you can see something has gone wrong, it has confused the year and the day. This is because the format wasn't what it expected, so we need to specify the format.
+date2 <- as.Date(date, format = "%d/%m/%Y")
+str(date2) # now it is correct as we told it what to expect.
 
 #as.Date is a base R function, we can also use the very similar lubridate::as_date function
 
 ```
-Exercise - can you take some of the date formats above and parse them so R understands them? Use [this guide](https://www.statology.org/r-date-format/) to understand how to specify the format
+Exercise - can you take some of the date formats above and parse them so R understands them? Use [this guide](https://www.statology.org/r-date-format/) to understand how to specify the format.
+
+What about when we also have times?
 
 ```{r datetime parsing}
+datetime <- "08/01/2024 14:03:00"
+#parse this to posixct, specifying the format
+datetime1 <- as.POSIXct(datetime, format = "%d/%m/%Y %H:%M:%S")
+str(datetime1)
 
+datetime <- "20240108T140306Z"
+datetime2 <- as.POSIXct(datetime, format = "%Y%m%dT%H%M%SZ")
+str(datetime2)
+
+#We can also see how this is stored as a number
+as.numeric(datetime2)
+
+#Which should help you with the last format 1704722586 which is actually the simplest as it is the number of seconds since 1st Jan 1970. 
+datetime2 <- as.POSIXct(1704722586, origin = "1970-01-01")
+str(datetime2)
+
+#1st Jan 1970 is the standard to count from, but sometimes you get numeric date times with different origins - usually 1st Jan 1900. Just change the origin to parse these.
+
+#Sometimes we have the information spread out, e.g.
+
+Date = c("08/01/2024")
+Time = c("14:03:00")
+datetime3 <- as.POSIXct(paste(Date, Time, sep = " "), format = "%d/%m/%Y %H:%M:%S")
+str(datetime3)
+
+
+
+#If you have your information in a data frame, the parsing is pretty similar, just specify the columns
+
+
+course_dates <- data.frame(Date = c("08/01/2024", "09/01/2024", "22/01/2024", "23/01/2024"),
+                    StartTime = c("09:30:00", "09:30:00", "09:30:00", "09:30:00"),
+                    EndTime = c("16:30:00", "16:30:00", "16:30:00", "16:30:00"))
+
+course_dates$StartDateTime <- as.POSIXct(paste(course_dates$Date, course_dates$StartTime, sep = " "), format = "%d/%m/%Y %H:%M:%S")
+
+course_dates$EndDateTime <- as.POSIXct(paste(course_dates$Date, course_dates$EndTime, sep = " "), format = "%d/%m/%Y %H:%M:%S")
+course_dates$duration <- difftime( course_dates$EndDateTime, course_dates$StartDateTime)
 
 ```
+Exercise - Now we have the start and end date times, can you calculate how many hours each day is? Hint use the difftime function
 
 
+Once you have your dates parsed you can then extract info from them.
 
-- use airquality dataset for this? At least it includes month
-- how to check what format a date column is in
-- how to set a date
-- how to extract information such as the year and month from a date
+```{r extract date components}
+#extract the year
+course_dates$Year <- lubridate::year(course_dates$StartDateTime)
+course_dates$Month <- lubridate::month(course_dates$StartDateTime, label = TRUE) #Label = TRUE gives it as month abbr (Jan etc), false gives it as a number
+
+#you can also convert between formats e.g.
+course_dates$Month_long <- month.name[course_dates$Month]
+
+#You can also use the format function to extract components
+
+course_dates$day <- format(course_dates$StartDateTime,"%d")
+```
+
 
 
 ### Dealing with spatial data
