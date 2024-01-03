@@ -60,7 +60,6 @@ points in your code.
 
 # Plot data ---------------------------
 ```
-![](C:/Users/ellie/OneDrive - University of East Anglia/!PhD/R course/R-code-headings.JPG)
 
 If your script uses add-on packages, load them all at once at the very 
 beginning of the file. This is more transparent than sprinkling `library()` 
