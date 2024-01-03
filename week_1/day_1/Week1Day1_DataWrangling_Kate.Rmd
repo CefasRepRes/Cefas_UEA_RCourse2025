@@ -14,12 +14,6 @@ Sys.setenv(tz="UTC") #set environment time zone to utc
 ```
 
 ## Basic data wrangling
-What has already been covered in previous sessions:
-
-- how to import data
-- how to load packages
-- how to check your data -- format/classes etc (Sam's session)
-
 
 In this session, we will take a look at functions and packages that will help you do some basic data exploration. We will investigate some example data, take a look at pivoting data, learn how to merge two datasets and create subsets of data. All the data we will be using are example datasets that are built into R, so there is no need to import external datasets.
 
@@ -38,39 +32,39 @@ Let's start by taking a look at the `iris` dataset:
 ```{r investigate1}
 data("iris")
 
-#It can be useful to make a copy of your original dataset. That way, if something goes wrong, you can go back to a previous version of your data.
+# It can be useful to make a copy of your original dataset. That way, if something goes wrong, you can go back to a previous version of your data.
 
 iris_ori <- iris
 
-# let's get a first overview -- this will have been covered to some extend by Sam
+# Let's get a first overview
 
 str(iris)
 
-# we can see that we have 4 columns containing numerical values and one column containing a factor with 3 levels
+# We can see that we have 4 columns containing numerical values and one column containing a factor with 3 levels
 
 summary(iris)
 head(iris)
 
-## let's take a closer look at the rows and columns in our dataset:
+## Let's take a closer look at the rows and columns in our dataset:
 
 ncol(iris) # we have 5 columns
 nrow(iris) # we have 150 rows
 
-# what are minimum and maximum values for our numerical columns?
+# What are minimum and maximum values for our numerical columns?
 min(iris$Sepal.Length)
 max(iris$Sepal.Width)
 mean(iris$Petal.Length)
 
-# if we wanted we could calculate the sum of a column:
+# If we wanted we could calculate the sum of a column:
 sum(iris$Sepal.Length)
 
-## now we want to take a look at our factors - what are the three levels?
+## Now we want to take a look at our factors - what are the three levels?
 unique(iris$Species)
 
-# we can use this function on any column, but with numerical values we will just get more results:
+# We can use this function on any column, but with numerical values we will just get more results:
 unique(iris$Sepal.Length)
 
-# do we have any duplicates in our dataset? Do we have any NAs?
+# Do we have any duplicates in our dataset? Do we have any NAs?
 any(is.na(iris$Sepal.Length))
 table(is.na(iris$Sepal.Length))
 
@@ -78,7 +72,7 @@ any(duplicated(iris$Sepal.Length))
 duplicated(iris$Sepal.Length)
 table(duplicated(iris$Sepal.Length))
 
-# in this case this is not very informative -- we expect to see 'duplicate' entries
+# In this case this is not very informative -- we expect to see 'duplicate' entries
 ```
 
 ### Making basic changes to your data
@@ -421,7 +415,6 @@ Let's take a look at datetime classes. The main ones used are Date (a day stored
 class(Sys.Date()) # Date class
 class(lubridate::now()) #POSIXct class
 
-data$DateTime <- as.POSIXct(as.character(data$DateTime), format="%Y-%m-%d %H:%M") #change format to reflect format of datetime
 
 ```
 Now let's take some of the date formats above and tell R how to parse them

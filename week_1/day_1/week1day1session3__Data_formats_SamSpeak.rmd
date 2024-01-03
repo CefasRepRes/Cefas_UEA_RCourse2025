@@ -156,7 +156,7 @@ Characters can be combined together
 
 (KC comment, can you include something about how to split up strings - for example to extract the characters with a year in a string, or to split using underscores. And how to add them together using paste.)
 
-```{r Character}
+```{r Character 2}
 part_a <- "What is your favourite food?"
 
 part_b <- 'Mine would have to be Lasanga!' 

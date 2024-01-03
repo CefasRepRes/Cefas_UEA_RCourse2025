@@ -78,6 +78,21 @@ plot(x = iris$Petal.Length) # looks a bit like a histogram? but R returns a scat
 plot(x = iris$Species, y = iris$Petal.Length) # here we get a boxplot because one of our variables is a factor
 ```
 
+<u>**Line plot**</u>
+
+Let's revisit the chicks from yesterday
+
+```{r chickweight}
+data("ChickWeight")
+#let's plot the weight of chick 2 through time.
+chick2 <- ChickWeight[ChickWeight$Chick == 2, ]
+plot(x = chick2$Time, y = chick2$weight, type = "l")
+
+ggplot() +
+  geom_line(data = ChickWeight[ChickWeight$Chick < 20,], aes(x = Time, y = weight, col = Chick))
+#Maybe it is clear now what happened to chick 16 and 18. Perhaps they didn't escape after all.
+```
+
 
 <u>**So what's the difference?**</u>
 
