@@ -272,12 +272,6 @@ if (nzchar(x <- complicated_function()) < 1) {
 }
 ```
 
-The only exception is in functions that capture side-effects:
-
-```{r, eval = FALSE}
-output <- capture.output(x <- f())
-```
-
 
 ## Control flow
 
@@ -300,147 +294,14 @@ if (y < 0 && debug) {
   message("y is negative")
 }
 
-if (y == 0) {
-  if (x > 0) {
-    log(x)
-  } else {
-    message("x is negative or zero")
-  }
-} else {
-  y^x
-}
-
-test_that("call1 returns an ordered factor", {
-  expect_s3_class(call1(x, y), c("factor", "ordered"))
-})
-
-tryCatch(
-  {
-    x <- scan()
-    cat("Total: ", sum(x), "\n", sep = "")
-  },
-  interrupt = function(e) {
-    message("Aborted by user")
-  }
-)
-
 # Bad
 if (y < 0 && debug) {
 message("Y is negative")
 }
 
-if (y == 0)
-{
-    if (x > 0) {
-      log(x)
-    } else {
-  message("x is negative or zero")
-    }
-} else { y ^ x }
+
 ```
 
-### If statements
-
-* If used, `else` should be on the same line as `}`.
-
-* `&` and `|` should never be used inside of an `if` clause because they can
-  return vectors. Always use `&&` and `||` instead.
-  
-* NB: `ifelse(x, a, b)` is not a drop-in replacement for `if (x) a else b`.
-  `ifelse()` is vectorised (i.e. if `length(x) > 1`, then `a` and `b`  will be 
-  recycled to match) and it is eager (i.e. both `a` and `b` will always be 
-  evaluated). 
-  
-    If you want to rewrite a simple but lengthy `if` block:
-        
-    ```{r, eval = FALSE}
-    if (x > 10) {
-      message <- "big"
-    } else {
-      message <- "small"
-    }
-    ```
-    
-    Just write it all on one line:
-    
-    ```{r, eval = FALSE}
-    message <- if (x > 10) "big" else "small"
-    ```
-
-### Inline statements {#inline-statements}
-
-It's ok to drop the curly braces for very simple statements that fit on one line, as long as they don't have side-effects.
-
-```{r}
-# Good
-y <- 10
-x <- if (y < 20) "Too low" else "Too high"
-```
-
-Function calls that affect control flow (like `return()`, `stop()` or `continue`) should always go in their own `{}` block:
-
-```{r}
-# Good
-if (y < 0) {
-  stop("Y is negative")
-}
-
-find_abs <- function(x) {
-  if (x > 0) {
-    return(x)
-  }
-  x * -1
-}
-
-# Bad
-if (y < 0) stop("Y is negative")
-
-if (y < 0)
-  stop("Y is negative")
-
-find_abs <- function(x) {
-  if (x > 0) return(x)
-  x * -1
-}
-```
-
-### Implicit type coercion
-
-Avoid implicit type coercion (e.g. from numeric to logical) in `if` statements:
-
-```{r, eval = FALSE}
-# Good
-if (length(x) > 0) {
-  # do something
-}
-
-# Bad
-if (length(x)) {
-  # do something
-}
-```
-
-### Switch statements
-
-* Avoid position-based `switch()` statements (i.e. prefer names).
-* Each element should go on its own line.
-* Elements that fall through to the following element should have a space after `=`.
-* Provide a fall-through error, unless you have previously validated the input.
-
-```{r, eval = FALSE}
-# Good 
-switch(x, 
-  a = ,
-  b = 1, 
-  c = 2,
-  stop("Unknown `x`", call. = FALSE)
-)
-
-# Bad
-switch(x, a = , b = 1, c = 2)
-switch(x, a =, b = 1, c = 2)
-switch(y, 1, 2, 3)
-```
 
 ## Long lines
 
@@ -550,121 +411,6 @@ than code, consider switching to [R Markdown][rmd].
 [rmd]:    https://rmarkdown.rstudio.com/
 
 
-
-
-# Functions
-
-## Naming
-
-As well as following the general advice for [object names], strive to use verbs for function names:
-
-```{r eval = FALSE}
-# Good
-add_row()
-permute()
-
-# Bad
-row_adder()
-permutation()
-```
-
-## Long lines
-
-There are two options if the function name and definition can't fit on a single line:
-
-*   Function-indent: place each argument on its own line, and indent to match the opening `(` of `function`:
-
-    ```{r, eval = FALSE}
-    long_function_name <- function(a = "a long argument",
-                                   b = "another argument",
-                                   c = "another long argument") {
-      # As usual code is indented by two spaces.
-    }
-    ```
-
-*   Double-indent: Place each argument of its own **double** indented line.
-
-    ```{r, eval = FALSE}
-    long_function_name <- function(
-        a = "a long argument",
-        b = "another argument",
-        c = "another long argument") {
-      # As usual code is indented by two spaces.
-    }
-    ```
-
-In both cases the trailing `)` and leading `{` should go on the same line as the last argument.
-
-Prefer function-indent style to double-indent style when it fits.
-
-These styles are designed to clearly separate the function definition from its body.
-
-```{r, eval = FALSE}
-# Bad
-long_function_name <- function(a = "a long argument",
-  b = "another argument",
-  c = "another long argument") {
-  # Here it's hard to spot where the definition ends and the
-  # code begins, and to see all three function arguments
-}
-```
-
-If a function argument can't fit on a single line, this is a sign you should rework the argument to keep it [short and sweet](https://design.tidyverse.org/def-short.html).
-
-## `return()`
-
-Only use `return()` for early returns. Otherwise, rely on R to return the result 
-of the last evaluated expression.
-
-```{r eval = FALSE}
-# Good
-find_abs <- function(x) {
-  if (x > 0) {
-    return(x)
-  }
-  x * -1
-}
-add_two <- function(x, y) {
-  x + y
-}
-
-# Bad
-add_two <- function(x, y) {
-  return(x + y)
-}
-```
-
-Return statements should always be on their own line because they have important effects on the control flow. See also [inline statements](#inline-statements).
-
-```{r, eval = FALSE}
-# Good
-find_abs <- function(x) {
-  if (x > 0) {
-    return(x)
-  }
-  x * -1
-}
-
-# Bad
-find_abs <- function(x) {
-  if (x > 0) return(x)
-  x * -1
-}
-```
-
-If your function is called primarily for its side-effects (like printing, 
-plotting, or saving to disk), it should return the first argument invisibly. 
-This makes it possible to use the function as part of a pipe. `print` methods 
-should usually do this, like this example from [httr](http://httr.r-lib.org/):
-
-```{r eval = FALSE}
-print.url <- function(x, ...) {
-  cat("Url: ", build_url(x), "\n", sep = "")
-  invisible(x)
-}
-```
-
-## Comments
 
 In code, use comments to explain the "why" not the "what" or "how". Each line 
 of a comment should begin with the comment symbol and a single space: `# `.
@@ -780,10 +526,10 @@ There are several acceptable forms of assignment:
     ```
 
 
-# Finally...
+# Useful packages
 
 
-Here are some useful packages  
+Here are some useful packages for best coding practices:  
 
 *   [styler](http://styler.r-lib.org) allows you to interactively restyle
     selected text, files, or entire projects. It includes an RStudio add-in,
@@ -794,4 +540,52 @@ Here are some useful packages
     to confirm that you conform to the style guide.
 
 
+# Creating your own test data
 
+To test out code on what would be a small dataset, you can simply enter test data yourself, e.g.
+
+```{r, echo=TRUE}
+
+df1 <- data.frame(ID = c(1, 2, 3, 4, 5),
+                  var1 = c('a', 'b', 'c', 'd', 'e'),
+                  var2 = c(1, 1, 0, 0, 1))
+
+df1 
+```
+
+You can generate numbers, characters and more with functions.
+
+```{r, echo=TRUE}
+seq(1, 16, by=2) # sequence of numbers from 1 to 16 increment by 2.
+LETTERS[1:8] # the 8 upper-case letters of the english alphabet.
+month.abb[1:8] # the three-letter abbreviations for the first 8 English months
+sample(10:20, 8, replace = TRUE) # 8 random numbers with replacement from 10 to 20.
+letters[1:8] # the first 8 lower-case letters of the english alphabet.
+
+df2 <- data.frame(a = seq(1,16,by=2), 
+                  b = LETTERS[1:8],
+                  x = month.abb[1:8],
+                  y = sample(10:20,8, replace = TRUE),
+                  z = letters[1:8])
+
+df2
+
+```
+
+Similarly, you can sample from a given set of numbers with or without replacement 
+
+```{r, echo=TRUE}
+# Generate 15 numbers randomly sampled, with replacement, from the numbers 1, 2, 3
+df3 = data.frame(X = sample(1:3, 15, replace = TRUE))
+
+df3
+```
+
+You can also generate numbers using mean and standard deviations of sampled data, eg. using rnorm
+
+```{r, echo=TRUE}
+set.seed(1) # allows random generations to be replicated
+df4 <- data.frame(Y = rnorm(15), Z = ceiling(rnorm(15)))
+
+df4
+```

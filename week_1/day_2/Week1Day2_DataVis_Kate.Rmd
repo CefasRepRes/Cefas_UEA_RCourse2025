@@ -18,6 +18,7 @@ Let's visualise our data using three different types of plots. This can also be 
 First we will load the `ggplot2` package so we can compare base R functions with `ggplot` functions:
 
 ```{r package, warning=FALSE, message=FALSE}
+# install.packages("ggplot2")
 library(ggplot2)
 ```
 
@@ -52,6 +53,8 @@ ggplot(data = iris,aes(x = Species, y = Petal.Length)) +
   geom_boxplot()
 ```
 
+Note here we have directly made boxplots for the three factors we have in our dataset - we can of course make a boxplot for just one of the factors, but usually when making boxplots we want to compare different factors.
+
 <u>**Scatterplot**</u>
 
 ```{r scatter}
@@ -65,7 +68,103 @@ ggplot() +
   geom_point(data = iris, aes(x = Petal.Length, y = Petal.Width))
 ```
 
+When we don't specify the type of plot we want, the base function gives us different results based on the class of our variable - this isn't always informative!!
+
+```{r plot1}
+plot(x = iris$Species) # plotting factors for x
+
+plot(x = iris$Petal.Length) # looks a bit like a histogram? but R returns a scatterplot because it's a numerical value...
+
+plot(x = iris$Species, y = iris$Petal.Length) # here we get a boxplot because one of our variables is a factor
+```
+
+
 <u>**So what's the difference?**</u>
+
+The two most obvious differences between base R `plot` and `ggplot` are:
+
+- the code/synthax
+- the layout and look of the resulting plot
+
+With base R plots, a lot of editing is done with additional lines of code that are technically independent from each other. With ggplot, you add 'layers' to your plot object and with each new layer you can either add more data to your plot or change settings.
+
+We will now look at some simple examples on how to customise plots.
+
+## Customising base R plots
+Let's change some basic things about our plot. We'll start with the base R `plot` function first before we move on to the `ggplot` function.
+
+```{r base-plot}
+# load the data:
+iris <- as.data.frame(iris)
+
+## let's remind us of what the plot looks like if we specify nothing else:
+plot(iris$Petal.Length, iris$Petal.Width)
+
+## now we change the axis titles:
+plot(iris$Petal.Length, iris$Petal.Width,
+     xlab = "Petal Length (cm)",
+     ylab = "Petal Width (cm)")
+
+# and what about a title?
+mtext(side=3, line=2, at=0.5, adj=0, cex=2, "Sepal width as a function of sepal length")
+```
+
+What if we want to change the colour of our points? Or change the type of symbol completely? R has the following options built in for point symbols:
+
+![Point types](./pch.png)
+
+
+To use one of these options in our plot, here is how we do it:
+
+```{r base-plot2}
+plot(iris$Petal.Length, iris$Petal.Width,
+     xlab = "Petal Length (cm)",
+     ylab = "Petal Width (cm)",
+     pch = 17)
+
+## or to change the colour on top of it:
+plot(iris$Petal.Length, iris$Petal.Width,
+     xlab = "Petal Length (cm)",
+     ylab = "Petal Width (cm)",
+     pch = 17,
+     col = "blue")
+
+```
+
+Note how our title disappeared as we didn't include this command line in our code chunk!
+
+There are many aspects of a plot that can be edited. Things that directly affect parts of the plot - such as the colour of points - can be specified *within* the `plot` function. Anything that concerns the general layout of the plot - such as margins, font size of labels, position of the legend - need to be specified *outside* the `plot` function. We've seen this with the title - we used `mtext()` for this. Another important function is `par()`. Within this function, we can specific parameters that define the general layout of our plot. For example, let's create very large outer margins, and change the colour of our axis labels to green:
+
+```{r base-plot3}
+# we have to define out plotting window BEFORE we plot:
+par(oma = c(5,5,5,5), col.lab = "darkgreen") # for reference: c(bottom, left, top, right)
+
+plot(iris$Petal.Length, iris$Petal.Width,
+     xlab = "Petal Length (cm)",
+     ylab = "Petal Width (cm)",
+     pch = 17,
+     col = "blue")
+```
+
+The documentation for this function gives you an overview of all the different parameters that can be changed with this function:
+https://www.rdocumentation.org/packages/graphics/versions/3.6.2/topics/par
+
+You will find a lot of things will be learned by 'trial and error'...
+
+**An important note:** the `par` function changes *global* settings for ALL subsequent plots -- that means if you want to reset your settings to the default, or you get lost down a rabbit hole and want to start fresh, use `dev.off()`
+
+Final example - let's group colourings by factor, and add a legend.
+
+```{r base-plot4}
+plot(iris$Petal.Length, iris$Petal.Width, col=iris$Species,
+     xlab = "Petal length (cm)", ylab = "Petal width (cm)")
+#legend(7,4.3,unique(data$Species),col=1:length(data$Species),pch=1)
+legend('bottomright', legend = levels(iris$Species), col = 1:3, cex = 0.8, pch = 1)
+
+
+```
+
+
 
 ## Basic plot editing
 - ggplot etc, including how to export for publications, leaflet
