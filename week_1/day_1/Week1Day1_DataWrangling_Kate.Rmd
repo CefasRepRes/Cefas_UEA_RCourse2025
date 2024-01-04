@@ -305,7 +305,7 @@ Source and further info: https://bookdown.org/rwnahhas/IntroToR/merge-join.html
 
 An example:
 
-```{r merge}
+```{r rbind}
 #set the name back to species for subset 2
 names(subset2)[names(subset2) == "Type"] <- "Species"
 
@@ -550,6 +550,13 @@ We will go into spatial data analysis in more detail in week 2.
 You may also have data which is already in a spatial format, for example a shapefile. sf has functions to read these data types in.
 
 (include example)
+
+## Exercise
+
+with one of these datasets
+https://environment.data.gov.uk/water-quality/view/download/new
+
+https://stecf.jrc.ec.europa.eu/dd/fdi
 
 ### Other -- For Kate to check
 
