@@ -633,7 +633,7 @@ another_matrix[,c(1,2)]
 
 ```
 
-#### Adding to a matrix 
+#### Adding to a matrix
 
 We can add to a matrix using `cbind()` and `rbind()`. Make sure to include the `c()`
 
@@ -683,9 +683,9 @@ multiarray
 
 ```
 
-We can access the array elements by referring to the index position. We can use the `[]` brackets to access the desired elements from an array. 
+We can access the array elements by referring to the index position. We can use the `[]` brackets to access the desired elements from an array.
 
-``` {r accessing array}
+```{r accessing array}
 thisarray <- c(1:24)
 multiarray <- array(thisarray, dim = c(4, 3, 2))
 
@@ -697,10 +697,9 @@ The syntax is as follow: array[row position, column position, matrix level]
 
 You can also access the whole row or column from a matrix in an array, by using the `c()` function.
 
-A comma (,) before c() means that we want to access the column.
-A comma (,) after c() means that we want to access the row.
+A comma (,) before c() means that we want to access the column. A comma (,) after c() means that we want to access the row.
 
-``` {r array multiple values}
+```{r array multiple values}
 multiarray <- array(thisarray, dim = c(4, 3, 2))
 multiarray[c(1),,1]
 
@@ -713,9 +712,9 @@ multiarray[,c(1),1]
 
 Factors are used to categorize data and have levels. Examples of factors are:
 
-Music: Rock, Pop, Classic, Jazz 
+Music: Rock, Pop, Classic, Jazz
 
-Training: Strength, Stamina 
+Training: Strength, Stamina
 
 Organisation: ARIES, CEFAS
 
@@ -731,9 +730,10 @@ film_types
 
 #### Levels
 
-We can check the levels that a factor has with the command `levels()` 
+We can check the levels that a factor has with the command `levels()`
 
-We can also use this to define the levels in a factor when we make it. 
+We can also use this to define the levels in a factor when we make it.
+
 ```{r factors levels}
 
 levels(film_types)
@@ -746,7 +746,7 @@ film_types
 
 #### Changing factor values
 
-We can access facotrs using the `[]` brackets. This means we can also change values as we have done before. 
+We can access facotrs using the `[]` brackets. This means we can also change values as we have done before.
 
 ```{r factors levels}
 
@@ -855,7 +855,7 @@ summary(cars$speed)
 
 ```
 
-#### Task 10
+#### Task 6 
 
 What are the top 20 lines ?
 
@@ -868,15 +868,15 @@ What are the top 20 lines ?
 
 ## Importing data
 
-So far we have only been using data that we have made ourselves. But this is not that common, we often want to load data into R from somewhere else. 
+So far we have only been using data that we have made ourselves. But this is not that common, we often want to load data into R from somewhere else.
 
-We can do this using the `read` function. We can also express what format the data is in. 
+We can do this using the `read` function. We can also express what format the data is in.
 
 Read in the chosen file `read.delim()`, you can express the deliminators as a command.
 
-Read in a csv (comma seperated values) file, `read.csv()` will be expecting the file to be comma separated.
+Read in a csv (comma separated values) file, `read.csv()` will be expecting the file to be comma separated.
 
-We can also read in Excel files we need to use the `read.excel()` function. 
+We can also read in Excel files we need to use the `read.excel()` function.
 
 If you have data in a non standard file type it is always a good idea to Google there is usually a package to import it.
 
