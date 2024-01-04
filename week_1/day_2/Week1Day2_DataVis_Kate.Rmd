@@ -180,6 +180,52 @@ legend('bottomright', legend = levels(iris$Species), col = 1:3, cex = 0.8, pch =
 
 ```
 
+## ggplots and how to customise them
+As you can probably tell by the previous examples, `ggplot` code looks different to base R plotting, and we need to write our code differently to achieve the same effects.
+
+`ggplot` builds up a plot layer by layer. If we were to call an empty `ggplot()` function, we are essentially telling R to set up an empty plotting window: 
+
+```{r ggplot1}
+ggplot()
+```
+
+Now we can add content to that empty box. You can specify which data to use in two places -- if you are only using one dataset, you can define your data at the start, if you will be plotting multiple datasets on top of each other (yes this is possible), you can define the data within each layer. Example:
+
+```{r ggplot2}
+ggplot(data = iris) +
+  geom_point(aes(x = Petal.Length, y = Petal.Width))
+
+# this gives the same results:
+
+ggplot() +
+  geom_point(data = iris, aes(x = Petal.Length, y = Petal.Width))
+```
+
+Different types of plots in `ggplot` are defined by different *geoms*. Here is a list to give you an overview:
+
+https://ggplot2.tidyverse.org/reference/
+
+This also shows us that in our example *geom_point* is the first layer that we add to our ggplot. The second important thing to understand about `ggplot` is the `aes()` function -- here we define *aethetics* of our variables. Just like with the `plot()` function we need to learn where in the function we define our parameters. For example, let's recreate our scatterplot to demonstrate:
+
+```{r ggplot3}
+ggplot(data = iris) + # define data, we could even add x and y definitions here
+  # changing point colour AND symbol based on factor
+  geom_point(aes(x = Petal.Length, y = Petal.Width, colour = Species, pch = Species))+
+  labs(title = "Petal Width as a function of petal length",
+       x = "Petal length (cm)",
+       y = "Petal width (cm)") +
+  theme_bw()+ # NOTE: here the order matters! We set the overall theme first then overwrite parts of it
+  theme(axis.title = element_text(size=10, face="bold", color = "black"))
+  
+```
+
+Things that directly affect our variables - the colour and point shape - are defined within the `aes()` function. General settings need to be defined *outside* of the plotting function and added as new layers with a +
+
+`ggplot` was developed to make plotting easier -- note for example that a legend was added automatically. For the vast majority of plots, this additional functionality is great and will allow you to do whatever you need. For some plots, the base R functions are better suited because they allow you to build up plots bit by bit, completely manually and from scratch.
+
+## How to save plots
+There are several options to save plots. In an R script, you can use the 'save plot' button above the plotting window. For ggplot, you can use `ggsave()` where you can define the location, format (jpeg, png, pdf) and dimensions of your outputs. You can also "print" to pdfs and pngs. 
+
 
 
 ## Basic plot editing
@@ -188,7 +234,7 @@ legend('bottomright', legend = levels(iris$Species), col = 1:3, cex = 0.8, pch =
 - basic scatter plot - in base plot and ggplot -- done
 - adding labels etc
 - adding lines
-- grouping by factors
+- grouping by factors -- done
 - adding trendlines
 - saving plots
 - interactivity with plotly
