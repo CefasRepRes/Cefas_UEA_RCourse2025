@@ -109,6 +109,33 @@ iris <- iris_ori
 ```
 
 
+Notice the use of 'gsub()' in the code above - this is an example of one way that you can manipulate character data. Functions like gsub, grep and more, allow you to search for a pattern in a string and then either find the position of it, or replace it. 
+
+Pattern matching uses regular expressions such as   **.**  ,   **\***   or   **^**   which act as wildcards or placement matching tools for the pattern.
+
+
+```{r regex, eval=TRUE}
+# make a string
+example <- c("let us", "find", "a", "pattern")
+
+# find a string
+grep(pattern = "pattern", example) # found in the 4th element
+
+# replace a string
+example2 <- gsub("pattern", "cat", example)
+example2
+
+# find a partial string
+grep(pattern = ".*ern", example) # found in the 4th element
+
+# replace a partial string
+example3 <- gsub(".*ern", "cat", example)
+example3
+```
+
+There are many pattern matching tools and regular expressions to get your head around - this [cheat sheet](https://rstudio.github.io/cheatsheets/html/strings.html?_gl=1*1bshcje*_ga*MTg0OTY1NjUzMi4xNjk4MTYwNTAz*_ga_2C0WZ1JHG0*MTcwNDM4NTAxMy41LjAuMTcwNDM4NTAxMy4wLjAuMA..#regular-expressions) has a list of regex and their meanings.
+
+
 
 - structure of your data -- Sam covers summary() -- done
 - number of rows, columns; getting the sum of a column -- done
