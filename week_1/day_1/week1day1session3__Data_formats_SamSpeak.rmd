@@ -878,12 +878,23 @@ Read in a csv (comma seperated values) file, `read.csv()` will be expecting the 
 
 We can also read in Excel files we need to use the `read.excel()` function. 
 
+If you have data in a non standard file type it is always a good idea to Google there is usually a package to import it.
+
 ```{r importing data}
 
-library(readxl)
+read.delim("~/PATH/to/your/data/data_file.txt")
+```
 
-read_excel(file = )
+Most importantly we can export our data from R to save it as a file. A good example of this is to write out our animal data frame as a csv with `write.csv()`.
 
+```{r exporting data}
 
+##### Please note you will need to put the PATH from where you are to where you want to save the data.
+
+write.csv(Animal_Df_4,file = "~/Documents/Training/Animal_data.csv", row.names = FALSE)
+
+saved_animal_data <- read.csv("~/Documents/Training/Animal_data.csv", header = TRUE,)
+
+saved_animal_data
 
 ```
