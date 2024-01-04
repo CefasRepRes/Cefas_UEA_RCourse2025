@@ -22,6 +22,8 @@ We will need to make sure we have installed and loaded the following packages:
 ```{r packages}
 library(tidyverse)
 library(reshape2)
+# install.packages("ViewPipeSteps")
+library(ViewPipeSteps)
 #we might need to explain here if teresa hasn't already what all the warnings you get when you load tidyverse are
 ```
 
@@ -44,6 +46,7 @@ str(iris)
 
 summary(iris)
 head(iris)
+tail(iris)
 
 ## Let's take a closer look at the rows and columns in our dataset:
 
