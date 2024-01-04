@@ -149,6 +149,19 @@ plot(iris$Petal.Length, iris$Petal.Width,
 
 Note how our title disappeared as we didn't include this command line in our code chunk!
 
+Just as we can change the point symbol, we can also change the line type. Here are the built in options:
+
+![Line types](./lty.png)
+
+So if we want to change the line type in our chick plot from earlier it would look like this:
+
+```{r lty}
+# data("ChickWeight")
+chick2 <- ChickWeight[ChickWeight$Chick == 2, ]
+plot(x = chick2$Time, y = chick2$weight, type = "l", lty = 3)
+```
+
+
 There are many aspects of a plot that can be edited. Things that directly affect parts of the plot - such as the colour of points - can be specified *within* the `plot` function. Anything that concerns the general layout of the plot - such as margins, font size of labels, position of the legend - need to be specified *outside* the `plot` function. We've seen this with the title - we used `mtext()` for this. Another important function is `par()`. Within this function, we can specific parameters that define the general layout of our plot. For example, let's create very large outer margins, and change the colour of our axis labels to green:
 
 ```{r base-plot3}
@@ -226,7 +239,27 @@ Things that directly affect our variables - the colour and point shape - are def
 ## How to save plots
 There are several options to save plots. In an R script, you can use the 'save plot' button above the plotting window. For ggplot, you can use `ggsave()` where you can define the location, format (jpeg, png, pdf) and dimensions of your outputs. You can also "print" to pdfs and pngs. 
 
+## Some further thoughts on plotting and online resources
+There are many other things you can customise about your plots - both using base R functions and ggplot. There are also many other base R functions to produce specific statistical plots. Some examples of other things you can do when plotting:
 
+- add labels/textboxes
+- add trendlines
+- plot outputs from statistical models, or plot error distributions
+- customise the colour palette used in your plots -- there are many palettes to choose from!
+- arrange multiple plots, either using the `par` function, or using packages such as `cowplot`
+- change the font size, style and angle of axis lables and tick marks
+- create interactive plots using packages such as `plotly` (this is a whole universe in its own)
+- plot spatial data using base R, ggplot or packages such as `leaflet` (another vast area we haven't explored)
+- create animations and gifs which can be embedded into documents or exported as gifs
+
+
+Like with many other things you can do in R, there are endless resources out there to help you! It is safe to assume that any plot customisation you want to do, someone else has already tried it and has asked the internet community for help (or went and wrote a book about it). Here are some links to get you started and to give you an idea of all the things you can look up online:
+
+https://www.datanovia.com/en/lessons/introduction-to-ggplot2/
+
+https://datacarpentry.org/R-ecology-lesson/04-visualization-ggplot2.html
+
+https://stackoverflow.com/questions/57153428/r-plot-color-combinations-that-are-colorblind-accessible
 
 ## Basic plot editing
 - ggplot etc, including how to export for publications, leaflet
