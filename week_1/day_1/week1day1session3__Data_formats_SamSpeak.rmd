@@ -76,7 +76,7 @@ u
 class(u)
 ```
 
-```{r}
+```{r multiplication}
 #### We can multiply variables together
 x <- n * m
 
@@ -143,7 +143,7 @@ part_a <- "What is your favourite food?"
 
 part_b <- 'Mine would have to be Lasanga!' 
   
-whole <- paste(part_a,part_b)
+whole <- paste(part_a, part_b)
 
 print(whole)
 
@@ -989,7 +989,7 @@ Most importantly we can export our data from R to save it as a file. A good exam
 
 write.csv(Animal_Df_4, file = "~/Documents/Training/Animal_data.csv", row.names = FALSE)
 
-saved_animal_data <- read.csv("~/Documents/Training/Animal_data.csv", header = TRUE,)
+saved_animal_data <- read.csv("~/Documents/Training/Animal_data.csv", header = TRUE)
 
 saved_animal_data
 
