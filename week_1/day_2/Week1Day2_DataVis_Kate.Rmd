@@ -88,9 +88,10 @@ data("ChickWeight")
 chick2 <- ChickWeight[ChickWeight$Chick == 2, ]
 plot(x = chick2$Time, y = chick2$weight, type = "l")
 
+#Now let's plot several chicks using ggplot
 ggplot() +
   geom_line(data = ChickWeight[ChickWeight$Chick < 20,], aes(x = Time, y = weight, col = Chick))
-#Maybe it is clear now what happened to chick 16 and 18. Perhaps they didn't escape after all.
+#Maybe it is clear now what happened to chicks 16 and 18. Perhaps they didn't escape after all.
 ```
 
 
