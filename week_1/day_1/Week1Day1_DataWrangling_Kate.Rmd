@@ -3,6 +3,9 @@ title: "Week 1, Day 1: Basic Data Wrangling"
 author: "Kate Collingridge and Kathrin Vossen"
 date: "`r format(Sys.time(), '%d/%m/%y')`"
 output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
 ---
 
 ```{r setup, include=FALSE}
@@ -15,9 +18,15 @@ Sys.setenv(tz="UTC") #set environment time zone to utc
 
 ## Basic data wrangling
 
-In this session, we will take a look at functions and packages that will help you do some basic data exploration. We will investigate some example data, take a look at pivoting data, learn how to merge two datasets and create subsets of data. All the data we will be using are example datasets that are built into R, so there is no need to import external datasets.
+In this session, we will take a look at functions and packages that will
+help you do some basic data exploration. We will investigate some
+example data, take a look at pivoting data, learn how to merge two
+datasets and create subsets of data. All the data we will be using are
+example datasets that are built into R, so there is no need to import
+external datasets.
 
-We will need to make sure we have installed and loaded the following packages:
+We will need to make sure we have installed and loaded the following
+packages:
 
 ```{r packages}
 library(tidyverse)
@@ -25,8 +34,8 @@ library(reshape2)
 #we might need to explain here if teresa hasn't already what all the warnings you get when you load tidyverse are
 ```
 
-
 ### Investigating your data
+
 Let's start by taking a look at the `iris` dataset:
 
 ```{r investigate1}
@@ -76,7 +85,10 @@ table(duplicated(iris$Sepal.Length))
 ```
 
 ### Making basic changes to your data
-We can change things such as column names, or set them to all lower or upper case. This can be useful when we want to merge different datasets together.
+
+We can change things such as column names, or set them to all lower or
+upper case. This can be useful when we want to merge different datasets
+together.
 
 ```{r change}
 # let's change a column name
@@ -105,28 +117,37 @@ iris <- iris_ori
 
 ```
 
-
-
-- structure of your data -- Sam covers summary() -- done
-- number of rows, columns; getting the sum of a column -- done
-- unique values -- done
-- how to change column names -- done
-- how to set column names and values to all lower or all upper case -- done
-- how to sort vectors (using base R sort function) -- **needs to be added**
+-   structure of your data -- Sam covers summary() -- done
+-   number of rows, columns; getting the sum of a column -- done
+-   unique values -- done
+-   how to change column names -- done
+-   how to set column names and values to all lower or all upper case --
+    done
+-   how to sort vectors (using base R sort function) -- **needs to be
+    added**
 
 ### Expanding vs reducing your datasets
-Now that we have explored the `iris` data a bit, let's try subsetting it based on different conditions. First, let's try making a new dataframe where we only select data for the species "setosa". There are two ways you can do this - using R base functions or using a Tidyverse pipeline.
+
+Now that we have explored the `iris` data a bit, let's try subsetting it
+based on different conditions. First, let's try making a new dataframe
+where we only select data for the species "setosa". There are two ways
+you can do this - using R base functions or using a Tidyverse pipeline.
 
 Let's try a conditional statement using square brackets first:
+
 ```{r subset1}
 setosa <- iris[iris$Species == "setosa",]
 str(setosa)
 unique(setosa$Species) # Note R still knows there are 3 levels for this factor, but the dataset only includes 1
 ```
 
-You can read this statement as: "assign an object called 'setosa' using the 'iris' dataset, selecting all rows where the factor Species has the value 'setosa', and selecting all columns". We are selecting **rows** because our conditional statement is *before* the comma.
+You can read this statement as: "assign an object called 'setosa' using
+the 'iris' dataset, selecting all rows where the factor Species has the
+value 'setosa', and selecting all columns". We are selecting **rows**
+because our conditional statement is *before* the comma.
 
-We can select **columns** if the conditional statement is *after* the comma. For example, we can only select two of the columns:
+We can select **columns** if the conditional statement is *after* the
+comma. For example, we can only select two of the columns:
 
 ```{r subset2}
 # to select the first three columns:
@@ -137,7 +158,8 @@ subset2 <- iris[,c("Sepal.Length", "Sepal.Width")]
 str(subset2)
 ```
 
-Now let's try the same using a Tidyverse function. First, this is how to select specific **rows** based on a factor:
+Now let's try the same using a Tidyverse function. First, this is how to
+select specific **rows** based on a factor:
 
 ```{r subset3}
 setosa <- iris %>%
@@ -157,14 +179,21 @@ subset4 <- iris %>%
   select(Sepal.Length, Sepal.Width)
 ```
 
-
-The next thing we want to try is expanding our dataset by adding a new column, Let's say we want to calculate the petal length to width ratio. We can do this calculation and automatically save this in a new column that we will call "LWRatio":
+The next thing we want to try is expanding our dataset by adding a new
+column, Let's say we want to calculate the petal length to width ratio.
+We can do this calculation and automatically save this in a new column
+that we will call "LWRatio":
 
 ```{r column1}
 iris$LWRatio <- iris$Petal.Length / iris$Petal.Width
 ```
 
-We saw before that we can check data for duplicate entries. In the case of the `iris` dataset, we expect to see duplicate entries when we look at individual columns -- we would assume that the same petal length or width will show up multiple times. However, sometimes we need to check if we have true duplicates in our data. We can do this by creating a 'unique identifier' and then using this column to check for duplicates.
+We saw before that we can check data for duplicate entries. In the case
+of the `iris` dataset, we expect to see duplicate entries when we look
+at individual columns -- we would assume that the same petal length or
+width will show up multiple times. However, sometimes we need to check
+if we have true duplicates in our data. We can do this by creating a
+'unique identifier' and then using this column to check for duplicates.
 
 ```{r duplicates}
 # let's create a unique identifier by pasting together information from the different rows: (KC think we could have a better example here)
@@ -202,17 +231,22 @@ nrow(iris) #we now have only 149 rows, we have lost the duplicate.
 
 ```
 
-
-- adding new columns -- done
-- checking for duplicates -- done, want to add more complex example though.
-- summing across rows and columns -- **do we want to include this?**
-- creating subsets: filtering and subsetting using conditional statements (aka base R functions) -- done
+-   adding new columns -- done
+-   checking for duplicates -- done, want to add more complex example
+    though.
+-   summing across rows and columns -- **do we want to include this?**
+-   creating subsets: filtering and subsetting using conditional
+    statements (aka base R functions) -- done
 
 ### Wide vs long format
 
-There are two main ways to store datasets - wide and long. Datasets are usually easier to work with in R in long format, but you may need to switch between them
+There are two main ways to store datasets - wide and long. Datasets are
+usually easier to work with in R in long format, but you may need to
+switch between them
 
-Long format is where you have data in an identifying column (or columns) which repeats, and then your response data all in one column. For example, let's look at the chick weight dataset.
+Long format is where you have data in an identifying column (or columns)
+which repeats, and then your response data all in one column. For
+example, let's look at the chick weight dataset.
 
 ```{r long}
 #oad the chick weight dataset
@@ -228,9 +262,16 @@ nrow(ChickWeight)
 unique(ChickWeight$Chick)
 ```
 
-You can see that this dataset has four columns. The first 3 contain identifying info (which chick is it and which diet is it on) and time of the measurement. The final column has the chick weight. Thus there are only 50 different chicks on 4 diets, but as they were weighed at different times and the data is in long format there are 578 rows in total. This is a good format for many r functions, but it does repeat information and is not so easy to read.
+You can see that this dataset has four columns. The first 3 contain
+identifying info (which chick is it and which diet is it on) and time of
+the measurement. The final column has the chick weight. Thus there are
+only 50 different chicks on 4 diets, but as they were weighed at
+different times and the data is in long format there are 578 rows in
+total. This is a good format for many r functions, but it does repeat
+information and is not so easy to read.
 
-The other way to store this data is in wide format, where each chick just has one row, and each time it is weighed goes in a separate column
+The other way to store this data is in wide format, where each chick
+just has one row, and each time it is weighed goes in a separate column
 
 ```{r wide}
 #In tidyverse
@@ -239,9 +280,18 @@ ChickWeight %>% tidyr::spread(Time, weight)
 reshape2::dcast(ChickWeight, Chick + Diet ~ Time, value.var = "weight")
 ```
 
-There are various terms for converting between these formats. The most common are melt or gather for wide>long, and cast or spread for long>wide.
+There are various terms for converting between these formats. The most
+common are melt or gather or pivot_long for wide\>long, and cast or
+spread or pivot_wider for long\>wide.
 
-Casting a dataset is simple where each unique entity only has one of each measurement, but sometimes that isn't the case. Maybe it was a bit difficult to get the chicks to stay still for weighing and you actually had more than one measurement for each chick in order to take an average. If you tried to cast such a dataset then you would get an error, as it can't put more than one weight in each cell in the wide format table. In this case you might need to specify a function, usually average. 
+Casting a dataset is simple where each unique entity only has one of
+each measurement, but sometimes that isn't the case. Maybe it was a bit
+difficult to get the chicks to stay still for weighing and you actually
+had more than one measurement for each chick in order to take an
+average. If you tried to cast such a dataset then you would get an
+error, as it can't put more than one weight in each cell in the wide
+format table. In this case you might need to specify a function, usually
+average.
 
 ```{r wide2, error = TRUE}
 ChickWeight
@@ -259,24 +309,40 @@ reshape2::dcast(ChickWeight, Chick + Diet ~ Time, value.var = "weight")
 ChickWeight_wide <- dcast(ChickWeight, Chick + Diet ~ Time, value.var = "weight", fun.aggregate = mean)
 
 ```
-This method can also be used to do a group by query which we will look at in more detail later.
 
-There may also be situations where you want to go from wide to long format
+This method can also be used to do a group by query which we will look
+at in more detail later.
+
+There may also be situations where you want to go from wide to long
+format
 
 ```{r wide to long}
 
 ChickWeight_long <- reshape2::melt(ChickWeight_wide, id = c("Chick", "Diet"), value.name = "weight", variable.name = "Time")
 ```
-Now we have the data back in long form. However you may notice that there are now 600 observations, when there were originally 578. This is because each cell has been given a row regardless of whether there was a measurement in it, so there are 50 chicks * 12 times = 600 rows. As you may have noticed in the wide table, several of the chicks weren't measured every time step (let's imagine they escaped part way through the experiment), for example chick 16 was only weighed up to day 12. So by pivoting from wide to long format we have introduced some extra rows.
+
+Now we have the data back in long form. However you may notice that
+there are now 600 observations, when there were originally 578. This is
+because each cell has been given a row regardless of whether there was a
+measurement in it, so there are 50 chicks \* 12 times = 600 rows. As you
+may have noticed in the wide table, several of the chicks weren't
+measured every time step (let's imagine they escaped part way through
+the experiment), for example chick 16 was only weighed up to day 12. So
+by pivoting from wide to long format we have introduced some extra rows.
 
 ```{r remove NAs}
 ChickWeight_long <- ChickWeight_long[!is.na(ChickWeight_long$weight),]
 ```
+
 Now we are back to the orginal 578 rows.
 
-
 ### Merging datasets
-Before we can merge or join two datasets together, we need to check that they are compatible. The `janitor` package allows us to compare columns between two datasets. Let's create an example by setting up two subsets of the `iris` dataset and renaming one column in one of the subsets to create a difference:
+
+Before we can merge or join two datasets together, we need to check that
+they are compatible. The `janitor` package allows us to compare columns
+between two datasets. Let's create an example by setting up two subsets
+of the `iris` dataset and renaming one column in one of the subsets to
+create a difference:
 
 ```{r janitor, eval = TRUE, warning=FALSE, message=FALSE}
 
@@ -290,18 +356,27 @@ library(janitor)
 
 janitor::compare_df_cols(subset1, subset2)
 ```
+
 To join two datasets together, we have several options:
 
-- **cbind**: this function merges two dataframes by adding *columns* -- so the dataframe is expanded horizontally
-- **rbind**: this function merges two dataframes by adding *rows* -- so the dataframe is expanded vertically
-- **merge**: base R function within which you can specify different ways to merge two dataframes 
-- **Tidyverse options**:
-  - inner_join() corresponds to merge(X, Y) – only retain rows that match between X and Y.
-  - left_join() corresponds to merge(X, Y, all.x = T) – retain all rows from X, whether or not they match in Y.
-  - right_join() corresponds to merge(X, Y, all.y = T) – retain all rows from Y, whether or not they match in X.
-  - full_join() corresponds to merge(X, Y, all = T) – retain all rows from both X and Y, whether or not they match.
+-   **cbind**: this function merges two dataframes by adding *columns*
+    -- so the dataframe is expanded horizontally
+-   **rbind**: this function merges two dataframes by adding *rows* --
+    so the dataframe is expanded vertically
+-   **merge**: base R function within which you can specify different
+    ways to merge two dataframes
+-   **Tidyverse options**:
+    -   inner_join() corresponds to merge(X, Y) -- only retain rows that
+        match between X and Y.
+    -   left_join() corresponds to merge(X, Y, all.x = T) -- retain all
+        rows from X, whether or not they match in Y.
+    -   right_join() corresponds to merge(X, Y, all.y = T) -- retain all
+        rows from Y, whether or not they match in X.
+    -   full_join() corresponds to merge(X, Y, all = T) -- retain all
+        rows from both X and Y, whether or not they match.
 
-Source and further info: https://bookdown.org/rwnahhas/IntroToR/merge-join.html
+Source and further info:
+<https://bookdown.org/rwnahhas/IntroToR/merge-join.html>
 
 An example:
 
@@ -344,17 +419,20 @@ schools3 <- cbind(schools2, NewRating)
 
 ```
 
-
-
-
 ### Dealing with dates and times
 
-Most data will come with a date and or time, but the formats can vary widely so it is important to understand how to deal with these in R. ["If you think dates and times are simple you haven't thought about it enough!"](https://gist.github.com/timvisee/fcda9bbdff88d45cc9061606b4b923ca)
+Most data will come with a date and or time, but the formats can vary
+widely so it is important to understand how to deal with these in R.
+["If you think dates and times are simple you haven't thought about it
+enough!"](https://gist.github.com/timvisee/fcda9bbdff88d45cc9061606b4b923ca)
 
 #### Time zones
 
-The first thing to get right is the time zone!
-You may have noticed that in the first setup chunk of code we set the timezone to UTC. This is the time zone at °0 longitude and does not use daylight saving time so it is always the same. As a default it is good to set this at the beginning of your script.
+The first thing to get right is the time zone! You may have noticed that
+in the first setup chunk of code we set the timezone to UTC. This is the
+time zone at °0 longitude and does not use daylight saving time so it is
+always the same. As a default it is good to set this at the beginning of
+your script.
 
 ```{r timezones}
 Sys.setenv(tz="UTC") #set environment time zone to utc
@@ -378,38 +456,49 @@ lubridate::now()
 lubridate::now(tzone = "NZ")
 
 ```
-OlsonNames() will show you all the timezone names.
 
+OlsonNames() will show you all the timezone names.
 
 #### Daylight savings time
 
-One of the complications of time is that depending on the time zone and whether the data has been recorded in local time, it may inconveniently shift by an hour for part of the year. For example if your data was collected in the UK in the summer time it may be in British Summer Time, which is UTC+1. This gets further complicated if you have data that spans the clock change. 
-[timeanddate.com](timeanddate.com) gives information about when daylight savings is used in each timezone e.g. [https://www.timeanddate.com/time/zones/cet](https://www.timeanddate.com/time/zones/cet)
-But I would recommend to always use UTC as your sys timezone!
-If you want a bit more info about timezones read this [R blog about timezone troubles](https://www.r-bloggers.com/2018/07/a-tour-of-timezones-troubles-in-r/)
+One of the complications of time is that depending on the time zone and
+whether the data has been recorded in local time, it may inconveniently
+shift by an hour for part of the year. For example if your data was
+collected in the UK in the summer time it may be in British Summer Time,
+which is UTC+1. This gets further complicated if you have data that
+spans the clock change. [timeanddate.com](timeanddate.com) gives
+information about when daylight savings is used in each timezone e.g.
+<https://www.timeanddate.com/time/zones/cet> But I would recommend to
+always use UTC as your sys timezone! If you want a bit more info about
+timezones read this [R blog about timezone
+troubles](https://www.r-bloggers.com/2018/07/a-tour-of-timezones-troubles-in-r/)
 
 Now let's learn how to format dates and times in R
 
 #### Formatting dates and times
 
-Your data may store this information in many different ways. Maybe you have years, days and months in separate columns, maybe months are in numbers, maybe in words, maybe in 3 letter abbreviations. Maybe your dates are in UK format, maybe American style with the day and month switched. Maybe your datetime is all in one column, maybe date and time are separate. Perhaps you have a separate column that tells you the timezone (if so, hallelujah someone thought to include this vital info!). Times may be in 12 or 24 hour format, and may or may not include seconds
-Here are some examples:
+Your data may store this information in many different ways. Maybe you
+have years, days and months in separate columns, maybe months are in
+numbers, maybe in words, maybe in 3 letter abbreviations. Maybe your
+dates are in UK format, maybe American style with the day and month
+switched. Maybe your datetime is all in one column, maybe date and time
+are separate. Perhaps you have a separate column that tells you the
+timezone (if so, hallelujah someone thought to include this vital
+info!). Times may be in 12 or 24 hour format, and may or may not include
+seconds Here are some examples:
 
-08/01/2024
-2024/08/01
-01/08/24
-8th January 2024
-08/01/2024 14:03
-08/01/2024 02:03 PM
-8 Jan 2024 14 03 06
-08/01/2024 15:03 CET
-8th January 2024
-202401081T140306Z
-1704722580
+08/01/2024 2024/08/01 01/08/24 8th January 2024 08/01/2024 14:03
+08/01/2024 02:03 PM 8 Jan 2024 14 03 06 08/01/2024 15:03 CET 8th January
+2024 202401081T140306Z 1704722580
 
-You can probably read and understand all of those (except the last one probably), but R needs to be told what they all are so it knows what datetime to associate with your data.
+You can probably read and understand all of those (except the last one
+probably), but R needs to be told what they all are so it knows what
+datetime to associate with your data.
 
-Let's take a look at datetime classes. The main ones used are Date (a day stored as the number of days since 1970-01-01), and POSIXct (date and time in seconds with the number of seconds beginning at 1 January 1970)
+Let's take a look at datetime classes. The main ones used are Date (a
+day stored as the number of days since 1970-01-01), and POSIXct (date
+and time in seconds with the number of seconds beginning at 1 January
+1970)
 
 ```{r date class}
 class(Sys.Date()) # Date class
@@ -417,7 +506,9 @@ class(lubridate::now()) #POSIXct class
 
 
 ```
-Now let's take some of the date formats above and tell R how to parse them
+
+Now let's take some of the date formats above and tell R how to parse
+them
 
 ```{r date parsing}
 date <- "2024/08/01"
@@ -434,7 +525,11 @@ str(date2) # now it is correct as we told it what to expect.
 #as.Date is a base R function, we can also use the very similar lubridate::as_date function
 
 ```
-Exercise - can you take some of the date formats above and parse them so R understands them? Use [this guide](https://www.statology.org/r-date-format/) to understand how to specify the format.
+
+Exercise - can you take some of the date formats above and parse them so
+R understands them? Use [this
+guide](https://www.statology.org/r-date-format/) to understand how to
+specify the format.
 
 What about when we also have times?
 
@@ -482,9 +577,9 @@ course_dates$EndDateTime <- as.POSIXct(paste(course_dates$Date, course_dates$End
 course_dates$duration <- difftime( course_dates$EndDateTime, course_dates$StartDateTime)
 
 ```
-Exercise - Now we have the start and end date times, can you calculate how many hours each day is? Hint use the difftime function
 
-
+Exercise - Now we have the start and end date times, can you calculate
+how many hours each day is? Hint use the difftime function
 
 Once you have your dates parsed you can then extract info from them.
 
@@ -501,19 +596,22 @@ course_dates$Month_long <- month.name[course_dates$Month]
 course_dates$day <- format(course_dates$StartDateTime,"%d")
 ```
 
-
-
 ## Exercise
 
-Read in the example dataset and create a posixct datetime field. Create a "Year" and "Month" column
-
+Read in the example dataset and create a posixct datetime field. Create
+a "Year" and "Month" column
 
 ### Dealing with spatial data
 
-We now understand how to deal with temporal data, but most data we use is also spatial. 
+We now understand how to deal with temporal data, but most data we use
+is also spatial.
 
-R has become a very powerful tool to handle, process and map spatial data thanks to packages that have been developed over the years. Up until very recently, the packages most people were using to import and handle spatial data were `rgdal`, `rgeos` and `terra`. These packages are being retired and are being replaced by [`sf` - Simple Features](https://r-spatial.github.io/sf/.
-
+R has become a very powerful tool to handle, process and map spatial
+data thanks to packages that have been developed over the years. Up
+until very recently, the packages most people were using to import and
+handle spatial data were `rgdal`, `rgeos` and `terra`. These packages
+are being retired and are being replaced by [`sf` - Simple
+Features](<https://r-spatial.github.io/sf/>.
 
 ```{r quakes}
 library(sf)
@@ -528,7 +626,8 @@ plot(st_geometry(quakes_sf))
 
 ```
 
-Similarly to timezones, with spatial data we have coordinate reference systems to deal with.
+Similarly to timezones, with spatial data we have coordinate reference
+systems to deal with.
 
 ```{r crs}
 #We can check the coordinate reference system of our spatial data like this
@@ -547,27 +646,27 @@ We will go into spatial data analysis in more detail in week 2.
 
 ### Reading in spatial data
 
-You may also have data which is already in a spatial format, for example a shapefile. sf has functions to read these data types in.
+You may also have data which is already in a spatial format, for example
+a shapefile. sf has functions to read these data types in.
 
 (include example)
 
 ## Exercise
 
 with one of these datasets
-https://environment.data.gov.uk/water-quality/view/download/new
+<https://environment.data.gov.uk/water-quality/view/download/new>
 
-https://stecf.jrc.ec.europa.eu/dd/fdi
+<https://stecf.jrc.ec.europa.eu/dd/fdi>
 
 ### Other -- For Kate to check
 
-- json? netcdf etc (maybe for second week)
-- assign one column based on another. qc - flagging data
+-   json? netcdf etc (maybe for second week)
+-   assign one column based on another. qc - flagging data
 
 ### potential overlap with tidyverse session:
-- duplicates/distinct
-- selecting columns and rows -- easiest done as part of a pipeline
-- filtering and subsetting
-- pivoting to/from long and wide formats
-- group by
 
-
+-   duplicates/distinct
+-   selecting columns and rows -- easiest done as part of a pipeline
+-   filtering and subsetting
+-   pivoting to/from long and wide formats
+-   group by
