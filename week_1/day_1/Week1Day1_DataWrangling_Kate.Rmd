@@ -10,8 +10,8 @@ editor_options:
 
 ```{r setup, include=FALSE}
 library(knitr)
-knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_chunk$set(eval = FALSE) ## have set this to FALSE for now, might have to change that if we want to show outputs
+knitr::opts_chunk$set(echo = TRUE) # This tells it to print the code chunks when knitting to html
+knitr::opts_chunk$set(eval = FALSE) # This tells it not to run the code chunks when knitting to html
 Sys.setenv(tz="UTC") #set environment time zone to utc
 
 ```
@@ -31,9 +31,7 @@ packages:
 ```{r packages}
 library(tidyverse)
 library(reshape2)
-# install.packages("ViewPipeSteps")
 library(ViewPipeSteps)
-#we might need to explain here if teresa hasn't already what all the warnings you get when you load tidyverse are
 ```
 
 ### Investigating your data
@@ -57,34 +55,43 @@ summary(iris)
 head(iris)
 tail(iris)
 
-## Let's take a closer look at the rows and columns in our dataset:
+```
 
-ncol(iris) # we have 5 columns
-nrow(iris) # we have 150 rows
+Let's take a closer look at our dataset
+
+```{r investigate2}
+
+ncol(iris) # We have 5 columns
+nrow(iris) # We have 150 rows
 
 # What are minimum and maximum values for our numerical columns?
+
 min(iris$Sepal.Length)
 max(iris$Sepal.Width)
 mean(iris$Petal.Length)
 
 # If we wanted we could calculate the sum of a column:
+
 sum(iris$Sepal.Length)
 
 ## Now we want to take a look at our factors - what are the three levels?
+
 unique(iris$Species)
 
 # We can use this function on any column, but with numerical values we will just get more results:
+
 unique(iris$Sepal.Length)
 
-# Do we have any duplicates in our dataset? Do we have any NAs?
+# Do we have any NAs in our dataset?
+
 any(is.na(iris$Sepal.Length))
 table(is.na(iris$Sepal.Length))
 
-any(duplicated(iris$Sepal.Length))
-duplicated(iris$Sepal.Length)
-table(duplicated(iris$Sepal.Length))
+# Finally if we want to open the dataset in a separate tab we can run
 
-# In this case this is not very informative -- we expect to see 'duplicate' entries
+View(iris)
+
+# You can also do this by clicking on it in the environment section of R studio.
 ```
 
 ### Making basic changes to your data
@@ -94,7 +101,8 @@ upper case. This can be useful when we want to merge different datasets
 together.
 
 ```{r change}
-# let's change a column name
+# Let's change a column name
+
 names(iris)[names(iris)=="Species"] <- "Type" 
 str(iris)
 
@@ -103,7 +111,7 @@ str(iris)
 names(iris) <- gsub("\\.", "_", names(iris))
 str(iris)
 
-# what if we want to change column names or rows to all upper or all lower case
+# What if we want to change column names or rows to all upper or all lower case
 
 names(iris) <- toupper(names(iris))
 str(iris)
@@ -111,11 +119,11 @@ str(iris)
 names(iris)[names(iris)=="TYPE"] <- tolower(names(iris)[names(iris)=="TYPE"])
 str(iris)
 
-#we can also change all values in a column
+# We can also change all values in a column
 iris$type <- toupper(iris$type)
 str(iris)
 
-# let's reverse these changes for now
+# Let's reverse these changes for now
 iris <- iris_ori
 
 ```
@@ -129,7 +137,7 @@ Pattern matching uses regular expressions such as   **.**  ,   **\***   or   **^
 ```{r regex, eval=TRUE}
 # make a string
 example <- c("let us", "find", "a", "pattern")
-
+example
 # find a string
 grep(pattern = "pattern", example) # found in the 4th element
 
@@ -144,6 +152,27 @@ grep(pattern = ".*ern", example) # found in the 4th element
 example3 <- gsub(".*ern", "cat", example)
 example3
 ```
+We can also use string tools on character columns in a dataset. Say we wanted to add the genus name to the iris dataset
+
+```{r genus}
+genus <- "Iris"
+
+iris$Species <- paste(genus, iris$Species, sep = "_")
+unique(iris$Species)
+
+# Now we have the full species name
+
+# Suppose we want to separate out the genus and species. We can use the underscore to do this
+
+strsplit(iris$Species, "_")
+
+# This sort of does the job but if we want these in separate columns in our data frame we can use the separate function:
+
+iris %>%
+  tidyr::separate(Species, c("Genus", "Species"), "_")
+
+```
+
 
 There are many pattern matching tools and regular expressions to get your head around - this [cheat sheet](https://rstudio.github.io/cheatsheets/html/strings.html?_gl=1*1bshcje*_ga*MTg0OTY1NjUzMi4xNjk4MTYwNTAz*_ga_2C0WZ1JHG0*MTcwNDM4NTAxMy41LjAuMTcwNDM4NTAxMy4wLjAuMA..#regular-expressions) has a list of regex and their meanings.
 
