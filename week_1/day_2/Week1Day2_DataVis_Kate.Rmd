@@ -282,6 +282,7 @@ ggplot(data = iris) +
 
 
 ```
+
 ## Interactive plots
 
 It is possible to create interactive plots using packages such as `plotly`. This is a whole universe in its own which we won't go into in any detail, but you can just pass a ggplot object to plotly
