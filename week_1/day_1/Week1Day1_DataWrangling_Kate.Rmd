@@ -361,12 +361,12 @@ ChickWeight
 #let's say chick 1 was being particularly difficult to weigh on day 6, so we have multiple measurements for that day
 ChickWeight <- ChickWeight %>% add_row(Chick = "1", Diet = "1", Time = 6, weight = 66)
 
-ChickWeight %>% tidyr::pivot_wider(names_from = Time, values_from = weight)
+ChickWeight_wide <- ChickWeight %>% tidyr::pivot_wider(names_from = Time, values_from = weight)
 # See how we get a nonsensical result here, because row 4 and 579 both contain weights for chick 1, diet 1, day 6, and it hasn't been able to do the pivot and has just put the number of observations.
 
 # We need to specify a function to use where there are multiple values
 
-ChickWeight %>% tidyr::pivot_wider(names_from = Time, values_from = weight, values_fn = mean)
+ChickWeight_wide <- ChickWeight %>% tidyr::pivot_wider(names_from = Time, values_from = weight, values_fn = mean)
 
 
 #We can also do the same thing with dcast
@@ -385,7 +385,10 @@ There may also be situations where you want to go from wide to long
 format
 
 ```{r wide to long}
-ChickWeight_wide %>% pivot_longer(cols=c('0', '2'), names_to = "Time", values_to = "weight") # help kathrin!
+# In tidyr
+ChickWeight_long <- ChickWeight_wide %>% pivot_longer(cols = 3:14, names_to = "Time", values_to = "weight")
+
+# In reshape2
 ChickWeight_long <- reshape2::melt(ChickWeight_wide, id = c("Chick", "Diet"), value.name = "weight", variable.name = "Time")
 ```
 
@@ -404,7 +407,7 @@ ChickWeight_long <- ChickWeight_long[!is.na(ChickWeight_long$weight),]
 
 Now we are back to the orginal 578 rows.
 
-- how to sort vectors (using base R sort function) -- **needs to be added**
+
 
 ### Merging datasets
 
@@ -425,6 +428,8 @@ names(subset2)[names(subset2) == "Species"] <- "Type"
 library(janitor)
 
 janitor::compare_df_cols(subset1, subset2)
+
+# We can now see that four of the columns match but species and type do not.
 ```
 
 To join two datasets together, we have several options:
@@ -455,6 +460,7 @@ An example:
 names(subset2)[names(subset2) == "Type"] <- "Species"
 
 fullDF <- rbind(subset1, subset2)
+fullDF
 
 ```
 
@@ -468,24 +474,38 @@ schools <- data.frame(City=c('Lowestoft', 'Lowestoft', 'Beccles', 'Beccles', 'No
                       School=c('Pakefield', 'Kirkley', 'John Leman', 'Free School', 'Hewitt'),
                       Rating=c('B', 'D', 'C', 'C', 'B'))
 
-# Town sizes.
+# Town sizes
 towns <- data.frame(Town=c('Lowestoft', 'Beccles', 'Norwich'),
                     Population=c(30000, 10000, 270000))
 
 NewRating <- data.frame(NewRating=c('B', 'C', 'B', 'D', 'B'))
 
-#Add the information about population size to the schools table using merge
+# Add the information about population size to the schools table using merge
+
 schools2 <- merge(schools, towns, by.x = "City", by.y = "Town")
-#Note we had to specify the column to match by as it was called city in one table and town in another. If we change the column name to be town in both then the merge is simpler as it guesses that you want to join on that column.
+
+# Note we had to specify the column to match by as it was called city in one table and town in another. If we change the column name to be town in both then the merge is simpler as it guesses that you want to join on that column.
 names(schools)[names(schools) == "City"] <- "Town"
 
 schools2 <- merge(schools, towns)
 
 # Suppose the schools have been rated again and we want to add the new ratings, we can use cbind
 
-
-# Example of how to use cbind (column bind).
 schools3 <- cbind(schools2, NewRating)
+
+```
+
+#### Sorting
+
+Sometimes we need to sort a data frame. Say we wanted to have the town names in alphabetical order
+
+```{r sort}
+data(mtcars)
+newdata <- mtcars[order(mpg),]
+
+schools3[order(schools3$Town),]
+# Or we can order by rating in descending order
+schools3[order(schools3$NewRating, decreasing = TRUE),]
 
 ```
 
