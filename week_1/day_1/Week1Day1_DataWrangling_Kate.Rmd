@@ -178,14 +178,6 @@ There are many pattern matching tools and regular expressions to get your head a
 
 
 
-- structure of your data -- Sam covers summary() -- done
-- number of rows, columns; getting the sum of a column -- done
-- unique values -- done
-- how to change column names -- done
-- how to set column names and values to all lower or all upper case -- done
-- how to sort vectors (using base R sort function) -- **needs to be added**
->>>>>>> aa8d5d6cd2f2b60e8d2a95f5130baa56f427b3e2
-
 ### Expanding vs reducing your datasets
 
 Now that we have explored the `iris` data a bit, let's try subsetting it
@@ -201,7 +193,7 @@ str(setosa)
 unique(setosa$Species) # Note R still knows there are 3 levels for this factor, but the dataset only includes 1
 ```
 
-You can read this statement as: "assign an object called 'setosa' using
+You can read this statement as: "Assign an object called 'setosa' using
 the 'iris' dataset, selecting all rows where the factor Species has the
 value 'setosa', and selecting all columns". We are selecting **rows**
 because our conditional statement is *before* the comma.
@@ -210,10 +202,13 @@ We can select **columns** if the conditional statement is *after* the
 comma. For example, we can only select two of the columns:
 
 ```{r subset2}
-# to select the first three columns:
+# To select the first three columns:
+
 subset1 <- iris[,1:3]
 str(subset1)
-# or to select by column name:
+
+# Or to select by column name:
+
 subset2 <- iris[,c("Sepal.Length", "Sepal.Width")]
 str(subset2)
 ```
@@ -230,11 +225,13 @@ str(setosa)
 And this is how to select specific **columns**:
 
 ```{r subset4}
-# select first three columns:
+# Select first three columns:
+
 subset3 <- iris %>%
   select(1:3)
 
-# select by column name:
+#Select by column name:
+
 subset4 <- iris %>%
   select(Sepal.Length, Sepal.Width)
 ```
@@ -248,15 +245,17 @@ that we will call "LWRatio":
 iris$LWRatio <- iris$Petal.Length / iris$Petal.Width
 ```
 
-We saw before that we can check data for duplicate entries. In the case
-of the `iris` dataset, we expect to see duplicate entries when we look
+###Duplicates
+
+It is important to check your dataset for duplicate data.
+In the case of the `iris` dataset, we expect to see duplicate entries when we look
 at individual columns -- we would assume that the same petal length or
 width will show up multiple times. However, sometimes we need to check
 if we have true duplicates in our data. We can do this by creating a
 'unique identifier' and then using this column to check for duplicates.
 
 ```{r duplicates}
-# let's create a unique identifier by pasting together information from the different rows: (KC think we could have a better example here)
+# Let's create a unique identifier by pasting together information from the different rows: (KC think we could have a better example here)
 
 iris$UniqueID <- apply(iris[,1:6], 1, paste, collapse = "-")
 str(iris)
@@ -264,62 +263,60 @@ str(iris)
 table(duplicated(iris$UniqueID))
 
 
-# we have one duplicate entry
-# let's check that further
+# We have one duplicate entry, let's check that further
 
 ID <- iris$UniqueID[duplicated(iris$UniqueID) == TRUE]
 test <- iris[iris$UniqueID == ID,]
-
+test
 # we can remove one of the two entries using the row number:
 iris <- iris[-143,]
 
-#An alternative way to do this is by using dplyr package:
+#An simpler way to do this is by using dplyr package:
+
+iris <- iris_ori
 
 dup <- iris %>%
   group_by_all() %>%
   filter(n()>1) %>%
-  ungroup()
+  ungroup() %>%
+  print_pipe_steps()
+
 
 dup
 
-#Keep only the distinct rows (based on all columns)
+#Keep only the distinct rows (based on all columns):
+
 iris <- iris %>% distinct()
-nrow(iris) #we now have only 149 rows, we have lost the duplicate.
 
+nrow(iris) # We now have only 149 rows, we have lost the duplicate.
 
-#What about if you have a more complex dataset, where you might have duplicate samples and want to keep only one of them? For example, say you have combined two datasets, but they contain some of the same data and you only want one version of each sample.
 
 ```
 
--   adding new columns -- done
--   checking for duplicates -- done, want to add more complex example
-    though.
--   summing across rows and columns -- **do we want to include this?**
--   creating subsets: filtering and subsetting using conditional
-    statements (aka base R functions) -- done
-
 ### Wide vs long format
 
-There are two main ways to store datasets - wide and long. Datasets are
+As explained in the tidyverse session, there are two main ways to store datasets - wide and long. Datasets are
 usually easier to work with in R in long format, but you may need to
-switch between them
+switch between them.
 
 Long format is where you have data in an identifying column (or columns)
 which repeats, and then your response data all in one column. For
 example, let's look at the chick weight dataset.
 
-```{r long}
-#oad the chick weight dataset
-data("ChickWeight")
+```{r chickweight}
+#  Load the chick weight dataset
+
 ChickWeight <- as.data.frame(ChickWeight)
-str(ChickWeight)
-#reorder the columns into a more sensible order
+str(ChickWeight) #You might notice this dataset has some column attributes for time and weight to give them labels and units. You can access these using the attr() function.
+
+
+# Let's reorder the columns into a more sensible order
 
 ChickWeight <- ChickWeight[, c("Chick", "Diet", "Time", "weight")] # leave the row index blank to keep all rows
 
 View(ChickWeight)
 nrow(ChickWeight)
-unique(ChickWeight$Chick)
+unique(ChickWeight$Chick) # you can also see the Chick column has levels which specify an order for this factor
 ```
 
 You can see that this dataset has four columns. The first 3 contain
@@ -335,14 +332,19 @@ just has one row, and each time it is weighed goes in a separate column
 
 ```{r wide}
 #In tidyverse
-ChickWeight %>% tidyr::spread(Time, weight)
+
+ChickWeight %>% tidyr::pivot_wider(names_from = Time, values_from = weight)
+
 #In reshape2
+
 reshape2::dcast(ChickWeight, Chick + Diet ~ Time, value.var = "weight")
+
+# You will see we now have each time step in a separate column and one row per chick.
 ```
 
 There are various terms for converting between these formats. The most
-common are melt or gather or pivot_long for wide\>long, and cast or
-spread or pivot_wider for long\>wide.
+common are pivot_long or melt  for wide\>long, and pivot_wider or
+cast for long\>wide.
 
 Casting a dataset is simple where each unique entity only has one of
 each measurement, but sometimes that isn't the case. Maybe it was a bit
@@ -359,10 +361,18 @@ ChickWeight
 #let's say chick 1 was being particularly difficult to weigh on day 6, so we have multiple measurements for that day
 ChickWeight <- ChickWeight %>% add_row(Chick = "1", Diet = "1", Time = 6, weight = 66)
 
-ChickWeight %>% tidyr::spread(Time, weight)
-#See how we get an error this time, because row 4 and 579 both contain weights for chick 1, diet 1, day 6.
+ChickWeight %>% tidyr::pivot_wider(names_from = Time, values_from = weight)
+# See how we get a nonsensical result here, because row 4 and 579 both contain weights for chick 1, diet 1, day 6, and it hasn't been able to do the pivot and has just put the number of observations.
+
+# We need to specify a function to use where there are multiple values
+
+ChickWeight %>% tidyr::pivot_wider(names_from = Time, values_from = weight, values_fn = mean)
+
+
+#We can also do the same thing with dcast
 
 reshape2::dcast(ChickWeight, Chick + Diet ~ Time, value.var = "weight")
+
 #In dcast it does run but says "Aggregation function missing: defaulting to length", and you will see all but one cells have a length of 1.
 #If we add fun.aggregate = mean the error goes away and where there are duplicates it calculates an average
 
@@ -370,14 +380,12 @@ ChickWeight_wide <- dcast(ChickWeight, Chick + Diet ~ Time, value.var = "weight"
 
 ```
 
-This method can also be used to do a group by query which we will look
-at in more detail later.
 
 There may also be situations where you want to go from wide to long
 format
 
 ```{r wide to long}
-
+ChickWeight_wide %>% pivot_longer(cols=c('0', '2'), names_to = "Time", values_to = "weight") # help kathrin!
 ChickWeight_long <- reshape2::melt(ChickWeight_wide, id = c("Chick", "Diet"), value.name = "weight", variable.name = "Time")
 ```
 
@@ -395,6 +403,8 @@ ChickWeight_long <- ChickWeight_long[!is.na(ChickWeight_long$weight),]
 ```
 
 Now we are back to the orginal 578 rows.
+
+- how to sort vectors (using base R sort function) -- **needs to be added**
 
 ### Merging datasets
 
@@ -717,6 +727,8 @@ with one of these datasets
 <https://environment.data.gov.uk/water-quality/view/download/new>
 
 <https://stecf.jrc.ec.europa.eu/dd/fdi>
+
+What about if you have a more complex dataset, where you might have duplicate samples and want to keep only one of them? For example, say you have combined two datasets, but they contain some of the same data and you only want one version of each sample.
 
 ### Other -- For Kate to check
 
