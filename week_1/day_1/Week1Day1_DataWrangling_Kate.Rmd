@@ -758,7 +758,7 @@ a "Year" and "Month" column
 
 
 ```{r exercise datetime}
-
+# This data is part of the environment agencies water quality archive https://environment.data.gov.uk/water-quality/view/download
 ea <- read.csv("../data/ENS-2023.csv")
 ea$sample.sampleDateTime[1:10]
 ea$datetime <- ""
