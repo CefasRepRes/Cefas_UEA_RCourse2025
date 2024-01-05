@@ -18,7 +18,6 @@ Let's visualise our data using three different types of plots. This can also be 
 First we will load the `ggplot2` package so we can compare base R functions with `ggplot` functions:
 
 ```{r package, warning=FALSE, message=FALSE}
-# install.packages("ggplot2")
 library(ggplot2)
 ```
 
@@ -27,14 +26,12 @@ Now let's start with some simple examples for different types of plots. Using th
 <u>**Histogram**</u>
 
 ```{r hist}
-## first we create our simple dataframe again:
+## First we create our simple dataframe again:
+
 iris <- as.data.frame(iris)
 
-## then we can plot a histogram of petal lengths:
+## Then we can plot a histogram of petal lengths:
 hist(iris$Petal.Length)
-
-# to change width of bins
-#hist(iris$Petal.Length, breaks = seq(min(iris$Petal.Length), max(iris$Petal.Length), length.out = 15))
 
 ## and the same using ggplot:
 ggplot(data = iris) +
@@ -58,12 +55,13 @@ Note here we have directly made boxplots for the three factors we have in our da
 <u>**Scatterplot**</u>
 
 ```{r scatter}
-## a scatterplot using base R -- note here a scatterplot is the default that R will return if we don't specify a specific plot and we are plotting two numerical variables
+## A scatterplot using base R -- note here a scatterplot is the default that R will return if we don't specify a specific plot and we are plotting two numerical variables
 plot(iris$Petal.Width~iris$Petal.Length)
-## alternative way of writing this:
+## Alternative way of writing this:
 # plot(x = iris$Petal.Length, y = iris$Petal.Width)
 
-## this is how a scatterplot looks using ggplot:
+## This is how a scatterplot looks using ggplot:
+
 ggplot() +
   geom_point(data = iris, aes(x = Petal.Length, y = Petal.Width))
 ```
@@ -84,14 +82,16 @@ Let's revisit the chicks from yesterday
 
 ```{r chickweight}
 data("ChickWeight")
-#let's plot the weight of chick 2 through time.
+
+# Let's plot the weight of chick 2 through time.
 chick2 <- ChickWeight[ChickWeight$Chick == 2, ]
 plot(x = chick2$Time, y = chick2$weight, type = "l")
 
-#Now let's plot several chicks using ggplot
+# Now let's plot several chicks using ggplot
 ggplot() +
-  geom_line(data = ChickWeight[ChickWeight$Chick < 20,], aes(x = Time, y = weight, col = Chick))
-#Maybe it is clear now what happened to chicks 16 and 18. Perhaps they didn't escape after all.
+  geom_line(data = ChickWeight[ChickWeight$Chick < 20,], aes(x = Time, y = weight, col = Chick)) # col = Chick tells it to use a different color for each chick so they get their own lines
+
+# Maybe it is clear now what happened to chicks 16 and 18. Perhaps they didn't escape after all.
 ```
 
 
@@ -99,7 +99,7 @@ ggplot() +
 
 The two most obvious differences between base R `plot` and `ggplot` are:
 
-- the code/synthax
+- the code/syntax
 - the layout and look of the resulting plot
 
 With base R plots, a lot of editing is done with additional lines of code that are technically independent from each other. With ggplot, you add 'layers' to your plot object and with each new layer you can either add more data to your plot or change settings.
@@ -110,18 +110,21 @@ We will now look at some simple examples on how to customise plots.
 Let's change some basic things about our plot. We'll start with the base R `plot` function first before we move on to the `ggplot` function.
 
 ```{r base-plot}
-# load the data:
+# Load the data:
 iris <- as.data.frame(iris)
 
-## let's remind us of what the plot looks like if we specify nothing else:
+## Let's remind us of what the plot looks like if we specify nothing else:
+
 plot(iris$Petal.Length, iris$Petal.Width)
 
-## now we change the axis titles:
+## Now we change the axis titles:
+
 plot(iris$Petal.Length, iris$Petal.Width,
      xlab = "Petal Length (cm)",
      ylab = "Petal Width (cm)")
 
-# and what about a title?
+# And what about a title?
+
 mtext(side=3, line=2, at=0.5, adj=0, cex=2, "Sepal width as a function of sepal length")
 ```
 
@@ -138,7 +141,7 @@ plot(iris$Petal.Length, iris$Petal.Width,
      ylab = "Petal Width (cm)",
      pch = 17)
 
-## or to change the colour on top of it:
+## Or to change the colour on top of it:
 plot(iris$Petal.Length, iris$Petal.Width,
      xlab = "Petal Length (cm)",
      ylab = "Petal Width (cm)",
@@ -157,6 +160,7 @@ So if we want to change the line type in our chick plot from earlier it would lo
 
 ```{r lty}
 # data("ChickWeight")
+
 chick2 <- ChickWeight[ChickWeight$Chick == 2, ]
 plot(x = chick2$Time, y = chick2$weight, type = "l", lty = 3)
 ```
@@ -165,7 +169,7 @@ plot(x = chick2$Time, y = chick2$weight, type = "l", lty = 3)
 There are many aspects of a plot that can be edited. Things that directly affect parts of the plot - such as the colour of points - can be specified *within* the `plot` function. Anything that concerns the general layout of the plot - such as margins, font size of labels, position of the legend - need to be specified *outside* the `plot` function. We've seen this with the title - we used `mtext()` for this. Another important function is `par()`. Within this function, we can specific parameters that define the general layout of our plot. For example, let's create very large outer margins, and change the colour of our axis labels to green:
 
 ```{r base-plot3}
-# we have to define out plotting window BEFORE we plot:
+# We have to define out plotting window BEFORE we plot:
 par(oma = c(5,5,5,5), col.lab = "darkgreen") # for reference: c(bottom, left, top, right)
 
 plot(iris$Petal.Length, iris$Petal.Width,
@@ -187,7 +191,6 @@ Final example - let's group colourings by factor, and add a legend.
 ```{r base-plot4}
 plot(iris$Petal.Length, iris$Petal.Width, col=iris$Species,
      xlab = "Petal length (cm)", ylab = "Petal width (cm)")
-#legend(7,4.3,unique(data$Species),col=1:length(data$Species),pch=1)
 legend('bottomright', legend = levels(iris$Species), col = 1:3, cex = 0.8, pch = 1)
 
 
@@ -208,7 +211,7 @@ Now we can add content to that empty box. You can specify which data to use in t
 ggplot(data = iris) +
   geom_point(aes(x = Petal.Length, y = Petal.Width))
 
-# this gives the same results:
+# This gives the same results:
 
 ggplot() +
   geom_point(data = iris, aes(x = Petal.Length, y = Petal.Width))
@@ -259,13 +262,13 @@ iris <- as.data.frame(iris)
 
 
 # Create our simple plot
-ggplot(data = iris) +
+gg <- ggplot(data = iris) +
   geom_histogram(aes(x = Petal.Length))
 
 # either highlight plot code or assign the plot and use ggThemeAssistGadget()
-# ggThemeAssistGadget(gg)
+ggThemeAssistGadget(gg)
 
-# it will automatically output the code, eg:
+gg + theme(plot.background = element_rect(fill = "antiquewhite"))# it will automatically output the code, eg:
 ggplot(data = iris) +
   geom_histogram(aes(x = Petal.Length)) + theme(axis.line = element_line(colour = "purple1",
     linetype = "solid"), panel.grid.major = element_line(colour = "aquamarine4",
@@ -282,6 +285,14 @@ ggplot(data = iris) +
 
 ## How to save plots
 There are several options to save plots. In an R script, you can use the 'save plot' button above the plotting window. For ggplot, you can use `ggsave()` where you can define the location, format (jpeg, png, pdf) and dimensions of your outputs. You can also "print" to pdfs and pngs. 
+
+
+```{r ggsave}
+ggplot(data = iris) +
+  geom_histogram(aes(x = Petal.Length))
+
+ggsave("plot.png")
+```
 
 ## Some further thoughts on plotting and online resources
 There are many other things you can customise about your plots - both using base R functions and ggplot. There are also many other base R functions to produce specific statistical plots. Some examples of other things you can do when plotting:
@@ -351,6 +362,9 @@ how to add alt text to tables
 One of the biggest issues with figures we are producing is the tendency to use colour to convey information. For example, in the following line plot, colour is used for the different series. This means that for someone who is unable to differentiate these it can be very difficult if not impossible to gain any information from.
 
 While colour is very useful for those of us who can see it, we should avoid using it as the only way to convey information. We could add labels to each line alongside the colour, now someone who can't distinguish the colours can still tell the series apart. Or we could use symbols.
+
+ggplot() +
+  geom_line(data = ChickWeight[ChickWeight$Chick < 20,], aes(x = Time, y = weight, col = Chick)) # col = Chick tells it to use a different color for each 
 
 In some instances it can be much harder to avoid use of colour. For example, in this map showing satellite temperature records in the North Sea. We cannot add labels or symbols to each cell without the map becoming impossible to read. However, we can carefully chose colour ramps which are colour blind friendly.
 
