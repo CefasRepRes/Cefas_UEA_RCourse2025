@@ -236,6 +236,50 @@ Things that directly affect our variables - the colour and point shape - are def
 
 `ggplot` was developed to make plotting easier -- note for example that a legend was added automatically. For the vast majority of plots, this additional functionality is great and will allow you to do whatever you need. For some plots, the base R functions are better suited because they allow you to build up plots bit by bit, completely manually and from scratch.
 
+## Using ggplot Theme Assist
+
+This user-friendly addin is a bit of a cheat for using ggplot. As a whole, it is best not to rely on it, otherwise you wont understand the underlying plot code that is generated. BUT! If you need a quick and easy way to edit your ggplot or you aren't sure how to write the code to do so, it is very handy to install this addin. 
+
+```{r ggplot Theme Assist}
+
+#install.packages("ggThemeAssist")
+
+library(ggThemeAssist)
+
+```
+
+To use ggplot Theme Assist, you need to have the code for at least a basic graph. Highlight the code, go to 'addins' (just below the help button on the toolbar), and click **ggplot Theme Assist**. 
+
+Here is an example or the code you start out with, and the code you can finish with. 
+
+```{r ggplot Theme Assist example}
+
+# Create our simple dataframe again
+iris <- as.data.frame(iris)
+
+
+# Create our simple plot
+ggplot(data = iris) +
+  geom_histogram(aes(x = Petal.Length))
+
+# either highlight plot code or assign the plot and use ggThemeAssistGadget()
+# ggThemeAssistGadget(gg)
+
+# it will automatically output the code, eg:
+ggplot(data = iris) +
+  geom_histogram(aes(x = Petal.Length)) + theme(axis.line = element_line(colour = "purple1",
+    linetype = "solid"), panel.grid.major = element_line(colour = "aquamarine4",
+    linetype = "dashed"), panel.grid.minor = element_line(linetype = "blank"),
+    axis.title = element_text(family = "serif",
+        size = 14, face = "bold"), axis.text = element_text(size = 15,
+        colour = "lightgoldenrod4"), plot.title = element_text(family = "serif",
+        size = 20, face = "bold"), legend.text = element_text(colour = "bisque1"),
+    panel.background = element_rect(fill = "honeydew2")) +labs(x = "Petal Length", y = "Count")
+
+
+
+```
+
 ## How to save plots
 There are several options to save plots. In an R script, you can use the 'save plot' button above the plotting window. For ggplot, you can use `ggsave()` where you can define the location, format (jpeg, png, pdf) and dimensions of your outputs. You can also "print" to pdfs and pngs. 
 
