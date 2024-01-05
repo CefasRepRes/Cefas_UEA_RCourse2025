@@ -245,7 +245,7 @@ that we will call "LWRatio":
 iris$LWRatio <- iris$Petal.Length / iris$Petal.Width
 ```
 
-###Duplicates
+### Duplicates
 
 It is important to check your dataset for duplicate data.
 In the case of the `iris` dataset, we expect to see duplicate entries when we look
@@ -343,8 +343,8 @@ reshape2::dcast(ChickWeight, Chick + Diet ~ Time, value.var = "weight")
 ```
 
 There are various terms for converting between these formats. The most
-common are pivot_long or melt  for wide\>long, and pivot_wider or
-cast for long\>wide.
+common are `pivot_long` or `melt`  for wide\>long, and `pivot_wider` or
+`cast` for long\>wide.
 
 Casting a dataset is simple where each unique entity only has one of
 each measurement, but sometimes that isn't the case. Maybe it was a bit
@@ -776,7 +776,7 @@ data thanks to packages that have been developed over the years. Up
 until very recently, the packages most people were using to import and
 handle spatial data were `rgdal`, `rgeos` and `terra`. These packages
 are being retired and are being replaced by [`sf` - Simple
-Features](<https://r-spatial.github.io/sf/>.
+Features](<https://r-spatial.github.io/sf/>).
 
 ```{r quakes}
 library(sf)
