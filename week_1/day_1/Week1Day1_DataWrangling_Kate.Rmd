@@ -361,12 +361,12 @@ ChickWeight
 #let's say chick 1 was being particularly difficult to weigh on day 6, so we have multiple measurements for that day
 ChickWeight <- ChickWeight %>% add_row(Chick = "1", Diet = "1", Time = 6, weight = 66)
 
-ChickWeight %>% tidyr::pivot_wider(names_from = Time, values_from = weight)
+ChickWeight_wide <- ChickWeight %>% tidyr::pivot_wider(names_from = Time, values_from = weight)
 # See how we get a nonsensical result here, because row 4 and 579 both contain weights for chick 1, diet 1, day 6, and it hasn't been able to do the pivot and has just put the number of observations.
 
 # We need to specify a function to use where there are multiple values
 
-ChickWeight %>% tidyr::pivot_wider(names_from = Time, values_from = weight, values_fn = mean)
+ChickWeight_wide <- ChickWeight %>% tidyr::pivot_wider(names_from = Time, values_from = weight, values_fn = mean)
 
 
 #We can also do the same thing with dcast
@@ -385,7 +385,10 @@ There may also be situations where you want to go from wide to long
 format
 
 ```{r wide to long}
-ChickWeight_wide %>% pivot_longer(cols=c('0', '2'), names_to = "Time", values_to = "weight") # help kathrin!
+# In tidyr
+ChickWeight_long <- ChickWeight_wide %>% pivot_longer(cols = 3:14, names_to = "Time", values_to = "weight")
+
+# In reshape2
 ChickWeight_long <- reshape2::melt(ChickWeight_wide, id = c("Chick", "Diet"), value.name = "weight", variable.name = "Time")
 ```
 
@@ -404,7 +407,7 @@ ChickWeight_long <- ChickWeight_long[!is.na(ChickWeight_long$weight),]
 
 Now we are back to the orginal 578 rows.
 
-- how to sort vectors (using base R sort function) -- **needs to be added**
+
 
 ### Merging datasets
 
@@ -425,6 +428,8 @@ names(subset2)[names(subset2) == "Species"] <- "Type"
 library(janitor)
 
 janitor::compare_df_cols(subset1, subset2)
+
+# We can now see that four of the columns match but species and type do not.
 ```
 
 To join two datasets together, we have several options:
@@ -455,6 +460,7 @@ An example:
 names(subset2)[names(subset2) == "Type"] <- "Species"
 
 fullDF <- rbind(subset1, subset2)
+fullDF
 
 ```
 
@@ -468,24 +474,38 @@ schools <- data.frame(City=c('Lowestoft', 'Lowestoft', 'Beccles', 'Beccles', 'No
                       School=c('Pakefield', 'Kirkley', 'John Leman', 'Free School', 'Hewitt'),
                       Rating=c('B', 'D', 'C', 'C', 'B'))
 
-# Town sizes.
+# Town sizes
 towns <- data.frame(Town=c('Lowestoft', 'Beccles', 'Norwich'),
                     Population=c(30000, 10000, 270000))
 
 NewRating <- data.frame(NewRating=c('B', 'C', 'B', 'D', 'B'))
 
-#Add the information about population size to the schools table using merge
+# Add the information about population size to the schools table using merge
+
 schools2 <- merge(schools, towns, by.x = "City", by.y = "Town")
-#Note we had to specify the column to match by as it was called city in one table and town in another. If we change the column name to be town in both then the merge is simpler as it guesses that you want to join on that column.
+
+# Note we had to specify the column to match by as it was called city in one table and town in another. If we change the column name to be town in both then the merge is simpler as it guesses that you want to join on that column.
 names(schools)[names(schools) == "City"] <- "Town"
 
 schools2 <- merge(schools, towns)
 
 # Suppose the schools have been rated again and we want to add the new ratings, we can use cbind
 
-
-# Example of how to use cbind (column bind).
 schools3 <- cbind(schools2, NewRating)
+
+```
+
+#### Sorting
+
+Sometimes we need to sort a data frame. Say we wanted to have the town names in alphabetical order
+
+```{r sort}
+data(mtcars)
+newdata <- mtcars[order(mpg),]
+
+schools3[order(schools3$Town),]
+# Or we can order by rating in descending order
+schools3[order(schools3$NewRating, decreasing = TRUE),]
 
 ```
 
@@ -506,23 +526,33 @@ your script.
 
 ```{r timezones}
 Sys.setenv(tz="UTC") #set environment time zone to utc
-#To view the timezone
+
+# To view the timezone
+
 Sys.timezone()
-#You can set a differnt timezone, e.g.
+
+# You can set a differnt timezone, e.g.
+
 Sys.setenv(tz="CET") #set environment time zone to central european time
 Sys.timezone()
 
-#Let's set it back to UTC for now
+# Let's set it back to UTC for now
+
 Sys.setenv(tz="UTC") 
 Sys.timezone()
 
-#We can also get R to tell us the current date and time
+# We can also get R to tell us the current date and time
+
 Sys.Date()
 Sys.time()
-#We can do this with the lubridate package too
+
+# We can do this with the lubridate package too
+
 lubridate::today()
 lubridate::now()
-#We can even get it to tell us the time in a different zone, say if I want to know if it's a good time to call my kiwi relatives.
+
+# We can even get it to tell us the time in a different zone, say if I want to know if it's a good time to call my kiwi relatives.
+
 lubridate::now(tzone = "NZ")
 
 ```
@@ -557,9 +587,25 @@ timezone (if so, hallelujah someone thought to include this vital
 info!). Times may be in 12 or 24 hour format, and may or may not include
 seconds Here are some examples:
 
-08/01/2024 2024/08/01 01/08/24 8th January 2024 08/01/2024 14:03
-08/01/2024 02:03 PM 8 Jan 2024 14 03 06 08/01/2024 15:03 CET 8th January
-2024 202401081T140306Z 1704722580
+08/01/2024
+
+2024/08/01
+
+01/08/24
+
+8th Jan 2024
+
+08/01/2024 14:03
+
+08/01/2024 02:03 PM
+
+8 Jan 2024 14 03 06
+
+08/01/2024 15:03 CET
+
+202401081T140306Z
+
+1704722580
 
 You can probably read and understand all of those (except the last one
 probably), but R needs to be told what they all are so it knows what
@@ -572,6 +618,7 @@ and time in seconds with the number of seconds beginning at 1 January
 
 ```{r date class}
 class(Sys.Date()) # Date class
+
 class(lubridate::now()) #POSIXct class
 
 
@@ -582,17 +629,26 @@ them
 
 ```{r date parsing}
 date <- "2024/08/01"
-class(date) # we see that R just has this stored as a string
+str(date)
+
+# We see that R just has this stored as a string, we need to tell R it is a date.
+
 date1 <- as.Date(date)
+
 str(date1) # now stored as a date
-#However, if we had give it a date like this
+
+#However, if we had give it a date like this:
+
 date <- "01/08/2024"
 date2 <- as.Date(date)
-str(date2) #you can see something has gone wrong, it has confused the year and the day. This is because the format wasn't what it expected, so we need to specify the format.
-date2 <- as.Date(date, format = "%d/%m/%Y")
-str(date2) # now it is correct as we told it what to expect.
+str(date2)
+# Yyou can see something has gone wrong, it has confused the year and the day. This is because the format wasn't what it expected, so we need to specify the format.
 
-#as.Date is a base R function, we can also use the very similar lubridate::as_date function
+date2 <- as.Date(date, format = "%d/%m/%Y")
+str(date2)
+# Now it is correct as we told it what to expect.
+
+# as.Date is a base R function, we can also use the very similar lubridate::as_date function
 
 ```
 
@@ -601,67 +657,96 @@ R understands them? Use [this
 guide](https://www.statology.org/r-date-format/) to understand how to
 specify the format.
 
-What about when we also have times?
+```{r date exercise}
+
+date1 <- "08/01/2024"
+
+date2 <- "2024/08/01"
+
+date3 <- "01/08/24"
+
+date4 <- "8th Jan 2024"
+
+```
+
+
+What about when we also have times? Let's look at how to format these
 
 ```{r datetime parsing}
 datetime <- "08/01/2024 14:03:00"
-#parse this to posixct, specifying the format
-datetime1 <- as.POSIXct(datetime, format = "%d/%m/%Y %H:%M:%S", tz="UTC") #note we specify the timezone, always a good idea! But if you don't it will assume what you set as your sys.timezone
+
+# Parse this to posixct, specifying the format
+
+datetime1 <- as.POSIXct(datetime, format = "%d/%m/%Y %H:%M:%S", tz="UTC")
+
+# Note we specify the timezone, always a good idea! But if you don't it will assume what you set as your sys.timezone
+
 str(datetime1)
 
+# What about this format?
 
 datetime <- "20240108T140306Z"
 datetime2 <- as.POSIXct(datetime, format = "%Y%m%dT%H%M%SZ", tz="UTC")
 str(datetime2)
 
-#We can also see how this is stored as a number
+# We can also see how this is as a number
 as.numeric(datetime2)
 
-#Which should help you with the last format 1704722586 which is actually the simplest as it is the number of seconds since 1st Jan 1970. 
+# This should help you with the last format "1704722586" which is actually the simplest as it is the number of seconds since 1st Jan 1970. 
 datetime2 <- as.POSIXct(1704722586, origin = "1970-01-01")
 str(datetime2)
 
-#1st Jan 1970 is the standard to count from, but sometimes you get numeric date times with different origins - usually 1st Jan 1900. Just change the origin to parse these.
+# 1st Jan 1970 is the standard to count from, but sometimes you get numeric date times with different origins - usually 1st Jan 1900. Just change the origin to parse these.
 
-#Sometimes we have the information spread out, e.g.
+# Sometimes we have the information spread out, e.g.
 
 Date = c("08/01/2024")
 Time = c("14:03:00")
+
+# We can use paste to combine these into one datetime
+
 datetime3 <- as.POSIXct(paste(Date, Time, sep = " "), format = "%d/%m/%Y %H:%M:%S")
 str(datetime3)
 
-
-
-#If you have your information in a data frame, the parsing is pretty similar, just specify the columns
-
+# If you have your information in a data frame, the parsing is pretty similar, just specify the columns. For example we could create a data frame of the course dates.
 
 course_dates <- data.frame(Date = c("08/01/2024", "09/01/2024", "22/01/2024", "23/01/2024"),
                     StartTime = c("09:00:00", "09:00:00", "09:00:00", "09:00:00"),
                     EndTime = c("16:00:00", "16:00:00", "16:00:00", "15:00:00"),
                     TimeZone = c("UTC", "UTC", "UTC", "UTC"), 
-                    Location = "Zicer", "Zicer", "", "")
+                    Location = "Zicer 0.01", "Zicer 0.01", "Sci 3.05", "EH 1.25")
+
+# Then we can create datetime columns for the start and end times
 
 course_dates$StartDateTime <- as.POSIXct(paste(course_dates$Date, course_dates$StartTime, sep = " "), format = "%d/%m/%Y %H:%M:%S", tz = "UTC")
 
 course_dates$EndDateTime <- as.POSIXct(paste(course_dates$Date, course_dates$EndTime, sep = " "), format = "%d/%m/%Y %H:%M:%S")
-course_dates$duration <- difftime( course_dates$EndDateTime, course_dates$StartDateTime)
+
 
 ```
 
 Exercise - Now we have the start and end date times, can you calculate
 how many hours each day is? Hint use the difftime function
 
+```{r duration, error = TRUE}
+
+course_dates$duration <- difftime()
+
+```
+
 Once you have your dates parsed you can then extract info from them.
 
 ```{r extract date components}
-#extract the year
+# Extract the year
+
 course_dates$Year <- lubridate::year(course_dates$StartDateTime)
 course_dates$Month <- lubridate::month(course_dates$StartDateTime, label = TRUE) #Label = TRUE gives it as month abbr (Jan etc), false gives it as a number
 
-#you can also convert between formats e.g.
+# You can also convert between formats e.g.
+
 course_dates$Month_long <- month.name[course_dates$Month]
 
-#You can also use the format function to extract components
+# You can also use the format function to extract components
 
 course_dates$day <- format(course_dates$StartDateTime,"%d")
 ```
@@ -670,6 +755,16 @@ course_dates$day <- format(course_dates$StartDateTime,"%d")
 
 Read in the example dataset and create a posixct datetime field. Create
 a "Year" and "Month" column
+
+
+```{r exercise datetime}
+# This data is part of the environment agencies water quality archive https://environment.data.gov.uk/water-quality/view/download
+ea <- read.csv("../data/ENS-2023.csv")
+ea$sample.sampleDateTime[1:10]
+ea$datetime <- ""
+ea$Year <- ""
+ea$Month <- ""
+```
 
 ### Dealing with spatial data
 
@@ -685,12 +780,20 @@ Features](<https://r-spatial.github.io/sf/>.
 
 ```{r quakes}
 library(sf)
-#Let's use the quakes dataset, which contains the locations of earthquakes off Fiji
+
+# Let's use the quakes dataset, which contains the locations of earthquakes off Fiji
+
 data("quakes")
 str(quakes)
-#You can see this data includes latitude and longitude, so it is spatial, but these are just stored as numeric, R does not know they are coordinates.
+
+# You can see this data includes latitude and longitude, so it is spatial, but these are just stored as numeric, R does not know they are coordinates.
+
 quakes_sf <- sf::st_as_sf(quakes, coords = c("long","lat")) # your x coordinate goes first, y second. Make sure to get this right or your data will be sideways!
-str(quakes_sf) # we can now see it has geometry
+
+str(quakes_sf)
+
+# We can now see it has geometry
+
 plot(st_geometry(quakes_sf))
 
 
@@ -700,15 +803,22 @@ Similarly to timezones, with spatial data we have coordinate reference
 systems to deal with.
 
 ```{r crs}
-#We can check the coordinate reference system of our spatial data like this
+# We can check the coordinate reference system of our spatial data like this
+
 st_crs(quakes_sf)
-#You will see that it is NA, so let's fix that
+
+# You will see that it is NA, so let's fix that
 st_crs(quakes_sf) <- st_crs(4326) #4326 is the EPSG code for WGS84. This is the most commonly used lat/lon projection
 st_crs(quakes_sf) 
 
-#The other most common CRS is the British National Grid which uses eastings and northings.
+# The other most common CRS is the British National Grid which uses eastings and northings.
 
 # BNG example 
+
+ea <- read.csv("../data/ENS-2023.csv")
+ea_sf <- sf::st_as_sf(ea, coords = c("sample.samplingPoint.easting","sample.samplingPoint.northing"), crs = st_crs(27700)) #27700 is the EPSG code for BNG
+st_crs(ea_sf)
+str(ea_sf)
 
 ```
 
@@ -719,26 +829,4 @@ We will go into spatial data analysis in more detail in week 2.
 You may also have data which is already in a spatial format, for example
 a shapefile. sf has functions to read these data types in.
 
-(include example)
 
-## Exercise
-
-with one of these datasets
-<https://environment.data.gov.uk/water-quality/view/download/new>
-
-<https://stecf.jrc.ec.europa.eu/dd/fdi>
-
-What about if you have a more complex dataset, where you might have duplicate samples and want to keep only one of them? For example, say you have combined two datasets, but they contain some of the same data and you only want one version of each sample.
-
-### Other -- For Kate to check
-
--   json? netcdf etc (maybe for second week)
--   assign one column based on another. qc - flagging data
-
-### potential overlap with tidyverse session:
-
--   duplicates/distinct
--   selecting columns and rows -- easiest done as part of a pipeline
--   filtering and subsetting
--   pivoting to/from long and wide formats
--   group by
