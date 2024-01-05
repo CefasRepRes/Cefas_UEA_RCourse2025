@@ -266,7 +266,7 @@ gg <- ggplot(data = iris) +
   geom_histogram(aes(x = Petal.Length))
 
 # either highlight plot code or assign the plot and use ggThemeAssistGadget()
-ggThemeAssistGadget(gg)
+#ggThemeAssistGadget(gg)
 
 gg + theme(plot.background = element_rect(fill = "antiquewhite"))# it will automatically output the code, eg:
 ggplot(data = iris) +
@@ -282,9 +282,21 @@ ggplot(data = iris) +
 
 
 ```
+## Interactive plots
 
+It is possible to create interactive plots using packages such as `plotly`. This is a whole universe in its own which we won't go into in any detail, but you can just pass a ggplot object to plotly
 
-### Maps
+```{r plotly}
+library(plotly)
+p <- ggplot() +
+  geom_line(data = ChickWeight[ChickWeight$Chick < 20,], aes(x = Time, y = weight, col = Chick))
+
+ggplotly(p)
+
+# Magic! Try hovering over the plot to see what happens
+```
+
+## Maps
 
 We can use ggplot to create maps
 
@@ -302,6 +314,8 @@ ggplot(quakes_sf) +
   ylim(-40, -10 )
   
 ```
+
+
 An alternative package for maps is leaflet. This can be used to create interactive maps.
 
 ```{r leaflet}
@@ -311,7 +325,7 @@ leaflet(quakes_sf) %>%
   addCircles()
 ```
 
-### How to save plots
+## How to save plots
 There are several options to save plots. In an R script, you can use the 'save plot' button above the plotting window. For ggplot, you can use `ggsave()` where you can define the location, format (jpeg, png, pdf) and dimensions of your outputs. You can also "print" to pdfs and pngs. 
 
 
@@ -326,6 +340,7 @@ ggplot(quakes_sf) +
 
 ggsave("plot.png")
 ```
+
 ## Some further thoughts on plotting and online resources
 There are many other things you can customise about your plots - both using base R functions and ggplot. There are also many other base R functions to produce specific statistical plots. Some examples of other things you can do when plotting:
 
@@ -335,7 +350,7 @@ There are many other things you can customise about your plots - both using base
 - customise the colour palette used in your plots -- there are many palettes to choose from!
 - arrange multiple plots, either using the `par` function, or using packages such as `cowplot`
 - change the font size, style and angle of axis lables and tick marks
-- create interactive plots using packages such as `plotly` (this is a whole universe in its own)
+
 - plot spatial data using base R, ggplot or packages such as `leaflet`
 - create animations and gifs which can be embedded into documents or exported as gifs
 
