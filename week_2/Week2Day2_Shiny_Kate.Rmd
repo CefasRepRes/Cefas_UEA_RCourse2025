@@ -1,0 +1,24 @@
+---
+title: "Introduction to R shiny"
+author: "Kate Collingridge"
+date: "2024-01-15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r packages}
+library("shiny")
+library("leaflet")
+
+```
+
+## Heading 1
+
+
+
+```{r shiny}
+
+```
+
