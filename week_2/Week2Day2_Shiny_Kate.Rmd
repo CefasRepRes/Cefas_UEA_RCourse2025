@@ -8,17 +8,110 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
 ```{r packages}
 library("shiny")
 library("leaflet")
 
 ```
 
-## Heading 1
+# What is R shiny
 
+Shiny is an R package that allows us to take anything done in R and make it into an interactive web app available to any user regardless of their technical ability. An app can even be set to fetch data remotely, do all the processing on the fly and display the outputs.
 
+Often we want to be able to share outputs from R with colleagues who lack the skills to run or edit R scripts themselves, or we have many different iterations of outputs that they want to explore.
 
-```{r shiny}
+For example when I am working with water quality assessments we need to look at plots for multiple parameters over multiple assessment areas. I can set up a script that will loop through these and export them into a folder. This might be fine if there are half a dozen plots, but it becomes impractical when there are hundreds.
+
+```{r looped plots}
+#Show a simple example where we output lots of different plots (say for species and areas)
+#if you run this loop you will find it generates x plots - quite a lot to look through
+```
+
+We will come back to this example in a bit, but first lets explore the basics of shiny apps.
+
+The Shiny package has eleven built-in examples that each demonstrate how Shiny works. Each example is a self-contained Shiny app. Let's have a look at a couple
+
+```{r hello shiny}
+runExample("01_hello")
+```
+
+# Components of an R shiny app
+
+R shiny apps have 2 basic parts:
+
+-   ui
+-   server
+
+These are combined into one script called app.R
+
+## UI
+
+The ui script is used to set up the user interface. It defines the layout, user inputs and output types.
+
+```{r ui example}
 
 ```
 
+### Input types
+
+numeric, text, picker, slider, action button etc.
+
+## Server
+
+The server script is where outputs are generated based on user inputs. Here we can set up code which is "reactive". Reactivity is probably the most important concept to understand when working with shiny.
+
+### Reactivity
+
+-   this means it automatically reruns when the user input changes. Give an overview of reactivity <https://shiny.posit.co/r/articles/build/reactivity-overview/>
+
+If you run the example below you will see that as you change the inputs on the sidebar the outputs reevaluate.
+
+```{r Server example}
+runExample("03_reactivity")
+```
+
+*Observe - not sure if I should include this or not, maybe not necessary:*
+
+This works well for smaller datasets or where you have a small number of inputs, but if any of your server code takes more than an instant to run it can be impractical to have the app refreshing at every input.
+
+In this case we can wrap our code in an observeEvent. This sits there quietly observing until it is triggered (for example by the user clicking a button), and only then will it run the code. Let's do that for the example above
+
+```{r observe event example}
+
+
+```
+
+### Outputs
+
+renderplot, rendertable, renderleaflet etc. Explain how to call inputs to produce outputs
+
+```{r leaflet example}
+#basic example for interactive map, maybe with zoom to functionality
+
+```
+
+## Debugging
+
+Explain how to use browser() to debug
+
+## Shiny with multiple files
+
+You can also use shiny with the ui and server in separate files called ui.R and server.R. In this case you can also add a global script
+
+### Global
+
+The global script is optional but can be quite useful if there is any preprocessing to do on your data or you have lots of datasets to use. The global script is run once at the start of loading the app.
+
+You should use the global script to do all the things you would at the beginning of an R markdown, such as loading packages, defining functions, loading data, doing basic data processing.
+
+If you have more complex data preprocessing it is usually best to do this outside the app so it doesn't take too long to load.
+
+```{r global example}
+```
+
+Let's go back to the loop above which produced loads of plots and see how we would make it into a shiny app.
+
+```{r looped plots 2}
+#Show shiny app for the looped plots above
+```
