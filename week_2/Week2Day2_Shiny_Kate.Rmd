@@ -115,3 +115,13 @@ Let's go back to the loop above which produced loads of plots and see how we wou
 ```{r looped plots 2}
 #Show shiny app for the looped plots above
 ```
+
+### Further reading
+
+This book is free and online and might be helpful: <https://mastering-shiny.org/index.html>
+
+The Shiny website features a whole range of useful content - might even be worth talking them through the different pages and explaining where to find what <https://shiny.posit.co/r/getstarted/shiny-basics/lesson1/index.html>
+
+A website explaining how to use leaflet with Shiny: <https://rstudio.github.io/leaflet/>
+
+Another introduction to Shiny: <https://www.r-bloggers.com/2021/03/a-gentle-introduction-to-r-shiny/>
