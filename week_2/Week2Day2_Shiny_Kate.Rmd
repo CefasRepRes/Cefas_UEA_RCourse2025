@@ -1,11 +1,11 @@
 ---
 title: "Introduction to R shiny"
 author: "Kate Collingridge"
-date: "2024-01-15"
+date: "2024-01-23"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, eval = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -17,33 +17,67 @@ library("leaflet")
 
 # What is R shiny
 
-Shiny is an R package that allows us to take anything done in R and make it into an interactive web app available to any user regardless of their technical ability. An app can even be set to fetch data remotely, do all the processing on the fly and display the outputs.
+Shiny is an R package that allows us to take anything done in R and make it into an interactive web app available to users, without them needing knowledge of R. An app can even be set to fetch data remotely, do all the processing on the fly and display the outputs.
 
-Often we want to be able to share outputs from R with colleagues who lack the skills to run or edit R scripts themselves, or we have many different iterations of outputs that they want to explore.
+Often we want to be able to share outputs from R with colleagues who lack the skills to run or edit R scripts themselves, or we have many different outputs that they want to explore.
 
-For example when I am working with water quality assessments we need to look at plots for multiple parameters over multiple assessment areas. I can set up a script that will loop through these and export them into a folder. This might be fine if there are half a dozen plots, but it becomes impractical when there are hundreds.
+For example, when I am working with water quality assessments we need to look at plots for multiple parameters over multiple assessment areas. I can set up a script that will loop through these and export them into a folder. This might be fine if there are half a dozen plots, but it becomes impractical when there are hundreds. A shiny app can be a good way to share these.
 
-```{r looped plots}
-#Show a simple example where we output lots of different plots (say for species and areas)
-#if you run this loop you will find it generates x plots - quite a lot to look through
+```{r looped plots, eval = FALSE}
+
+#if you run this loop you will find it generates 52 plots - quite a lot to look through, and this is only for one parameter! (only run if you want to sit here a few minutes!)
+
+wk3 <- read.csv("assessment_results.csv")
+
+#Plot of oxygen 5th percentile through time
+for (u in unique(wk3$UnitCode)) {
+  wk <- wk3[wk3$IndicatorID == 4 & wk3$UnitCode == u,]
+  
+  #unitID <- st_drop_geometry(units)[Code == u]$UnitID
+  unitCode <- u
+  unitName <- unique(wk[wk$Code.x == u,]$UnitName)
+  
+  title <- paste0("Eutrophication State [ES] and Threshold [ET] ", 1990, "-", 2020)
+  subtitle <- paste0("Oxygen Deficiency (DOXY) in ", unitName, " (", unitCode, ")", "\n")
+  subtitle <- paste0(subtitle, "Months: 7-10, Depths: 0-500m, Metric: 5th percentile of deepest sample within 10 meters from bottom, Unit: mg/l")
+  
+  fileName <- gsub(":", "", paste0("Annual_Indicator_Line_DOXY_", unitCode, ".png"))
+  
+  ggplot(wk, aes(x = as.Date(as.character(Period), "%Y"), y = ES, group = UnitCode, color = UnitCode)) +
+    labs(title = title , subtitle = subtitle) +
+    geom_point() +
+    geom_line() +
+    #geom_text(aes(label = N), vjust = -0.25, hjust = -0.25) +
+    #adding lines for boundaries between high/good/moderate etc
+    geom_hline(aes(yintercept = ET)) +
+    geom_hline(aes(yintercept = 7.75), linetype = 2) +
+    geom_hline(aes(yintercept = 4.25), linetype = 2) +
+    geom_hline(aes(yintercept = 2.5), linetype = 2) +
+    #labelling high/good/moderate etc
+    annotate("text", x = as.Date("2005", "%Y"), y = 5, label = "italic(Moderate)", parse = 2, size = 3.5, color = "grey") + 
+    annotate("text", x = as.Date("2005", "%Y"), y = 6.75, label = "italic(Good)", parse = 2, size = 3.5, color = "grey") +
+    annotate("text", x = as.Date("2005", "%Y"), y = 3.5, label = "italic(Poor)", parse = 2, size = 3.5, color = "grey") +
+    annotate("text", x = as.Date("2005", "%Y"), y = 1.5, label = "italic(Bad)", parse = 2, size = 3.5, color = "grey") +
+    annotate("text", x = as.Date("2005", "%Y"), y = 8.75, label = "italic(High)", parse = 2, size = 3.5, color = "grey") +
+    scale_x_date(date_labels = "%Y") +
+    xlab("Year") +
+    ylab("Oxygen (mg/l)") +
+    scale_y_continuous(limits = c(0,9), breaks = c(0,2,4,6,8))
+  if (nrow(wk) >0) {
+    ggsave(file.path("plots/", fileName), width = 15, height = 9, dpi = 300)
+    }
+  
+  
+}
 ```
 
 We will come back to this example in a bit, but first lets explore the basics of shiny apps.
 
-The Shiny package has eleven built-in examples that each demonstrate how Shiny works. Each example is a self-contained Shiny app. Let's have a look at a couple
-
-```{r hello shiny}
-runExample("01_hello")
-```
-
 # Components of an R shiny app
 
-R shiny apps have 2 basic parts:
+R shiny apps have 2 essential parts: the ui (user interface) and the server
 
--   ui
--   server
-
-These are combined into one script called app.R
+These are usually combined into one script called app.R
 
 ## UI
 
@@ -53,9 +87,96 @@ The ui script is used to set up the user interface. It defines the layout, user 
 
 ```
 
-### Input types
+### Layout
 
-numeric, text, picker, slider, action button etc.
+There are many different ways to define the layout of a shiny app, but the simplest is with a sidebar panel with inputs and a main panel with outputs.
+
+### Inputs
+
+Shiny apps can have several different types of input, which are defined in the ui using input functions
+
+Each input has an inputId, which is a unique string used to refer to the input, and usually a label, which is how it is displayed in the app, along with various other options depending on the input type. Some examples of input types are:
+
+numericInput
+
+textInput
+
+radioButtons
+
+selectInput
+
+sliderInput
+sliderInput("rng", "Range", value = c(10, 20), min = 0, max = 100)
+
+actionButton
+
+and many more besides!
+
+[Chapter 2 of Mastering Shiny goes into more detail on these](mastering-shiny.org)
+
+### Outputs
+The UI defines outputs which you want your app to generate. In the UI you are just defining the type and creating a placeholder.
+
+Some examples of output types are:
+textOutput
+tableOutput
+plotOutput
+leafletOutput
+
+
+Similarly to with inputs, outputs are referred to by their unique outputId.
+
+
+[Chapter 2 of Mastering Shiny goes into more detail on these](mastering-shiny.org)
+
+Here is a simple example of a ui script
+
+```{r ui, eval = FALSE}
+# Define UI for dataset viewer app ----
+ui <- fluidPage(
+
+  # App title ----
+  titlePanel("Reactivity"),
+
+  # Sidebar layout with input and output definitions ----
+  sidebarLayout(
+
+    # Sidebar panel for inputs ----
+    sidebarPanel(
+
+      # Input: Text for providing a caption ----
+      textInput(inputId = "caption",
+                label = "Caption:",
+                value = "Data Summary"),
+
+      # Input: Selector for choosing dataset ----
+      selectInput(inputId = "dataset",
+                  label = "Choose a dataset:",
+                  choices = c("rock", "pressure", "cars")),
+
+      # Input: Numeric entry for number of obs to view ----
+      numericInput(inputId = "obs",
+                   label = "Number of observations to view:",
+                   value = 10)
+
+    ),
+
+    # Main panel for displaying outputs ----
+    mainPanel(
+
+      # Output: Formatted text for caption ----
+      h3(textOutput("caption", container = span)),
+
+      # Output: Verbatim text for data summary ----
+      verbatimTextOutput("summary"),
+
+      # Output: HTML table with requested number of observations ----
+      tableOutput("view")
+
+    )
+  )
+)
+```
 
 ## Server
 
@@ -68,7 +189,7 @@ The server script is where outputs are generated based on user inputs. Here we c
 If you run the example below you will see that as you change the inputs on the sidebar the outputs reevaluate.
 
 ```{r Server example}
-runExample("03_reactivity")
+#runExample("03_reactivity")
 ```
 
 *Observe - not sure if I should include this or not, maybe not necessary:*
@@ -116,11 +237,24 @@ Let's go back to the loop above which produced loads of plots and see how we wou
 #Show shiny app for the looped plots above
 ```
 
-### Further reading
+## Sharing shiny apps
+
+Once you have finalised your shiny app you will want to be able to share it with people. While it is possible to share the code and any data files by email or using git, this will require your users to have R and the necessary packages installed. The best way is to host your app on a server. You can [view various options for hosting shiny apps on the shiny website](%5Bhttps://shiny.posit.co/r/deploy.htmlhttps://shiny.posit.co/r/deploy.html). Be aware that the free options usually mean your app will be public.
+
+For those of us at Cefas we have PositConnect servers available which can host R shiny apps and many more things besides. We have a development server where you can easily share apps with colleagues internally, and a live server where apps can be shared externally, after going through an [approval process](https://shiny.posit.co/r/deploy.html). Please make sure any apps you create are catalogued on the [Information Asset Register](https://mdr.cefas.co.uk/view/19069).
+
+## Further reading
+
+The Shiny package has eleven built-in examples that each demonstrate how Shiny works. Each example is a self-contained Shiny app. Let's have a look at a couple
+
+```{r hello shiny} runExample("01_hello")}
+```
+
+# 
 
 This book is free and online and might be helpful: <https://mastering-shiny.org/index.html>
 
-The Shiny website features a whole range of useful content - might even be worth talking them through the different pages and explaining where to find what <https://shiny.posit.co/r/getstarted/shiny-basics/lesson1/index.html>
+The Shiny website features a whole range of useful content: <https://shiny.posit.co/r/getstarted/shiny-basics/lesson1/index.html>
 
 A website explaining how to use leaflet with Shiny: <https://rstudio.github.io/leaflet/>
 
