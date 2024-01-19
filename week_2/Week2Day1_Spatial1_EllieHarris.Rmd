@@ -9,33 +9,37 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-This content is from <https://rspatial.org/spatial/index.html>, with slight modifications.
+In this session we will cover **what spatial data is**, the two main **data types**, **basic analyses,** and **mapping**.
 
-# Introduction
+A good starting point to understand spatial data in R is Paula Moraga's book '**Spatial Statistics for Data Science: Theory and Practice with R**'
 
-This is an introduction to spatial data manipulation with *R* and the *terra* package. In this context "spatial data" refers to data about geographical locations.
+Let's take a look at her chapter 'Spatial Data in R': <https://www.paulamoraga.com/book-spatial/spatial-data-in-r.html>
 
-You can install the latest released version of *terra* from CRAN with `install.packages("terra")`. You can ask questions on how to use `terra` on [stackoverflow](https://stackoverflow.com/search?tab=newest&q=terra).
-
-This is the introductory part of a set of resources for learning about spatial analysis and modeling with *R*. Here we cover the basics of data manipulation.
+The below content is from <https://rspatial.org/spatial/index.html>, with modifications.
 
 # Spatial data
 
-## Introduction
-
-There are generally two types of spatial data: *vector* data and *raster* data. These can be thought of as discrete objects with clear boundaries (eg. a road, rivers, towns), and continuous phenomena without natural boundaries (eg. elevation, temperature), respectively.
+There are two types of spatial data that we work with in R: *vector* data and *raster* data.
 
 ## Vector data
 
-Vector data consists of a description of the "geometry" or "shape" of the objects, and normally also includes additional variables. For example, a vector data set may represent the borders of the countries of the world (geometry), and also store their names and the size of their population in 2015; or it may have the geometry of the roads in an area, as well as their type and names. These additional variables are often referred to as "attributes".
+Vector data represents discrete objects with clear boundaries (eg. a road, rivers, towns). It consists of a description of the "geometry" or "shape" of the objects, and normally also includes additional variables. For example, a vector data set may represent the borders of the countries of the world (geometry), and also store their names and the size of their population in 2015; or it may have the geometry of the roads in an area, as well as their type and names. These additional variables are often referred to as "attributes".
 
-The main vector data types are **points**, **lines** and **polygons**. In all cases, the geometry of these data structures consists of sets of coordinate pairs (x, y). Points are the simplest case. Each point has one coordinate pair, and *n* associated variables. For example, a point might represent a place where a rat was trapped, and the attributes could include the date it was captured, the person who captured it, the species size and sex, and information about the habitat. It is also possible to combine several points into a multi-point structure, with a single attribute record. For example, all the coffee shops in a town could be considered as a single geometry.
+The main vector data types are points, lines and polygons. In all cases, the geometry of these data structures consists of sets of coordinate pairs (x, y).
 
-The geometry of **lines** is a just a little bit more complex. First note that in this context, the term 'line' refers to a set of one or more polylines (connected series of line segments). For example, in spatial analysis, a river and all its tributaries could be considered as a single 'line' (but they could also also be several lines, perhaps one for each tributary river). Lines are represented as ordered sets of coordinates (nodes). The actual line segments can be computed (and drawn on a map) by connecting the points. Thus, the representation of a line is very similar to that of a multi-point structure. The main difference is that for a line the ordering of the points is important, because we need to know in which order the points should be connected.
+[**Points**]{.underline} are the simplest case. Each point has one coordinate pair, and *n* associated variables (attributes). It is also possible to combine several points into a [multi-point]{.underline} structure, with a single attribute record.
 
-A **network** (e.g. a road or river network), or spatial graph, is a special type of lines geometry where there is additional information about things like flow, connectivity, direction, and distance.
+For example: a point might represent the location of a coffee shop, and the attributes are the shop name, year it was founded, and the number of customers it can seat. But, a multipoint example would have a point for each coffee shop in a town under the same geometry and they would all share the same attributes, which could be the town name and population size.
 
-A **polygon** refers to a set of closed polylines. The geometry is very similar to that of lines, but to close a polygon the last coordinate pair coincides with the first pair. A complication with polygons is that they can have holes (that is a polygon entirely enclosed by another polygon, that serves to remove parts of the enclosing polygon (for example to show an island inside a lake. Again, multiple polygons can be considered as a single geometry. For example, Indonesia consists of many islands. Each island can be represented by a single polygon, but together then can be represent a single (multi-) polygon representing the entire country.
+[**Lines**]{.underline} have a more complex geometry. The term 'line' refers to a set of one or more polylines (connected series of line segments). Lines are represented as ordered sets of coordinates (nodes). The actual line segments can be computed (and drawn on a map) by connecting the points. Thus, the representation of a line is very similar to that of a multi-point structure, except that the ordering of the points is important, because we need to know in which order the points should be connected.
+
+For example: a river and all its tributaries could be considered as a single 'line', but they could also also be several lines, perhaps one for each tributary river.
+
+[**Polygons**]{.underline} are a set of closed polylines. The geometry is very similar to that of lines, but to close a polygon the last coordinate pair coincides with the first pair. A complication with polygons is that they can have holes (that is a polygon entirely enclosed by another polygon, that serves to remove parts of the enclosing polygon). Again, [multiple polygons]{.underline} can be considered as a single geometry.
+
+For example: A lake could be represented with a polgon, and an island on the lake would also be represented by a polygon. This would create a 'hole' in the lake polygon.
+
+For example: Indonesia consists of many islands. Each island can be represented by a single polygon, but together then can be represent a single (multi-) polygon representing the entire country.
 
 ## Raster data
 
@@ -43,236 +47,14 @@ Raster data is commonly used to represent spatially continuous phenomena such as
 
 In contrast to vector data, in raster data the geometry is not explicitly stored as coordinates. It is implicitly set by knowing the spatial extent and the number or rows and columns in which the area is divided. From the extent and number of rows and columns, the size of the raster cells (spatial resolution) can be computed. While raster cells can be thought of as a set of regular polygons, it would be very inefficient to represent the data that way as coordinates for each cell would have to be stored explicitly. Doing so would also dramatically increase processing time.
 
-## Simple representation of spatial data
+# Working with spatial data in R
 
-Spatial data can be represented at a very basic level in base R, without using an special packages.
+In R, we tend to use the package 'sf' to analyse vector data, and 'terra' to analyse raster data (although 'terra' also has functionality to work with vectors).
 
-Let's say we have the location (represented by longitude and latitude) of ten weather stations (named A to J) and their annual precipitation.
+```{r install packages}
 
-In the example below we make a very simple map. Note that a *map* is special type of plot (like a scatter plot, barplot, etc.), and spatial data itself should not be referred to as a map.
-
-```{r}
-name <- LETTERS[1:10]
-longitude <- c(-116.7, -120.4, -116.7, -113.5, -115.5,
-        -120.8, -119.5, -113.7, -113.7, -110.7)
-latitude <- c(45.3, 42.6, 38.9, 42.1, 35.7, 38.9, 
-       36.2, 39, 41.6, 36.9)
-stations <- cbind(longitude, latitude)
-# Simulated rainfall data
-set.seed(0)
-precip <- round((runif(length(latitude))*10)^3)
-```
-
-A map of point locations is not that different from a basic x-y scatter plot. Here I make a plot (a map in this case) that shows the location of the weather stations, and the size of the dots is proportional to the amount of precipitation. The point size is set with argument `cex`.
-
-**Copy the below code into a new R script and run it.** (It doesn't work on R markdown)
-
-```{r, spatialdata_2}
-psize <- 1 + precip/500
-plot(stations, cex = psize, pch = 20, col = 'red', main = 'Precipitation')
-
-# add names to plot
-text(stations, name, pos = 4)
-
-# add a legend
-breaks <- c(100, 250, 500, 1000)
-legend.psize <- 1 + breaks/500
-legend("topright", legend = breaks, pch = 20, pt.cex = legend.psize, col = 'red', bg = 'gray')
-```
-
-Note that the data are represented by "longitude, latitude", in that order, do not use "latitude, longitude" because on most maps latitude (North/South) is used for the vertical axis and longitude (East/West) for the horizontal axis. This is important to keep in mind, as it is a very common source of mistakes!
-
-**Run the below code in an R script**. We can add multiple sets of points to the plot, and even draw lines and polygons:
-
-```{r, spatialdata_3}
-lon <- c(-116.8, -114.2, -112.9, -111.9, -114.2, -115.4, -117.7)
-lat <- c(41.3, 42.9, 42.4, 39.8, 37.6, 38.3, 37.6) 
-x <- cbind(lon, lat)
-
-plot(stations, main = 'Precipitation')
-
-polygon(x, col = 'blue', border = 'light blue')
-lines(stations, lwd = 3, col = 'red')
-points(x, cex = 2, pch = 20)
-points(stations, cex = psize, pch = 20, col = 'red', main = 'Precipitation')
-```
-
-The above illustrates how numeric vectors representing locations can be used to draw simple maps. It also shows how points can (and typically are) represented by pairs of numbers. A line and a polygon can be represented by a number of these points, but the `polygon` function needs to be used to turn the lines into a 'closed' polygon.
-
-Likewise, raster data could be represented by a matrix. Particularly when only dealing with point data such an approach may be practical. For example, a spatial data set representing points and attributes could be made by combining geometry and attributes in a single `data.frame`.
-
-```{r}
-wst <- data.frame(longitude, latitude, name, precip)
-wst
-```
-
-However, `wst` is a data.frame and *R* does not automatically understand the special meaning of the first two columns, or to what coordinate reference system it refers (longitude/latitude, or perhaps UTM zone 17S, or ....?).
-
-It is harder to do basic spatial operations representing the spatial data in this manner in base R. For example, the blue polygon drawn on the map above might represent a state, and a next question might be which of the 10 stations fall within that polygon. And how about any other operation on spatial data, including reading from and writing data to files? To facilitate such operations a number of *R* packages have been developed that define new spatial data types that can be used for this type of specialized operations.
-
-Recent packages in R that define such spatial data structures include `terra` and `sf`. These packages replace a set of older packages including `raster` and `sp`.
-
-We mostly use the `terra` package in these materials. You can install the latest released version of *terra* from CRAN with `install.packages("terra")`
-
-# Introduction to datatypes in `terra`
-
-```{r, echo = FALSE, include = FALSE}
-library(knitr)
-opts_chunk$set(fig.width = 5, fig.height = 5, fig.cap = '', collapse = TRUE)
-```
-
-The `terra` package defines a set of *classes* to represent spatial data. A class defines a particular data type. The `data.frame` is an example of a class. Any particular `data.frame` you create is an *object* of that class.
-
-`terra` introduces a number of classes with names that start with `Spat`. For vector data, the relevant class is `SpatVector`. These classes represent geometries as well as attributes (variables) describing the geometries. For raster data, the class is called a `SpatRaster`, where
-
-## Vector data
-
-It is possible to create `SpatVector` objects from scratch with *R* code. This is very useful when creating a small self contained example to illustrate something, for example to ask a question about how to do a particular operation; without needing to give access to the real data you are using (which is always cumbersome). It is also frequently done when using coordinates that were obtained with a GPS. But in most other cases, you will read these from a file or database, [see Chapter 5](./5-files.html) for examples.
-
-To get started, let's make some SpatVector objects from scratch anyway, using the same data as were used in the previous chapter.
-
-### Points
-
-```{r}
-longitude <- c(-116.7, -120.4, -116.7, -113.5, -115.5, -120.8, -119.5, -113.7, -113.7, -110.7)
-latitude <- c(45.3, 42.6, 38.9, 42.1, 35.7, 38.9, 36.2, 39, 41.6, 36.9)
-lonlat <- cbind(longitude, latitude)
-```
-
-Now create a `SpatVector` object.
-
-```{r}
-# install.packages("terra")
-library(terra)
-pts <- vect(lonlat)
-```
-
-Let's check what kind of object `pts` is.
-
-```{r}
-class(pts)
-```
-
-And what is inside of it
-
-```{r}
-pts
-geom(pts)
-```
-
-So we see that the object has the coordinates we supplied, but also an `extent`. This spatial extent was computed from the coordinates. There is also a coordinate reference system ("CRS", discussed in more detail later). We did not provide the CRS when we created `pts`. That is not good, so let's recreate the object, and now provide a CRS.
-
-```{r}
-crdref <- "+proj = longlat +datum = WGS84"
-pts <- vect(lonlat, crs = crdref)
-pts
-crs(pts)
-```
-
-We can add attributes (variables) to the `SpatVector` object. First we need a `data.frame` with the same number of rows as there are geometries.
-
-```{r}
-# Generate random precipitation values, same quantity as points
-precipvalue <- runif(nrow(lonlat), min = 0, max = 100)
-df <- data.frame(ID = 1:nrow(lonlat), precip = precipvalue)
-```
-
-Combine the `SpatVector` with the `data.frame`.
-
-```{r}
-ptv <- vect(lonlat, atts = df, crs = crdref)
-```
-
-To see what is inside:
-
-```{r}
-ptv
-```
-
-### Lines and polygons
-
-Making a `SpatVector` of points was easy. Making a `SpatVector` of lines or polygons is a bit more complex, but still relatively straightforward.
-
-```{r}
-lon <- c(-116.8, -114.2, -112.9, -111.9, -114.2, -115.4, -117.7)
-lat <- c(41.3, 42.9, 42.4, 39.8, 37.6, 38.3, 37.6) 
-lonlat <- cbind(id = 1, part = 1, lon, lat)
-lonlat
-lns <- vect(lonlat, type = "lines", crs = crdref)
-lns
-```
-
-```{r}
-pols <- vect(lonlat, type = "polygons", crs = crdref)
-pols
-```
-
-The main take home message is that a `SpatVector` stores geometries (coordinates), the name of the coordinate reference system, and attributes.
-
-We can make use `plot` to make a map. Note, the `terra` package has a function called 'plot' which automatically overrides the base R 'plot' function.
-
-**Run the below code in an R script, as it does not work in R markdown.**
-
-```{r, vectordata-1}
-plot(pols, las = 1)
-plot(pols, border = 'blue', col = 'yellow', lwd = 3, add = TRUE)
-points(pts, col = 'red', pch = 20, cex = 3)
-```
-
-## Raster data
-
-The `terra` package has functions for creating, reading, manipulating, and writing raster data. The package provides, among other things, general raster data manipulation functions that can easily be used to develop more specific functions. For example, there are functions to read a chunk of raster values from a file or to convert cell numbers to coordinates and back. The package also implements raster algebra and many other functions for raster data manipulation.
-
-### SpatRaster
-
-A `SpatRaster` represents multi-layer (multi-variable) raster data. A SpatRaster always stores a number of fundamental parameters describing its geometry. These include the number of columns and rows, the spatial extent, and the Coordinate Reference System. In addition, a `SpatRaster` can store information about the file in which the raster cell values are stored. Or, if there is no such a file, a `SpatRaster` can hold the cell values in memory.
-
-Here I create a `SpatRaster` from scratch. But note that in most cases where real data is analyzed, these objects are created from a file.
-
-```{r}
-library(terra)
-r <- rast(ncol = 10, nrow = 10, xmin = -150, xmax = -80, ymin = 20, ymax = 60)
-r
-```
-
-SpatRaster `r` only has the geometry of a raster data set. That is, it knows about its location, resolution, etc., but there are no values associated with it. Let's assign some values. In this case I assign a vector of random numbers with a length that is equal to the number of raster cells.
-
-```{r}
-values(r) <- runif(ncell(r))
-r
-```
-
-You could also assign cell numbers (in this case overwriting the previous values)
-
-```{r}
-values(r) <- 1:ncell(r)
-r
-```
-
-We can plot this object. Run the below code in an R script.
-
-```{r, plot4-1, fig.height = 4}
-plot(r)
-
-# add polygon and points
-lon <- c(-116.8, -114.2, -112.9, -111.9, -114.2, -115.4, -117.7)
-lat <- c(41.3, 42.9, 42.4, 39.8, 37.6, 38.3, 37.6)
-lonlat <- cbind(id = 1, part = 1, lon, lat)
-pts <- vect(lonlat)
-pols <- vect(lonlat, type = "polygons", crs = "+proj = longlat +datum = WGS84")
-
-points(pts, col = "red", pch = 20, cex = 3)
-lines(pols, col = "blue", lwd = 2)
-```
-
-You can create a multi-layer object using the `c` method.
-
-```{r, plot4-2, fig.height = 6.8, fig.width = 9}
-r2 <- r * r
-r3 <- sqrt(r)
-s <- c(r, r2, r3)
-s
-plot(s)
+install.packages("terra")
+install.packages("sf")
 ```
 
 # Reading and writing spatial data
@@ -281,6 +63,7 @@ plot(s)
 library(knitr)
 opts_chunk$set(fig.width = 5, fig.height = 5, fig.cap = '', collapse = TRUE)
 library(terra)
+library(sf)
 ```
 
 ## Introduction
@@ -289,77 +72,99 @@ Reading and writing spatial data is complicated by the fact that there are many 
 
 ## Vector files
 
-The `shapefile` is the most commonly used file format for vector data (if you are not familiar with this file format, an important thing to understand is that a [shapefile](https://en.wikipedia.org/wiki/Shapefile) is really a set of at least three (ideally four) files, with all the same name, but different extension. For shapefile `x` you *must* have, in the same directory, these three files: `x.shp`, `x.shx`, `x.dbf`, and ideally also `x.prj`.
+The `shapefile` is the most commonly used file format for vector data. If you are not familiar with this file format, an important thing to understand is that a [shapefile](https://en.wikipedia.org/wiki/Shapefile) is really a set of at least three (ideally four) files, with all the same name, but different extension. For shapefile `x` you *must* have, in the same directory, these three files: `x.shp`, `x.shx`, `x.dbf`, and ideally also `x.prj`.
 
-It is easy to read and write such files. Here we use a shapefile that comes with the `terra` package.
+### Reading and writing vectors with sf
 
-### Reading
+In sf, we use the [`st_read()`](https://r-spatial.github.io/sf/reference/st_read.html) function to read in a shapefile.
 
-We use the `system.file` function to get the full path name of the file's location. We need to do this as the location of this file depends on where the terra package is installed. You should **not use** the `system.file` function for your own files. It only serves for creating examples with data that ship with *R*. With your own files, just use the filename (and path if the file is not in your working directory).
-
-```{r, shp1}
-library(terra)
-filename <- system.file("ex/lux.shp", package = "terra")
-basename(filename)
-```
-
-Now we have the filename we can use the `vect` function to read the file.
-
-```{r, shp2}
-s <- vect(filename)
-s
-```
-
-The `vect` function returns `SpatVector` objects. It is important to recognise the difference between this type of *R* object (`SpatVector`), and the file ("shapefile") that was used to create it. Thus, you should never say "I have a shapefile in R", say "I have a SpatVector of polygons in R", (and in some cases you can add "created from a shapefile"). The shapefile is one of many file formats for vector data.
-
-### Writing
-
-You can write new files using the `writeVector` method. You need to add argument `overwrite = TRUE` if you want to overwrite an existing file.
-
-```{r, shp3}
-outfile <- "shp_test.shp"
-writeVector(s, outfile, overwrite = TRUE)
-```
-
-To remove the file again you can use `file.remove` or `unlink` (be careful!)
+The following command reads the `nc` dataset from a file that is contained in the `sf` package:
 
 ```{r}
-ff <- list.files(patt = "^shptest")
-file.remove(ff)
+# install.packages("sf")
+library(sf)
+
+nc1 <- st_read(system.file("shape/nc.shp", package = "sf"))
+
+# examine the class of the vector
+class(nc1)
+
+```
+
+This means it extends (and "is" a) `data.frame`, but with a single list-column with geometries, which is held in the column with name geometry.
+
+If we print the first 6 features, we see their attribute values and an abridged version of the geometry
+
+```{r, echo=TRUE, eval=FALSE}
+
+head(nc1)
+
+```
+
+To save a vector as a shapefile, using sf, we use 'st_write':
+
+```{r}
+# save to current directory
+st_write(nc1, "nc.shp")
+
+```
+
+### Reading and writing vectors with terra
+
+In terra, vector files are read in with the function 'vect()'
+
+```{r, shp1, message=FALSE}
+library(terra)
+
+# repeat the steps above, but using 'vect' instead of 'st_read'
+nc2 <- vect(system.file("shape/nc.shp", package = "sf"))
+
+# explore how the vectors are stored differently when read in by sf vs terra
+class(nc2)
+
+head(nc2)
+
+```
+
+The `vect` function returns `SpatVector` objects.
+
+You can save vectors as new shapefiles with the `writeVector` method. You need to add argument `overwrite = TRUE` if you want to overwrite an existing file.
+
+```{r, shp3}
+# object, name you want to save under (dont forget .shp extension), whether you want to overwrite files with the same name
+writeVector(nc2, "shp_test.shp", overwrite = TRUE)
 ```
 
 ## Raster files
 
-The terra package can read and write several raster file formats.
+The terra package can read and write several raster file formats.Raster data often come in GeoTIFF format which has extension .tif
 
 ### Reading raster data
 
-Again we need to get a filename for an example file.
-
-```{r, ras0}
-f <- system.file("ex/logo.tif", package = "terra")
-basename(f)
-```
-
-Now we can do
+In terra, we read in raster data using the 'rast()' function. The below is another example using a built in dataset.
 
 ```{r, ras1}
+f <- system.file("ex/logo.tif", package = "terra")
+basename(f)
+
+# load in the raster
 r <- rast(f)
+class(r)
 r
 ```
 
-Note that `x` is a SpatRaster of three layers ("bands"). We can subset it to get a single layer.
+Note that `x` is a SpatRaster of three layers ("bands"). We can subset it to get a single layer using '[[]]'
 
 ```{r, ras2}
 r2 <- r[[2]]
 r2
 ```
 
-The same approach holds for other raster file formats, including GeoTiff, NetCDF, Imagine, and ESRI Grid formats.
+The same approach holds for other raster file formats, including NetCDF and ESRI Grid formats.
 
 ### Writing raster data
 
-Use `writeRaster` to write raster data. You must provide a SpatRaster and a filename. The file format will be guessed from the filename extension. If that does not work you can provide an argument like `format = GTiff`. Note the argument `overwrite = TRUE` and see `?writeRaster` for more arguments, such as `datatype =`to set the a specific datatype (e.g., integer).
+Use `writeRaster` to write raster data. You must provide a SpatRaster and a filename. The file format will be guessed from the filename extension. If that does not work you can provide an argument like `format = GTiff`.
 
 ```{r, ras5}
 x <- writeRaster(r, "test_output.tif", overwrite = TRUE)
@@ -376,15 +181,17 @@ file.remove("test_output.tif")
 
 A very important aspect of spatial data is the coordinate reference system (CRS) that is used. For example, a location of (140, 12) is not meaningful if you don't know where the origin (0,0) is and if the x-coordinate is 140 meters, feet, nautical miles, kilometers, or perhaps degrees away from the x-origin.
 
+A great explanation of CRS is in Paula Moraga's 'Spatial Statistics for Data Science: THeory and Practice with R':
+
+Follow the link!
+
+<https://www.paulamoraga.com/book-spatial/spatial-data-in-r.html#coordinate-reference-systems>
+
 ## Coordinate Reference Systems (CRS)
 
 ### Angular coordinates
 
 The earth has an irregular spheroid-like shape. The natural coordinate reference system for geographic data is longitude/latitude. This is an *angular* coordinate reference system. The latitude $\phi$ (phi) of a point is the angle between the equatorial plane and the line that passes through a point and the center of the Earth. Longitude $\lambda$ (lambda) is the angle from a reference meridian (lines of constant longitude) to a meridian that passes through the point.
-
-```{r, echo = FALSE}
-knitr::include_graphics("img/sphere.png")
-```
 
 Obviously we cannot actually measure these angles. But we can estimate them. To do so, you need a model of the shape of the earth. Such a model is called a "datum". The simplest datums are a spheroid (a sphere that is "flattened" at the poles and bulges at the equator). More complex datums allow for more variation in the earth's shape. The most commonly used datum is called WGS84 (World Geodesic System 1984). This is very similar to NAD83 (The North American Datum of 1983). Other, local datums exist to more precisely record locations for a single country or region.
 
@@ -440,7 +247,7 @@ We can transform these data to a new data set with another CRS using the `projec
 Here we use the Robinson projection. First we need to find the correct notation.
 
 ```{r}
-newcrs <- "+proj = robin +datum = WGS84"
+newcrs <- "+proj=robin +datum=WGS84"
 ```
 
 Now use it
@@ -455,7 +262,7 @@ After the transformation, the units of the geometry are no longer in degrees, bu
 We can backtransform to longitude/latitude:
 
 ```{r}
-p2 <- terra::project(rob, "+proj = longlat +datum = WGS84")
+p2 <- terra::project(rob, "+proj=longlat +datum=WGS84")
 ```
 
 ## Transforming raster data
