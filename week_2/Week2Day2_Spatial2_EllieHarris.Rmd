@@ -9,22 +9,27 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+It is my preference to work in `terra` for vectors as well as rasters. This is simply because it is easier to work in one package where you know that functions are designed to work with both datatypes, and you wont face issues with converting between.
+
+The following is from rspatial.org by Robert Hijmans, with modifications.
 
 # Vector data manipulation
 
-This chapter illustrates some ways in which we can manipulate vector data. We start with an example SpatVector that we read from a shapefile.
+Read in the lux shapefile from yesterday.
 
 ```{r, vec1}
 library(terra)
 f <- system.file("ex/lux.shp", package = "terra")
-p <- vect(f)
-p
+#p <- # fill in this part
+
 ```
 
-We can plot these data in many ways. For example:
+As a quick reminder of yesterdays work, plot `p` with unique colours for '`NAME_2`'
 
 ```{r}
-plot(p, "NAME_2")
+# plot p
+
+
 ```
 
 ## Basics
@@ -49,7 +54,6 @@ Or as "well-known-text"
 
 ```{r}
 g <- geom(p, wkt = TRUE)
-substr(g, 1, 50)
 ```
 
 ### Variables
@@ -95,11 +99,19 @@ p$lets <- NULL
 
 ### Merge
 
-You can assign an attributes table (data.frame) to a SpatVector with `values <-`. To add attributes to a SpatVector that already has attributes use `merge` (or `cbind` if you know the order of the records is the same).
+You can assign an attributes table (data.frame) to a SpatVector with `values() <-`. To add attributes to a SpatVector that already has attributes use `merge` (or `cbind` if you know the order of the records is the same).
 
 ```{r}
-dfr <- data.frame(District = p$NAME_1, Canton = p$NAME_2, Value = round(runif(length(p), 100, 1000)))
 
+
+dfr <- data.frame(District = p$NAME_1, Canton = p$NAME_2, ValueCol = round(runif(length(p), 100, 1000)))
+
+# add attributes to a spatvector
+p2 <- p
+values(p2) <- dfr
+head(p2)
+
+# merge attributes to a spatvector
 dfr <- dfr[order(dfr$Canton), ]
 pm <- merge(p, dfr, by.x = c('NAME_1', 'NAME_2'), by.y = c('District', 'Canton'))
 pm
@@ -143,14 +155,25 @@ plot(z2, add = TRUE, border = 'red', lwd = 2, col = 'red')
 To append SpatVector objects of the same (vector) type you can use `rbind` (or `c` for older versions of terra).
 
 ```{r}
-b <- rbind(p, z)
+# subset p to the first geometry
+a <- p[1]
+plot(a)
+
+# subset p to all but the first geometry
+aa <- p[-1]
+plot(aa)
+
+# bind together
+b <- rbind(a, aa)
+plot(b)
+
 # with older versions
 # b <- c(p, z)
 head(b)
 tail(b)
 ```
 
-Note how `rbind` (`c` for older versions of terra) allows you to append `SpatVect` objects with different attribute names, unlike the standard `rbind` for `data.frame`s.
+`rbind` (`c` for older versions of terra) allows you to append `SpatVect` objects with different attribute names, unlike the standard `rbind` for `data.frame`s.
 
 ## Aggregate
 
@@ -160,24 +183,25 @@ Run the below in an R script.
 
 ```{r, agg}
 pa <- aggregate(p, by = 'NAME_1')
-za <- aggregate(z)
-plot(za, col = 'light gray', border = 'light gray', lwd = 5)
-plot(pa, add = TRUE, col = rainbow(3), lwd = 3, border = 'white')
+
+plot(pa, col = rainbow(3), lwd = 3, border = 'white')
 ```
 
 It is also possible to aggregate polygons without dissolving the borders.
 
 ```{r, aggnodis}
-zag <- aggregate(z, dissolve = FALSE)
-zag
-plot(zag, col = "light gray")
+pag <- aggregate(p, dissolve = FALSE)
+pag
+plot(pag, col = "light gray")
 ```
 
-This is a structure that is similar to what you may get for an archipelago: multiple polygons represented as one entity (one row). Use `disagg` to split these up into their parts.
+This is a structure that is similar to what you may get for an archipelago: multiple polygons represented as one entity (one row). Use `disagg` to split these up into their parts and save it as 'pd'. Try this yourself - type `??terra::disagg` into the console to find out what arguments you need to put (if any!).
 
 ```{r diis}
-zd <- disagg(zag)
-zd
+# use disagg
+
+
+plot(pd)
 ```
 
 ## Overlay
@@ -186,10 +210,25 @@ There are many different ways to "overlay" vector data. Here are some examples:
 
 ### Erase
 
-Erase a part of a SpatVector
+Erase a part of a SpatVector by creating a spatExtent (bounding box) half it's extent. Run the below code in an R script window.
 
 ```{r raser}
-e <- erase(p, z2)
+# This is the extent of p
+bb <- ext(p)
+plot(bb)
+
+# examine the extent and create a new spatvector which is half the width
+ext(p) # SpatExtent : 5.74414015, 6.52825212, 49.44780731, 50.18162155 (xmin, xmax, ymin, ymax) 
+
+# split in half by changing the bounding x and y points
+bb <- ext(6.15, 6.528, 49.447, 50.18) # x, x, y, y
+
+# Plot p and add bb
+##
+##
+##
+
+e <- erase(p, bb)
 plot(e)
 ```
 
@@ -198,11 +237,11 @@ plot(e)
 Intersect SpatVectors
 
 ```{r, int}
-i <- intersect(p, z2)
+i <- intersect(p, bb)
 plot(i)
 ```
 
-You can also `intersect` or `crop` with a SpatExtent (rectangle). The difference between `intersect` and `crop` is that with `crop` the geometry of the second argument is not added to the output.
+You can `intersect` or `crop` with a SpatExtent. The difference between `intersect` and `crop` is that with `crop` the geometry of the second argument is not added to the output.
 
 Run the below in an R script.
 
@@ -220,8 +259,16 @@ plot(e, add = TRUE, lwd = 3, border = "blue")
 Get the union of two SpatVectors.
 
 ```{r}
-u <- union(p, z)
+# subset p into two different spatvectors
+p1 <- p[c(1, 4, 5)]
+plot(p1)
+
+p2 <- p[c(1, 3, 6)]
+plot(p2)
+
+u <- union(p1, p2)
 u
+plot(u)
 ```
 
 Note that there are many more polygons now. One for each unique combination of polygons (and attributes in this case).
@@ -231,26 +278,6 @@ set.seed(5)
 plot(u, col = sample(rainbow(length(u))))
 ```
 
-### Cover
-
-`cover` is a combination of `intersect` and `union`. `intersect` returns new (intersected) geometries with the attributes of both input datasets. `union` appends the geometries and attributes of the input. `cover` returns the intersection and appends the other geometries and attributes of both datasets.
-
-```{r, cov}
-cov <- cover(p, z[c(1,4),])
-cov
-plot(cov)
-```
-
-### Difference
-
-The symmetrical difference of two SpatVectors
-
-```{r, dif}
-dif <- symdif(z,p)
-plot(dif, col = rainbow(length(dif)))
-dif
-```
-
 ## Spatial queries
 
 We can query polygons with points ("point-in-polygon query"). Run the below in an R script.
@@ -258,17 +285,17 @@ We can query polygons with points ("point-in-polygon query"). Run the below in a
 ```{r, pts}
 pts <- matrix(c(6, 6.1, 5.9, 5.7, 6.4, 50, 49.9, 49.8, 49.7, 49.5), ncol = 2)
 spts <- vect(pts, crs = crs(p))
-plot(z, col = 'light blue', lwd = 2)
+plot(p, col = 'light blue', lwd = 2)
 points(spts, col = 'light gray', pch = 20, cex = 6)
 text(spts, 1:nrow(pts), col = 'red', font = 2, cex = 1.5)
-lines(p, col = 'blue', lwd = 2)
+
 ```
 
 `extract` is used for queries between SpatVector and SpatRaster objects, and also for queries between SpatVectors.
 
 ```{r}
 extract(spts, p)
-extract(spts, z)
+extract(p, spts)
 ```
 
 # Raster data manipulation
@@ -277,16 +304,16 @@ extract(spts, z)
 
 A `SpatRaster` can easily be created from scratch using the function `rast`. The default settings will create a global raster data structure with a longitude/latitude coordinate reference system and 1 by 1 degree cells. You can change these settings by providing additional arguments such as `xmin`, `nrow`, `ncol`, and/or `crs`, to the function. You can also change these parameters after creating the object. If you set the projection, this is only to properly define it, not to change it. To transform a `SpatRaster` to another coordinate reference system (projection) you can use the `project` function.
 
-Here is an example of creating and changing a `SpatRaster` object 'r' from scratch.
+Create a spatraster 'x' from scratch:
 
 ```{r, raster-1a}
 library(terra)
-# SpatRaster with the default parameters
-x <- rast()
-x
+# Create a SpatRaster with the default parameters (use '?terra::rast()' if unsure)
+
+
 ```
 
-With some other parameters
+Add some other parameters
 
 ```{r, raster-1b}
 x <- rast(ncol = 36, nrow = 18, xmin = -1000, xmax = 1000, ymin = -100, ymax = 900)
@@ -312,7 +339,7 @@ res(x)
 Set the coordinate reference system (CRS) (i.e., define the projection).
 
 ```{r, raster-1e}
-crs(x) <- "+proj=utm +zone=48 +datum=WGS84"
+crs(x) <- "EPSG:4326"
 x
 ```
 
@@ -339,7 +366,7 @@ set.seed(0)
 values(r) <- runif(ncell(r))
 
 hasValues(r)
-sources(r)
+
 values(r)[1:10]
 plot(r, main = 'Raster with 100 cells')
 ```
@@ -373,7 +400,7 @@ dim(r)
 xmax(r)
 ```
 
-While we can create a `SpatRaster` from scratch, it is more common to do so from a file. The `terra` package can use raster files in several formats, including GeoTiff, ESRI, ENVI, and ERDAS.
+While we can create a `SpatRaster` from scratch, it is more common to do so from a file.
 
 A notable feature of the `terra` package is that it can work with raster datasets that are stored on disk and are too large to be loaded into memory (RAM). The package can work with large files because the objects it creates from these files only contain information about the structure of the data, such as the number of rows and columns, the spatial extent, and the filename, but it does not attempt to read all the cell values in memory. In computations with these objects, data is processed in chunks. If no output filename is specified to a function, and the output raster is too large to keep in memory, the results are written to a temporary file.
 
@@ -423,7 +450,7 @@ b
 nlyr(b)
 ```
 
-Extract a single layer (the second one on this case)
+Extract the second layer
 
 ```{r, raster-2b6}
 r <- b[[2]]
@@ -446,6 +473,9 @@ Now some raster algebra.
 s <- r + 10
 s <- sqrt(s)
 s <- s * r + 5
+
+plot(s)
+
 values(r) <- runif(ncell(r))
 r <- round(r)
 r <- r == 1
@@ -454,10 +484,12 @@ r <- r == 1
 You can also use replacement functions.
 
 ```{r, raster-3b}
-#Not yet implemented
+
 s[r] <- -0.5
 s[!r] <- 5
 s[s == 5] <- 15
+
+plot(s)
 ```
 
 If you use multiple `SpatRaster` objects (in functions where this is relevant, such as `range`), these must have the same resolution and origin. The origin of a `Raster` object is the point closest to (0, 0) that you could get if you moved from a corner of a `SpatRaster` toward that point in steps of the `x` and `y` resolution. Normally these objects would also have the same extent, but if they do not, the returned object covers the spatial intersection of the objects used.
@@ -477,6 +509,8 @@ Summary functions (`min`, `max`, `mean`, `prod`, `sum`, `median`, `cv`, `range`,
 
 ```{r, raster-3d}
 a <- mean(r, s, 10)
+plot(a)
+
 b <- sum(r, s)
 st <- c(r, s, a, b)
 sst <- sum(st)
@@ -492,7 +526,7 @@ global(sst, 'sum')
 
 ## 'High-level' functions
 
-Several 'high level' functions have been implemented for `SpatRaster` objects. 'High level' functions refer to functions that you would normally find in a computer program that supports the analysis of raster data. Here we briefly discuss some of these functions. All these functions work for raster datasets that cannot be loaded into memory. See the help files for more detailed descriptions of each function.
+Several 'high level' functions have been implemented for `SpatRaster` objects. 'High level' functions refer to functions that you would normally find in a computer program that supports the analysis of raster data. All these functions work for raster datasets that cannot be loaded into memory. See the help files for more detailed descriptions of each function.
 
 The high-level functions have some arguments in common. The first argument is typically a `SpatRaster` 'x' or 'object'. It is followed by one or more arguments specific to the function (either additional `SpatRaster` objects or other arguments), followed by `filename` and `...` arguments.
 
@@ -542,11 +576,6 @@ m <- merge(r1, r2, filename = "test.tif", overwrite = TRUE)
 plot(m)
 ```
 
-```{r, echo = FALSE, include = FALSE}
-ff <- list.files(patt = "^test")
-file.remove(ff)
-```
-
 `flip`: lets you flip the data (reverse order) in horizontal or vertical direction -- typically to correct for a 'communication problem' between different R packages or a misinterpreted file.
 
 `rotate`: lets you rotate longitude/latitude rasters that have longitudes from 0 to 360 degrees (often used by climatologists) to the standard -180 to 180 degrees system.
@@ -574,6 +603,7 @@ Set all values above 4 to `NA`
 ```{r, raster-6b}
 s <- app(r, fun = function(x){ x[x < 4] <- NA; return(x)} )
 as.matrix(s)
+
 ```
 
 Divide the first raster with two times the square root of the second raster and add five.
@@ -764,7 +794,113 @@ You can convert `SpatRaster` objects to `Raster*` objects defined in the `raster
 ```{r, raster-120}
 r <- rast(ncol = 36, nrow = 18)
 values(r) <- runif(ncell(r))
+#install.packages("raster)
 library(raster)
 x <- raster(r)
 ```
 
+# [Exercises:]{.underline}
+
+1.  Install the rnatural earth package and create two sf maps of Germany (shown below). Convert these to SpatVectors
+
+2.  Subset the second map to the first 5 geometries, label it map3
+
+3.  Use the 'geoData' package to download a raster of temperature (shown below). How many layers does it have?
+
+4.  Plot the mean temperature over all the layers
+
+5.  Plot the average temperature but only for the areas in map3
+
+6.   What is the average minimum temperature, for each month over the entirety of Germany
+
+7.   Practice plotting, and using the functions from this session on data or your own. Think about practical applications of these functions and how you may want to use it in your own work.
+
+8.  If you're a bit more advanced than this, check out the other chapters in <https://www.paulamoraga.com/book-spatial/> or <https://rspatial.org/analysis/index.html>
+
+```{r}
+
+# install.packages("rnaturalearth")
+library(rnaturalearth)
+
+map1 <- ne_countries(type = "countries", country = "Germany",
+                     scale = "medium", returnclass = "sf")
+map2 <- rnaturalearth::ne_states("Germany", returnclass = "sf") #may require additional package installation
+
+# 1. convert both to spatvectors
+
+
+
+# 2. subset map2 with the first 5 geometries and label it map3 
+
+
+
+# install.packages("geodata")
+library(geodata)
+d <- worldclim_country(country = "Germany", var = "tmin",
+                       path = tempdir())
+
+# 3. How many layers?
+
+
+
+# 4. Plot the average over the layers
+
+
+
+# 5. plot average for only map3 areas
+
+
+
+# 6.  What is the average minimum temperature, for each month over the entirety of Germany. If you get NA values, examine the function's help page to find out a way around this.
+
+
+
+
+
+```
+
+Answers
+
+```{r}
+
+
+# install.packages("rnaturalearth")
+library(rnaturalearth)
+
+
+map1 <- ne_countries(type = "countries", country = "Germany",
+                     scale = "medium", returnclass = "sf")
+map2 <- rnaturalearth::ne_states("Germany", returnclass = "sf") #may require additional package installation
+
+# 1. convert both to spatvectors
+map1 <- vect(map1)
+map2 <- vect(map2)
+
+# 2. subset map2 with the first 5 geometries and label it map3 
+
+map3 <- map2[1:5]
+
+# install.packages("geodata")
+library(geodata)
+d <- worldclim_country(country = "Germany", var = "tmin",
+                       path = tempdir())
+
+# 3. How many layers?
+nlyr(d) # one for each month
+
+# 4. Plot the average over the layers
+terra::plot(mean(d))
+
+# 5. plot average for only map3 areas
+
+dmap3 <- mask(d, map3) 
+
+plot(mean(dmap3))
+
+# 6.  What is the average minimum temperature, for each month over the entirety of Germany. If you get NA values, examine the function's help page to find out a way around this.
+
+glob <- global(d, mean, na.rm = TRUE)
+
+
+
+```
