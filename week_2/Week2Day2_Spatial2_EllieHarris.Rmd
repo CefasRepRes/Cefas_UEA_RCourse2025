@@ -1,5 +1,5 @@
 ---
-title: "Week2Day2_Spatial2_EllieHarris"
+title: "Spatial Data 2"
 author: "Ellie Harris"
 date: "`r Sys.Date()`"
 output: html_document
@@ -9,2557 +9,762 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-This R markdown document is a slightly modified version of R. Hijman's  https://rspatial.org/analysis/index.html.
 
-# Introduction
+# Vector data manipulation
 
-In this section we introduce a number of approaches and techniques that are commonly used in spatial data analysis and modelling.
+This chapter illustrates some ways in which we can manipulate vector data. We start with an example SpatVector that we read from a shapefile.
 
-Spatial data are mostly like other data. The same general principles apply. But there are few things that are rather important to consider when using spatial data that are not common with other data types. These are discussed in Chapters 2 and 3 and include issues of scale and zonation (the modifiable areal unit problem), distance and spatial autocorrelation. 
-
-The other chapters, introduce methods in different areas of spatial data analysis. These include the three classical area of spatial statistics (point pattern analysis, regression and inference with spatial data, geostatistics (interpolation using Kriging), as well some other methods (local and global regression and classification with spatial data). 
-
-
-This section builds on our session yesterday.
-
-
-# Scale and distance
-
-
-## Introduction
-
-Scale, aggregation, and distance are two key concepts in spatial data analysis that can be difficult to come to grips with. This chapter first discusses scale and related concepts resolution, aggregation and zonation. The second part of the chapter discusses distance and adjacency. 
-
-
-## Scale and resolution
-
-The term 'scale', meaning the ratio of a distance on a (paper) map to the actual distance, is commonly misused. As such, spatial analyists usually prefer the term 'spatial resolution'.
-
-
-Raster data: In the case of raster data the notion of resolution is straightforward: it is the size of the cells. For vector data resolution is not as well defined, and it can vary largely within a data set, but you can think of it as the average distance between the nodes (coordinate pairs) of the lines or polygons. Point data do not have a resolution, unless cases that are within a certain distance of each other are merged into a single point (the actual geographic objects represented by points, actually do cover some area; so the actual average size of those areas could also be a measure of interest, but it typically is not). 
-
-There is a difference between the resolution at which something was measured, and the resolution at which that measurement is displayed.
-
-Why does scale/resolution matter? 
-
-First of all, different processes have different spatial and temporal scales at which they operate [Levin, 1992](http://www.esa.org/history/Awards/papers/Levin_SA_MA.pdf) --- in this context, scale refers both to "extent" and "resolution". Processes that operate over a larger extent (e.g., a forest) can be studied at a larger resolution (trees) whereas processes that operate over a smaller extent (e.g. a tree) may need to be studied at the level of leaves. 
-
-From a practical perspective: it affects our estimates of length and size. For example if you wanted to know the length of the coastline of Britain, you could use the length of spatial dataset representing that coastline. You could get rather different numbers depending on the data set used. The higher the resolution of the spatial data, the longer the coastline would appear to be. This is not just a problem of the representation (the data), also at a theoretical level, one can argue that the length of the coastline is not defined, as it becomes infinite if your resolution approaches zero. This is illustrated [here](http://rspatial.org/cases/2-coastline.html)
-
-Resolution also affects our understanding of relationships between variables of interest. In terms of data collection this means that we want data to be at the highest spatial (and temporal) resolution possible (affordable). We can *aggregate* our data to lower resolutions, but it is not nearly as easy, or even impossible to correctly *disaggregate* ("downscale") data to a higher resolution. 
-
-
-## Zonation 
-
-Geographic data are often aggregated by zones. While we would like to have data at the most granular level that is possible or meanigful (individuals, households, plots, sites), reality is that we often can only get data that is aggregated. Rather than having data for individuals, we may have mean values for all inhabitants of a census district. Data on population, disease, income, or crop yield, is typically available for entire countries, for a number of sub-national units (e.g. provinces), or a set of raster cells. 
-
-The areas used to aggregate data are arbitrary (at least relative to the data of interest). The way the borders of the areas are drawn (how large, what shape, where) can strongly affect the patterns we see and the outcome of data analysis. This is sometimes referred to as the "Modifiable Areal Unit Problem" (MAUP). The problem of analyzing aggregated data is referred to as "Ecological Inference". 
-
-To illustrate the effect of zonation and aggregation, I create a region with 1000 households. For each household we know where they live and what their annual income is. I then aggregate the data to a set of zones. 
-
-The income distribution data
-```{r}
-set.seed(0)
-xy <- cbind(x = runif(1000, 0, 100), y = runif(1000, 0, 100))
-income <- (runif(1000) * abs((xy[,1] - 50) * (xy[,2] - 50))) / 500
-```
-
-Inspect the data, both spatially and non-spatially. The first two plots show that there are many poor people and a few rich people. The third that there is a clear spatial pattern in where the rich and the poor live.
-
-```{r incplot, fig.width = 8, fig.height = 4}
-par(mfrow = c(1,3), las = 1)
-plot(sort(income), col = rev(terrain.colors(1000)), pch = 20, cex = .75, ylab = 'income')
-hist(income, main = '', col = rev(terrain.colors(10)), xlim = c(0,5), breaks = seq(0,5,0.5))
-plot(xy, xlim = c(0, 100), ylim = c(0,100), cex = income, col = rev(terrain.colors(50))[10*(income + 1)])
-```
-
-Income inequality is often expressed with the Gini coefficient.
-
-```{r}
-n <- length(income)
-G <- (2 * sum(sort(income) * 1:n)/sum(income) - (n + 1)) / n
-G
-```
-
-For our data set the Gini coefficient is `r round(G, 3)`. 
-
-Now assume that the household data was grouped by some kind of census districts. I create different districts, in our case rectangular raster cells, and compute mean income for each district. 
-
-```{r}
+```{r, vec1}
 library(terra)
-v <- vect(xy)
-v$income <- income
-r1 <- rast(ncol = 1, nrow = 4, xmin = 0, xmax = 100, ymin = 0, ymax = 100)
-r1 <- rasterize(v, r1, "income", mean)
-
-r2 <- rast(ncol = 4, nrow = 1, xmin = 0, xmax = 100, ymin = 0, ymax = 100)
-r2 <- rasterize(v, r2, "income", mean)
-
-r3 <- rast(ncol = 2, nrow = 2, xmin = 0, xmax = 100, ymin = 0, ymax = 100)
-r3 <- rasterize(v, r3, "income", mean)
-
-r4 <- rast(ncol = 3, nrow = 3, xmin = 0, xmax = 100, ymin = 0, ymax = 100)
-r4 <- rasterize(v, r4, "income", mean)
-
-r5 <- rast(ncol = 5, nrow = 5, xmin = 0, xmax = 100, ymin = 0, ymax = 100)
-r5 <- rasterize(v, r5, "income", mean)
-
-r6 <- rast(ncol = 10, nrow = 10, xmin = 0, xmax = 100, ymin = 0, ymax = 100)
-r6 <- rasterize(v, r6, "income", mean)
-
+f <- system.file("ex/lux.shp", package = "terra")
+p <- vect(f)
+p
 ```
 
-Have a look at the plots of the income distribution and the sub-regional averages. 
+We can plot these data in many ways. For example:
 
-```{r incdistplot, fig.height = 5, fig.width = 9}
-par(mfrow = c(2,3), las = 1)
-plot(r1); plot(r2); plot(r3); plot(r4); plot(r5); plot(r6)
+```{r}
+plot(p, "NAME_2")
 ```
 
-It is not surprising to see that the smaller the regions get, the better the real pattern is captured. But in all cases, the histograms show that we do not capture the full income distribution (compare to the histogram with the data for individuals). 
+## Basics
 
-```{r inchist}
-par(mfrow = c(1,3), las = 1)
-hist(r4, col = rev(terrain.colors(10)), xlim = c(0,5), breaks = seq(0, 5, 0.5))
-hist(r5, main = "", col = rev(terrain.colors(10)), xlim = c(0,5), breaks = seq(0, 5, 0.5))
-hist(r6, main = "", col = rev(terrain.colors(10)), xlim = c(0,5), breaks = seq(0, 5, 0.5))
-```
+### Geometry and attributes
 
-
-## Distance
-
-Distance is a numerical description of how far apart things are. It is the most fundamental concept in geography. After all, Waldo Tobler's First Law of Geography states that "everything is related to everything else, but near things are more related than distant things". But how far away are things? That is not always as easy a question as it seems. Of course we can compute distance "as the crow flies" but that is often not relevant. Perhaps you need to also consider national borders, mountains, or other barriers. The distance between A and B may even by asymetric, meaning that it the distance from A to B is not the same as from B to A (for example, the President of the United States can call me, but I cannot call him (or her)); or because you go faster when walking downhill than when waling uphill. 
-
-
-### Distance matrix
-
-Distances are often described in a "distance matrix". In a distance matrix we have a number for the distance between all objects of interest. If the distance is symmetric, we only need to fill half the matrix. 
-
-Let's create a distance matrix from a set of points. We start with a set of points
- 
-Set up the data, using x-y coordinates for each point:
-```{r}
-A <- c(40, 43)
-B <- c(101, 1)
-C <- c(111, 54)
-D <- c(104, 65)
-E <- c(60, 22)
-F <- c(20, 2)
-pts <- rbind(A, B, C, D, E, F)
-pts
-```
-
-Plot the points and labels:
-```{r pointlabs}
-plot(pts, xlim = c(0,120), ylim = c(0,120), pch = 20, cex = 2, col = 'red', xlab = 'X', ylab = 'Y', las = 1)
-text(pts + 5, LETTERS[1:6])
-```
-
-You can use the `dist` function to make a distance matrix with a data set of any dimension.
+To extract the attributes (data.frame) from a SpatVector, use:
 
 ```{r}
-dis <- dist(pts)
-dis
-```
-
-We can check that for the first point using Pythagoras' theorem.
-```{r}
-sqrt((40 - 101)^2 + (43 - 1)^2)
-```
-
-We can transform a distance matrix into a normal matrix.
-```{r}
-D <- as.matrix(dis)
-round(D)
-```
-
-Distance matrices are used in all kinds of non-geographical applications. For example, they are often used to create cluster diagrams (dendograms). 
-
-__Question 4__: *Show R code to make a cluster dendogram summarizing the distances between these six sites, and plot it. See* `?hclust`. 
-
-
-### Distance for longitude/latitude coordinates
-
-Now consider that the values in `pts` were coordinates in degrees (longitude/latitude). Then the cartesian distance as computed by the dist function would be incorrect. In that case we can use the pointDistance function from the `raster` package.
-
-```{r}
-gdis <- distance(pts, lonlat = TRUE)
-gdis
-```
-
-__Question 5__: *What is the unit of the values in `gdis`?*
-
-
-## Spatial influence
-
-An important step in spatial statistics and modelling is to get a measure of the spatial influence between geographic objects. This can be expressed as a function of adjacency or (inverse) distance, and is often expressed as a spatial weights matrix. Influence is of course very complex and cannot really be measured and it can be estimated in many ways. For example the influence between a set of polyongs (countries) can be expressed as having a shared border or not (being ajacent); as the "crow-fly" distance between their centroids;or as the lengths of a shared border, and in other ways. 
-
-
-### Adjacency
-
-Adjacency is an important concept in some spatial analysis. In some cases objects are considered ajacent when they "touch", e.g. neighboring countries. In can also be based on distance. This is the most common approach when analyzing point data.
-
-We create an adjacency matrix for the point data analysed above. We define points as "ajacent" if they are within a distance of 50 from each other. Given that we have the distance matrix `D` this is easy to do.
-```{r}
-a <- D < 50
-a
-```
-
-In adjacency matrices the diagonal values are often set to `NA` (we do not consider a point to be adjacent to itself). And `TRUE/FALSE` values are commonly stored as `1/0` (this is equivalent, and we can make this change with a simple trick: multiplication with 1)
-
-```{r}
-diag(a) <- NA
-Adj50 <- a * 1
-Adj50
-```
-
-### Two nearest neighbours
-
-What if you wanted to compute the "two nearest neighbours" (or three, or four) adjacency-matrix? Here is how you can do that. For each row, we first get the column numbers in order of the values in that row (that is, the numbers indicate how the values are ordered).
-
-```{r}
-cols <- apply(D, 1, order)
-# we need to transpose the result
-cols <- t(cols)
-```
-
-And then get columns 2 to 3 (why not column 1?)
-```{r}
-cols <- cols[, 2:3]
-cols
-```
-
-As we now have the column numbers, we can make the row-column pairs that we want (`rowcols`). 
-
-```{r}
-rowcols <- cbind(rep(1:6, each = 2), as.vector(t(cols)))
-head(rowcols)
-```
-
-We use these pairs as indices to change the values in matrix `Ak3`.
-```{r}
-Ak3 <- Adj50 * 0
-Ak3[rowcols] <- 1
-Ak3
-```
-
-### Weights matrix
-
-Rather than expressing spatial influence as a binary value (adjacent or not), it is often expressed as a continuous value. The simplest approach is to use inverse distance (the further away, the lower the value). 
-
-```{r}
-W <- 1 / D
-round(W, 4)
-```
-
-Such as "spatial weights" matrix is often "row-normalized", such that the sum of weights for each row in the matrix is the same. First we get rid if the `Inf` values by changing them to `NA`. (Where did the `Inf` values come from?)
-
-```{r}
-W[!is.finite(W)] <- NA
-```
-
-Then compute the row sums.
-```{r}
-rtot <- rowSums(W, na.rm = TRUE)
-# this is equivalent to
-# rtot <- apply(W, 1, sum, na.rm = TRUE)
-rtot
-```
-
-And divide the rows by their totals and check if they row sums add up to 1.
-```{r}
-W <- W / rtot
-rowSums(W, na.rm = TRUE)
-```
-
-The values in the columns do not add up to 1.
-```{r}
-colSums(W, na.rm = TRUE)
-```
-
-### Spatial influence for polygons
-
-Above we looked at adjacency for a set of points. Here we look at it for polygons. The difference is that 
-
-```{r}
-p <- vect(system.file("ex/lux.shp", package = "terra"))
-```
-
-We create a "rook's case" neighbors matrix.
-
-```{r}
-wr <- adjacent(p, "rook", pairs = FALSE)
-dim(wr)
-wr[1:6,1:11]
-``` 
-
-Compute the number of neighbors for each area.
-
-```{r}
-i <- rowSums(wr)
-i
-```
-
-Expresses as percentage
-```{r}
-round(100 * table(i) / length(i), 1)
-```
-
-
-Plot the links between the polygons.
-```{r, links, fig.width = 6}
-par(mai = c(0,0,0,0))
-plot(p, col = "gray", border = "blue")
-nb <- adjacent(p, "rook")
-v <- centroids(p)
-p1 <- v[nb[,1], ]
-p2 <- v[nb[,2], ]
-lines(p1, p2, col = "red", lwd = 2)
-``` 
- 
-
-Now some alternative approaches to compute "spatial influence". 
-
-Distance based:
-```{r}
-wd10 <- nearby(v, distance = 10000)
-wd25 <- nearby(v, distance = 25000)
-```
-
-Nearest neighbors:
-```{r}
-k3 <- nearby(v, k = 3)
-k6 <- nearby(v, k = 6)
-```
-
-And now we plot some using the `plotit` function. 
-
-```{r, weights, fig.height = 5, fig.width = 9}
-
-plotit <- function(nb, lab = '') {
- plot(p, col = 'gray', border = 'white')
- v <- centroids(p)
- p1 <- v[nb[,1], ,drop = FALSE]
- p2 <- v[nb[,2], ,drop = FALSE]
- lines(p1, p2, col = "red", lwd = 2)
- text(6.3, 50.1, paste0('(', lab, ')'), cex = 1.25)
-}
-
-par(mfrow = c(1, 3), mai = c(0,0,0,0))
-plotit(nb, "adjacency")
-plotit(wd25, "25 km")
-plotit(k3, "k = 3")
-```
-
-
-
-## Raster based distance metrics
-
-### distance
-
-### cost distance
-
-### resistance distance 
-
-
-# Spatial autocorrelation
-
-
-## Introduction
-
-Spatial autocorrelation is an important concept in spatial statistics. It is a both a nuisance, as it complicates statistical tests, and a feature, as it allows for spatial interpolation. Its computation and properties are often misunderstood. This chapter discusses what it is, and how statistics describing it can be computed. 
-
-Autocorrelation (whether spatial or not) is a measure of similarity (correlation) between nearby observations. To understand spatial autocorrelation, it helps to first consider temporal autocorrelation. 
-
-### Temporal autocorrelation
-
-If you measure something about the same object over time, for example a persons weight or wealth, it is likely that two observations that are close to each other in time are also similar in measurement. Say that over a couple of years your weight went from 50 to 80 kg. It is unlikely that it was 60 kg one day, 50 kg the next and 80 the day after that. Rather it probably went up gradually, with the occasional tapering off, or even reverse in direction. The same may be true with your bank account, but that may also have a marked monthly trend. To measure the degree of association over time, we can compute the correlation of each observation with the next observation. 
-
-Let `d` be a vector of daily observations. 
-```{r}
-set.seed(0)
-d <- sample(100, 10)
-d
-```
-
-Compute auto-correlation.
-
-```{r, autocor1}
-a <- d[-length(d)]
-b <- d[-1]
-plot(a, b, xlab = 't', ylab = 't-1')
-cor(a, b)
-```
-
-The autocorrelation computed above is very small. Even though this is a random sample, you (almost) never get a value of zero. We computed the "one-lag" autocorrelation, that is, we compare each value to its immediate neighbour, and not to other nearby values.
-
-After sorting the numbers in `d` autocorrelation becomes very strong (unsurprisingly). 
-
-```{r, autocor2}
-d <- sort(d)
-d
-a <- d[-length(d)]
-b <- d[-1]
-plot(a, b, xlab = 't', ylab = 't-1')
-cor(a, b)
-```
-
-The `acf` function shows autocorrelation [computed in a slightly different way](http://stats.stackexchange.com/questions/10947/formula-for-autocorrelation-in-r-vs-excel) for several lags (it is 1 to each point it self, very high when comparing with the nearest neighbour, and than tapering off).
-
-```{r, acfplot}
-acf(d)
-```
-
-### Spatial autocorrelation
-
-The concept of *spatial* autocorrelation is an extension of temporal autocorrelation. It is a bit more complicated though. Time is one-dimensional, and only goes in one direction, ever forward. Spatial objects have (at least) two dimensions and complex shapes, and it may not be obvious how to determine what is "near". 
-
-Measures of spatial autocorrelation describe the degree two which observations (values) at spatial locations (whether they are points, areas, or raster cells), are similar to each other. So we need two things: observations and locations.
-
-Spatial autocorrelation in a variable can be exogenous (it is caused by another spatially autocorrelated variable, e.g. rainfall) or endogenous (it is caused by the process at play, e.g. the spread of a disease).
-
-A commonly used statistic that describes spatial autocorrelation is Moran's *I*, and we'll discuss that here in detail. Other indices include Geary's *C* and, for binary data, the join-count index. The semi-variogram also expresses the amount of spatial autocorrelation in a data set (see the chapter on interpolation).
- 
-
-## Example data
-
-Read the example data
-
-```{r, message = FALSE}
-library(terra)
-p <- vect(system.file("ex/lux.shp", package = "terra"))
-p <- p[p$NAME_1 == "Diekirch", ]
-p$value <- c(10, 6, 4, 11, 6) 
-as.data.frame(p)
-``` 
-
-Let's say we are interested in spatial autocorrelation in variable "AREA". If there were spatial autocorrelation, regions of a similar size would be spatially clustered. 
-
-Here is a plot of the polygons. I use the `coordinates` function to get the centroids of the polygons to place the labels.
-
-```{r, autocor3}
-par(mai = c(0,0,0,0))
-plot(p, col = 2:7)
-xy <- centroids(p)
-points(xy, cex = 6, pch = 20, col = 'white')
-text(p, 'ID_2', cex = 1.5)
-``` 
-
-
-## Adjacent polygons
-
-Now we need to determine which polygons are "near", and how to quantify that. Here we'll use adjacency as criterion. To find adjacent polygons, we can use package 'spdep'.
-
-```{r, message = FALSE}
-w <- adjacent(p, symmetrical = TRUE)
-class(w)
-head(w)
-```
-
-`summary(w)` tells us something about the neighborhood. The average number of neighbors (adjacent polygons) is 2.8, 3 polygons have 2 neighbors and 1 has 4 neighbors (which one is that?). 
-
-Let's have a look at `w`.
-
-
-```{r}
-w
-``` 
-
-__Question 1__:*Explain the meaning of the values returned by w*
-
-
-Plot the links between the polygons.
-```{r, autocor4}
-plot(p, col = 'gray', border = 'blue', lwd = 2)
-p1 <- xy[w[,1], ]
-p2 <- xy[w[,2], ]
-lines(p1, p2, col = 'red', lwd = 2)
-``` 
-
-We can also make a spatial weights matrix, reflecting the intensity of the geographic relationship between observations (see previous chapter). 
-
-```{r}
-wm <- adjacent(p, pairs = FALSE)
-wm
-``` 
-
-
-## Compute Moran's *I*
-
-Now let's compute Moran's index of spatial autocorrelation 
-
-
-$$
-I = \frac{n}{\sum_{i = 1}^n (y_i - \bar{y})^2} \frac{\sum_{i = 1}^n \sum_{j = 1}^n w_{ij}(y_i - \bar{y})(y_j - \bar{y})}{\sum_{i = 1}^n \sum_{j = 1}^n w_{ij}}
-$$
-
-Yes, that looks impressive. But it is not much more than an expanded version of the formula to compute the correlation coefficient. The main thing that was added is the spatial weights matrix. 
-
-The number of observations
-```{r}
-n <- length(p)
-``` 
-
-Get 'y' and 'ybar' (the mean value of y)
-
-```{r}
-y <- p$value
-ybar <- mean(y)
-``` 
-
-Now we need 
-$$ 
-(y_i - \bar{y})(y_j - \bar{y}) 
-$$ 
-
-That is, (yi-ybar)(yj-ybar) for all pairs. I show two methods to get that.
-
-
-Method 1:
-```{r}
-dy <- y - ybar
-g <- expand.grid(dy, dy)
-yiyj <- g[,1] * g[,2]
-``` 
-
-Method 2:
-```{r}
-yi <- rep(dy, each = n)
-yj <- rep(dy)
-yiyj <- yi * yj
-``` 
-
-Make a matrix of the multiplied pairs
-```{r}
-pm <- matrix(yiyj, ncol = n)
-``` 
-
-And multiply this matrix with the weights to set to zero the value for the pairs that are not adjacent.
-```{r}
-pmw <- pm * wm
-pmw
-``` 
-
-
-We now sum the values, to get this bit of Moran's *I*:
-
-$$
-\sum_{i = 1}^n \sum_{j = 1}^n w_{ij}(y_i - \bar{y})(y_j - \bar{y})
-$$
-
-```{r}
-spmw <- sum(pmw) 
-spmw
-``` 
-
-The next step is to divide this value by the sum of weights. That is easy.
-```{r}
-smw <- sum(wm)
-sw <- spmw / smw
-``` 
-
-And compute the inverse variance of y
-```{r}
-vr <- n / sum(dy^2)
-``` 
-
-The final step to compute Moran's *I*
-```{r}
-MI <- vr * sw
-MI
-``` 
-
-This is a simple (but crude) way to estimate the expected value of Moran's *I*. That is, the value you would get in the absence of spatial autocorelation (if the data were spatially random). Of course you never really expect that, but that is how we do it in statistics. Note that the expected value approaches zero if *n* becomes large, but that it is not quite zero for small values of *n*.
-```{r}
-EI <- -1/(n - 1)
-EI
-``` 
-
-
-After doing this 'by hand', now let's use the spdep package to compute Moran's *I* and do a significance test. To do this we first need to create a spatial weights matrix 
-```{r}
-ww <- adjacent(p, "queen", pairs = FALSE)
-ww
-``` 
-
-Now we can use the `autocor` function.
-
-```{r}
-ac <- autocor(p$value, ww, "moran")
-ac
-``` 
-
-We can test for significance using Monte Carlo simulation. That is the preferred method (in fact, the only good method). The way it works that the values are randomly assigned to the polygons, and the Moran's *I* is computed. This is repeated several times to establish a distribution of expected values. The observed value of Moran's *I* is then compared with the simulated distribution to see how likely it is that the observed values could be considered a random draw.
-
-```{r}
-m <- sapply(1:99, function(i) {
-	autocor(sample(p$value), ww, "moran")
-})
-hist(m)
-pval <- sum(m >= ac) / 100
-pval
-``` 
-
-__Question 2__: *How do you interpret these results (the significance tests)?*
-
-
-
-We can make a "Moran scatter plot" to visualize spatial autocorrelation. We first get the neighbouring values for each value.
-
-```{r}
-n <- length(p)
-ms <- cbind(id = rep(1:n, each = n), y = rep(y, each = n), value = as.vector(wm * y))
-``` 
-
-Remove the zeros
-
-```{r}
-ms <- ms[ms[,3] > 0, ]
-``` 
-
-And compute the average neighbour value
-```{r}
-ams <- aggregate(ms[,2:3], list(ms[,1]), FUN = mean)
-ams <- ams[,-1]
-colnames(ams) <- c('y', 'spatially lagged y')
-head(ams)
-``` 
-
-Finally, the plot.
-
-```{r, auto5}
-plot(ams, pch = 20, col = "red", cex = 2)
-reg <- lm(ams[,2] ~ ams[,1])
-abline(reg, lwd = 2)
-abline(h = mean(ams[,2]), lt = 2)
-abline(v = ybar, lt = 2)
-``` 
-
-Note that the slope of the regression line:
-
-```{r, ngb2}
-coefficients(reg)[2]
-```
-has a similar magnitude as Moran's *I*.
- 
- # Interpolation
-
-
-## Introduction
-
-Almost any geographic variable of interest has [spatial autocorrelation](/analysis/3-spauto.html). That can be a problem in statistical tests, but it is a very useful feature when we want to predict values at locations where no measurements have been made; as we can generally safely assume that values at nearby locations will be similar. There are several spatial interpolation techniques. We show some of them in this chapter.
-
-## Temperature in California 
-
-We will be working with temperature data for California, USA. If have not yet done so, first install the `rspat` package to get the data. You may need to install the `remotes` package first.
-
-```{r fields00}
-if (!require("rspat")) remotes::install_github('rspatial/rspat')
-```
-
-Now get the data:
-
-```{r fields0}
-library(rspat)
-d <- spat_data('precipitation')
+d <- as.data.frame(p)
 head(d)
 ```
 
-Compute annual precipitation
-
-```{r fields1}
-mnts <- toupper(month.abb)
-d$prec <- rowSums(d[, mnts])
-plot(sort(d$prec), ylab = "Annual precipitation (mm)", las = 1, xlab = "Stations")
-```
-
-Now make a quick map.
-```{r fields15}
-dsp <- vect(d, c("LONG", "LAT"), crs = "+proj = longlat +datum = NAD83")
-CA <- spat_data("counties")
-
-# define groups for mapping
-cuts <- c(0,200,300,500,1000,3000)
-# set up a palette of interpolated colors
-blues <- colorRampPalette(c('yellow', 'orange', 'blue', 'dark blue'))
-
-plot(CA, col = "light gray", lwd = 4, border = "dark gray")
-plot(dsp, "prec", type = "interval", col = blues(10), legend = TRUE, cex = 2,
-	breaks = cuts, add = TRUE, plg = list(x = -117.27, y = 41.54))
-lines(CA)
-```
-
-Transform longitude/latitude to planar coordinates, using the commonly used coordinate reference system for California ("Teale Albers") to assure that our interpolation results will align with other data sets we have.
- 
-```{r}
-TA <- "+proj = aea +lat_1 = 34 +lat_2 = 40.5 +lat_0 = 0 +lon_0 = -120 +x_0 = 0 +y_0 = -4000000 +datum = WGS84 +units = m"
-dta <- project(dsp, TA)
-cata <- project(CA, TA)
-```
-
-
-### 9.2 NULL model 
-
-We are going to interpolate (estimate for unsampled locations) the precipitation values. The simplest way would be to take the mean of all observations. We can consider that a "Null-model" that we can compare other approaches to. We'll use the Root Mean Square Error (RMSE) as evaluation statistic. 
+You can also extract the geometry as a matrix (this is rarely needed).
 
 ```{r}
-RMSE <- function(observed, predicted) {
- sqrt(mean((predicted - observed)^2, na.rm = TRUE))
-}
+g <- geom(p)
+head(g)
 ```
 
-Get the RMSE for the Null-model
-```{r}
-null <- RMSE(mean(dsp$prec), dsp$prec)
-null
-```
-
-So `r round(null)` is our target. Can we do better (have a smaller RMSE)?
-
-### proximity polygons
-
-Proximity polygons can be used to interpolate categorical variables. Another term for this is "nearest neighbour" interpolation.
-
-```{r fields25}
-v <- voronoi(dta)
-plot(v)
-points(dta)
-```
-
-
-Let's cut out what is not California, and map precipitation.
-
-```{r fields35}
-vca <- crop(v, cata)
-plot(vca, "prec")
-```
-
-
-Now we can `rasterize` the results like this.
-
-```{r fields45}
-r <- rast(vca, res = 10000)
-vr <- rasterize(vca, r, "prec")
-plot(vr)
-```
-
-And use 5-fold cross-validation to evaluate this model.
+Or as "well-known-text"
 
 ```{r}
-set.seed(5132015)
-kf <- sample(1:5, nrow(dta), replace = TRUE)
-
-rmse <- rep(NA, 5)
-for (k in 1:5) {
- test <- dta[kf == k, ]
- train <- dta[kf != k, ]
- v <- voronoi(train)
- p <- extract(v, test)
- rmse[k] <- RMSE(test$prec, p$prec)
-}
-rmse
-mean(rmse)
-# relative model performance
-perf <- 1 - (mean(rmse) / null)
-round(perf, 3)
+g <- geom(p, wkt = TRUE)
+substr(g, 1, 50)
 ```
 
-__Question 1__: *Describe what each step in the code chunk above does (that is, how does cross-validation work?)*
+### Variables
 
-
-__Question 2__: *How does the proximity-polygon approach compare to the NULL model?*
-
-
-__Question 3__: *You would not typically use proximty polygons for rainfall data. For what kind of data might you use them?*
-
-
-
-### Nearest neighbour interpolation
-
-Here we do nearest neighbour interpolation considering multiple (5) neighbours. 
-
-We can use the `gstat` package for this. First we fit a model. `~1` means "intercept only". In the case of spatial data, that would be only 'x' and 'y' coordinates are used. We set the maximum number of points to 5, and the "inverse distance power" `idp` to zero, such that all five neighbors are equally weighted 
-
-
-```{r nneigh}
-#install.packages("gstat")
-library(gstat)
-d <- data.frame(geom(dta)[,c("x", "y")], as.data.frame(dta))
-head(d)
-gs <- gstat(formula = prec~1, locations = ~x+y, data = d, nmax = 5, set = list(idp = 0))
-nn <- interpolate(r, gs, debug.level = 0)
-nnmsk <- mask(nn, vr)
-plot(nnmsk, 1)
-```
-
-Again we cross-validate the result. Note that we can use the `predict` method to get predictions for the locations of the test points.
+You can extract a variable as you would do with a `data.frame`.
 
 ```{r}
-rmsenn <- rep(NA, 5)
-for (k in 1:5) {
- test <- d[kf == k, ]
- train <- d[kf != k, ]
- gscv <- gstat(formula = prec~1, locations = ~x+y, data = train, nmax = 5, set = list(idp = 0))
- p <- predict(gscv, test, debug.level = 0)$var1.pred
- rmsenn[k] <- RMSE(test$prec, p)
-}
-rmsenn
-mean(rmsenn)
-1 - (mean(rmsenn) / null)
+p$NAME_2
 ```
 
-
-### Inverse distance weighted
-
-A more commonly used method is "inverse distance weighted" interpolation. The only difference with the nearest neighbour approach is that points that are further away get less weight in predicting a value a location.
-
-```{r fields70}
-library(gstat)
-gs <- gstat(formula = prec~1, locations = ~x+y, data = d)
-idw <- interpolate(r, gs, debug.level = 0)
-idwr <- mask(idw, vr)
-plot(idwr, 1)
-```
-
-__Question 4__: *IDW generated rasters tend to have a noticeable artefact. What is that and what causes that?*
-
-
-Cross-validate again. We can use `predict` for the locations of the test points
+To sub-set a SpatVector to one or more variables you can use the notation below. Note how this is different from the above example. Above a vector of values is returned. With the approach below you get a new SpatVector with only one variable.
 
 ```{r}
-rmse <- rep(NA, 5)
-for (k in 1:5) {
- test <- d[kf == k, ]
- train <- d[kf != k, ]
- gs <- gstat(formula = prec~1, locations = ~x+y, data = train)
- p <- predict(gs, test, debug.level = 0)
- rmse[k] <- RMSE(test$prec, p$var1.pred)
-}
-rmse
-mean(rmse)
-1 - (mean(rmse) / null)
+p[, "NAME_2"]
 ```
 
-
-__Question 5__: *Inspect the arguments used for and make a map of the IDW model below. What other name could you give to this method (IDW with these parameters)? Why? Illustrate with a map*
-
-```{r}
-gs2 <- gstat(formula = prec~1, locations = ~x+y, data = d, nmax = 1, set = list(idp = 1))
-```
-
-
-
-## Calfornia Air Pollution data
-
-We use California Air Pollution data to illustrate geostatistcal (Kriging) interpolation.
-
-### Data preparation
-
-We use the airqual dataset to interpolate ozone levels for California (averages for 1980-2009). Use the variable `OZDLYAV` (unit is parts per billion). [Original data source]( http://www.arb.ca.gov/aqd/aqdcd/aqdcddld.htm).
-
-Read the data file. To get easier numbers to read, I multiply OZDLYAV with 1000
-
-```{r aqual}
-x <- rspat::spat_data("airqual")
-x$OZDLYAV <- x$OZDLYAV * 1000
-x <- vect(x, c("LONGITUDE", "LATITUDE"), crs = "+proj = longlat +datum = WGS84")
-```
-
-Create a SpatVector and transform to Teale Albers. Note the `units = km`, which was needed to fit the variogram.
-
-```{r}
-TAkm <- "+proj = aea +lat_1 = 34 +lat_2 = 40.5 +lat_0 = 0 +lon_0 = -120 +x_0 = 0 +y_0 = -4000000 +datum = WGS84 +units = km"
-aq <- project(x, TAkm)
-```  
-
-Create an template SpatRaster to interpolate to. 
-
-```{r}
-ca <- project(CA, TAkm)
-r <- rast(ca)
-res(r) <- 10 # 10 km if your CRS's units are in km
-```
-	
-
-### Fit a variogram
-
-Use gstat to create an emperical variogram 'v'
-```{r krig20}
-p <- data.frame(geom(aq)[, c("x", "y")], as.data.frame(aq))
-gs <- gstat(formula = OZDLYAV~1, locations = ~x+y, data = p)
-v <- variogram(gs, width = 20)
-v
-plot(v)
-```
-
-
-Now, fit a model variogram 
-```{r krig22}
-fve <- fit.variogram(v, vgm(85, "Exp", 75, 20))
-fve
-plot(variogramLine(fve, 400), type = 'l', ylim = c(0,120))
-points(v[,2:3], pch = 20, col = 'red')
-```
-
-
-Try a different type (spherical in stead of exponential)
-```{r krig24}
-fvs <- fit.variogram(v, vgm(85, "Sph", 75, 20))
-fvs
-plot(variogramLine(fvs, 400), type = 'l', ylim = c(0,120) ,col = 'blue', lwd = 2)
-points(v[,2:3], pch = 20, col = 'red')
-```
-
-Both look pretty good in this case. 
-
-Another way to plot the variogram and the model
-```{r krig26}
-plot(v, fve)
-``` 
- 
- 
-### Ordinary kriging
-
-Use variogram `fve` in a kriging interpolation
-```{r krig28, fig.width = 10}
-k <- gstat(formula = OZDLYAV~1, locations = ~x+y, data = p, model = fve)
-# predicted values
-kp <- interpolate(r, k, debug.level = 0)
-ok <- mask(kp, ca)
-names(ok) <- c('prediction', 'variance')
-plot(ok)
-```
-
-
-### Compare with other methods
-
-Let's use gstat again to do IDW interpolation. The basic approach first.
-
-```{r krig30}
-idm <- gstat(formula = OZDLYAV~1, locations = ~x+y, data = p)
-idp <- interpolate(r, idm, debug.level = 0)
-idp <- mask(idp, ca)
-plot(idp, 1)
-```
-
-We can find good values for the idw parameters (distance decay and number of neighbours) through optimization. For simplicity's sake I only do that once here, not *k* times. The `optim` function may be a bit hard to grasp at first. But the essence is simple. You provide a function that returns a value that you want to minimize (or maximize) given a number of unknown parameters. You also need to provide initial values for these parameters. `optim` then searches for the optimal values (for which the function returns the lowest number).
-
-
-```{r}
-f1 <- function(x, test, train) {
- nmx <- x[1]
- idp <- x[2]
- if (nmx < 1) return(Inf)
- if (idp < .001) return(Inf)
- m <- gstat(formula = OZDLYAV~1, locations = ~x+y, data = train, nmax = nmx, set = list(idp = idp))
- p <- predict(m, newdata = test, debug.level = 0)$var1.pred
- RMSE(test$OZDLYAV, p)
-}
-set.seed(20150518)
-i <- sample(nrow(aq), 0.2 * nrow(aq))
-tst <- p[i,]
-trn <- p[-i,]
-opt <- optim(c(8, .5), f1, test = tst, train = trn)
-str(opt)
-```
-
-
-Our optimal IDW model
-```{r krig32}
-m <- gstat(formula = OZDLYAV~1, locations = ~x+y, data = p, nmax = opt$par[1], set = list(idp = opt$par[2]))
-idw <- interpolate(r, m, debug.level = 0)
-idw <- mask(idw, ca)
-plot(idw, 1)
-```
-
-And now, for something completely different, a thin plate spline model:
-
-```{r krig34, message = FALSE}
-library(fields)
-m <- fields::Tps(p[,c("x", "y")], p$OZDLYAV)
-tps <- interpolate(r, m)
-tps <- mask(tps, idw[[1]])
-plot(tps)
-```
-
-
-### Cross-validation 
-
-Cross-validate the three methods (IDW, Ordinary kriging, TPS) and add RMSE weighted ensemble model.
-
-```{r}
-k <- sample(5, nrow(p), replace = TRUE)
-
-ensrmse <- tpsrmse <- krigrmse <- idwrmse <- rep(NA, 5)
-
-for (i in 1:5) {
- test <- p[k != i,]
- train <- p[k == i,]
- m <- gstat(formula = OZDLYAV~1, locations = ~x+y, data = train, nmax = opt$par[1], set = list(idp = opt$par[2]))
- p1 <- predict(m, newdata = test, debug.level = 0)$var1.pred
- idwrmse[i] <- RMSE(test$OZDLYAV, p1)
-
- m <- gstat(formula = OZDLYAV~1, locations = ~x+y, data = train, model = fve)
- p2 <- predict(m, newdata = test, debug.level = 0)$var1.pred
- krigrmse[i] <- RMSE(test$OZDLYAV, p2)
-
- m <- Tps(train[,c("x", "y")], train$OZDLYAV)
- p3 <- predict(m, test[,c("x", "y")])
- tpsrmse[i] <- RMSE(test$OZDLYAV, p3)
- 
- w <- c(idwrmse[i], krigrmse[i], tpsrmse[i])
- weights <- w / sum(w)
- ensemble <- p1 * weights[1] + p2 * weights[2] + p3 * weights[3]
- ensrmse[i] <- RMSE(test$OZDLYAV, ensemble)
- 
-}
-rmi <- mean(idwrmse)
-rmk <- mean(krigrmse)
-rmt <- mean(tpsrmse)
-rms <- c(rmi, rmt, rmk)
-rms
-rme <- mean(ensrmse)
-rme
-```
-
-__Question 6__: *Which method performed best?*
-
-
-We can use the RMSE values to make a weighted ensemble. I use the normalized difference between a model's RMSE and the NULL model as weights.
-
-```{r krig40}
-nullrmse <- RMSE(test$OZDLYAV, mean(test$OZDLYAV))
-w <- nullrmse - rms
-# normalize weights to sum to 1
-weights <- ( w / sum(w) )
-# check 
-sum(weights)
-s <- c(idw[[1]], ok[[1]], tps)
-ensemble <- sum(s * weights)
-```
-
-And compare maps.
-```{r ensplot, fig.width = 10, fig.height = 10}
-s <- c(idw[[1]], ok[[1]], tps, ensemble)
-names(s) <- c("IDW", "OK", "TPS", "Ensemble")
-plot(s)
-```
-
-
-__Question 7__: *Show where the largest difference exist between IDW and OK.*
-
-
-__Question 8__: *Show the 95% confidence interval of the OK prediction.*
-
-
-# Spatial distribution models
-
-
-This page shows how you can use the Random Forest algorithm to make spatial predictions. This approach is widely used, for example to classify remote sensing data into different land cover classes. But here our objective is to predict the entire range of a species based on a set of locations where it has been observed. As an example, we use the hominid species *Imaginus magnapedum* (also known under the vernacular names of "bigfoot" and "sasquatch"). This species is believed to occur in the United States, but it is so hard to find by scientists that its very existence is commonly denied by the mainstream media --- despite the many reports on Twitter! For more information about this controversy, see the article by Lozier, Aniello and Hickerson: [Predicting the distribution of Sasquatch in western North America: anything goes with ecological niche modelling](http://onlinelibrary.wiley.com/doi/10.1111/j.1365-2699.2009.02152.x/abstract).
-
-We will use "citizen-science" data to find out: 
-  
-  a) What the complete range of the species might be.
-
-  b) How good (general) our model is by predicting the range of the Eastern sub-species, with data from the Western sub-species. 
-  
-  c) How climate change might affect its distribution.
-  
-In this context, this type of analysis is often referred to as 'species distribution modeling' or 'ecological niche modeling'. [Here is a more in-depth discussion](/terra/sdm) of this technique.
-
-First make sure we have the packages needed:
-
-```{r pkgs, echo = TRUE}
-if (!require("rspat")) remotes::install_github("rspatial/rspat")
-if (!require("predicts")) install.packages("predicts")
-if (!require("geodata")) install.packages("geodata")
-``` 
- 
-## Data 
-
-### Observations
-
-We get a data set of reported Bigfoot observations
-
-```{r getDatabigfoot, echo = TRUE}
-library(terra)
-library(rspat)
-bf <- spat_data("bigfoot")
-dim(bf)
-head(bf)
-```
-
-It is always good to first plot the locations to see what we are dealing with.
-
-```{r, sup1}
-plot(bf[,1:2], cex = 0.5, col = "red")
-
-library(geodata)
-wrld <- geodata::world(path = ".")
-bnds <- wrld[wrld$NAME_0 %in% c("Canada", "Mexico", "United States"), ]
-lines(bnds)
-```
-
-So the are in Canada and in the United States, but no reports from Mexico, so far.
-
-### Predictor variables
-
-Here, as is common in species distribution modeling, we use climate data as predictor variables in our model. Specifically, we use "bioclimatic variables", see: https://www.worldclim.org/data/bioclim.html. Here we used a spatial resolution of 10 minutes (one sixt of a degree). That is relatively coarse but it makes the download and processing faster.
-
-```{r, sup3}
-wc <- geodata::worldclim_global("bio", res = 10, ".")
-plot(wc[[c(1, 12)]], nr = 2)
-```
-
-Now extract climate data for the locations of our observations. In that way, we can find out what the climate conditions are that the species likes, apparently.
-
-```{r, sup5x}
-bfc <- extract(wc, bf[,1:2])
-head(bfc, 3)
-```
-
-I remove the first column with the ID that we do not need. 
-
-```{r, sup5}
-bfc <- bfc[,-1]
-```
-
-
-Now we can plot the species' distribution in a part of the *environmental* space. Here is a plot of temperature vs rainfall of sites where Bigfoot was observed. 
-
-```{r, sup7}
-plot(bfc[ ,"wc2.1_10m_bio_1"], bfc[, "wc2.1_10m_bio_12"], col = "red",
-    xlab = "Annual mean temperature (°C)", ylab = "Annual precipitation (mm)")
-```
-
-
-### Background data
-
-Normally, one would build a model that would compare the values of the predictor variables at the locations where something was observed, with those values at the locations where it was not observed. But we do not have data from a systematic survey that determined presence and absence. We have presence-only data. (And, determining absence is not that simple. You blink and Bigfoot is gone!). 
-
-The common approach to deal with these type of data is to not model presence versus absence, but presence versus "background". The "background" is the random (or maximum entropy) expectation; it is what you would get if the species had no preference for any of the predictor variables (or to other variables that are not in the model, but correlated with the predictor variables).
-
-There is not much point in taking absence data from very far away (tropical Africa or Antarctica). Typically they are taken from more or less the entire study area for which we have presences data.
-
-To do so, I first get the extent of all points
-```{r}
-ext_bf <- ext(vect(bf[, 1:2])) + 1
-ext_bf
-```
-
-And then I take 5000 random samples (excluding `NA` cells) from SpatExtent `e`, by using it as a "window" (blacking out all other areas) on the climate SpatRaster.
+You can add a new variable to a `SpatVector` just as if it were a `data.frame`.
 
 ```{r}
 set.seed(0)
-window(wc) <- ext_bf
-bg <- spatSample(wc, 5000, "random", na.rm = TRUE, xy = TRUE)
-head(bg)
+p$lets <- sample(letters, nrow(p))
+p
 ```
 
-Instead of using `window` you could also subset the climate data like this `wc <- crop(wc, ext_bf)`
-
-Above, with `spatSample`, I used the argument `xy = TRUE` to be able to show were these points are from:
+Note that to get the number of geometries of SpatVector `p`, you can use `nrow(p)`, or `size(p)`. You can also do `perim(p)` to get the "length" of the spatial objects (zero for points, the length of the lines, or the perimeter of the polygons).
 
 ```{r}
-plot(bg[, c("x", "y")])
+perim(p)
 ```
 
-But we otherwise do not need them so I remove them again,
+Assigning a new value to an existing variable.
 
 ```{r}
-bg <- bg[, -c(1:2)]
-```
-
-
-We can now compare the climate of the presence and background points, for example, for temperature and rainfall
-
-```{r}
-plot(bg[,1], bg[,12], xlab = "Annual mean temperature (°C)", 
- 	   ylab = "Annual precipitation (mm)", cex = .8)
-
-points(bfc[,1], bfc[,12], col = "red", cex = .6, pch = "+")
-legend("topleft", c("observed", "background"), col = c("red", "black"), pch = c("+", "o"), pt.cex = c(.6, .8))  
-```
-
-So we see that while Bigfoot is widespread, it is not common in cold areas, nor in hot and dry areas.
-
-
-### East vs West
-
-I am first going to split the data into East and West. This is because I believe there are two sub-species (The Eastern Sasquatch is darker, less hairy, and has more pointy ears). I am principally interested in the western sub-species. Note how I use the original coordinates to subset the climate data. We can do this because they are in the same order. 
-
-```{r}
-#eastern points
-bfe <- bfc[bf[,1] > -102, ]
-#western points
-bfw <- bfc[bf[,1] <= -102, ]
-```
-
-And now I combine the presence ("1") with the background ("0") data (I use the same background data for both subspecies) 
-
-```{r}
-dw <- rbind(cbind(pa = 1, bfw), cbind(pa = 0, bg))
-de <- rbind(cbind(pa = 1, bfe), cbind(pa = 0, bg))
-
-dw <- data.frame(dw)
-de <- data.frame(na.omit(de))
-
-dim(dw)
-dim(de)
-```
-
-## Fit a model
-
-Now we have the data to fit a model. Let's first look at a Classification and Regression Trees (CART) model.
-
-
-### CART
-
-```{r, sup10a}
-library(rpart)
-cart <- rpart(pa~., data = dw)
-```
-
-The "complexity parameter" can be used as a stopping parameter to avoid overfitting. 
-
-```{r, sup10ab}
-printcp(cart)
-plotcp(cart)
-```
-
-Fit the model again, with fewer splits
-
-```{r, sup10abc}
-cart <- rpart(pa~., data = dw, cp = 0.02)
-```
-
-
-And here is the tree
-
-```{r, sup10b}
-library(rpart.plot)
-rpart.plot(cart, uniform = TRUE, main = "Regression Tree")
-```
-
-
-__Question 1__: *Describe the environmental conditions that Bigfoot appears to enjoy most?*
-
-
-And now we can use the model to show how attractive the climate is for this species.
-
-```{r sup10bb, fig.width = 6, fig.height = 4}
-x <- predict(wc, cart)
-x <- mask(x, wc[[1]])
-x <- round(x, 2)
-plot(x, type = "class", plg = list(x = "bottomleft"))
-```
-
-Notice that there are six values, because the regression tree has six leaves.
-
-### Random Forest
-
-CART gives us a nice result to look at that can be easily interpreted (as you just illustrated with your answer to Question 1). But the approach suffers from high variance (meaning that the model tends to be over-fit, it is different each time a somewhat different datasets are used); and the quality of its predictions suffers from that. Random Forest does not have that problem as much. Above, with CART, we use regression, let's do both regression and classification here. 
-
-But first I set some points aside for validation (normally we would do k-fold cross-validation, but we keep it simple here).
-
-```{r}
-set.seed(123)
-i <- sample(nrow(dw), 0.2 * nrow(dw))
-test <- dw[i,]
-train <- dw[-i,]
-```
-
-First we do classification, by making a categorical variable for presence/background.
-
-```{r, sup11}
-fpa <- as.factor(train[, 'pa'])
-```
-
-Now fit the RandomForest model
-
-```{r, sup12a}
-library(randomForest)
-crf <- randomForest(train[, 2:ncol(train)], fpa)
-crf
-```
-
-The Out-Of-Bag error rate is very small. 
-
-The variable importance plot shows which variables are most important in fitting the model. 
-This is computed by randomizing each variable one by one, and then evaluating the decline in model prediction.
-
-```{r, sup12b}
-varImpPlot(crf)
-```
-
-Now we use regression, rather than classification.
-First we tune a parameter.
-
-```{r, sup14a}
-trf <- tuneRF(train[, 2:ncol(train)], train[, "pa"])
-trf
-mt <- trf[which.min(trf[,2]), 1]
-mt
-```
-
-__Question 2__: *What did tuneRF help us find? What does the values of mt represent?*
-
-
-```{r, sup14b}
-rrf <- randomForest(train[, 2:ncol(train)], train[, "pa"], mtry = mt, ntree = 250)
-rrf
-plot(rrf)
-```
-
-
-__Question 3__: *What does `plot(rrf)` show us?*
-
-
-## Predict
-
-We can use the model to make predictions to any other place for which we have values for the predictor variables. Our climate data is global so we could find suitable areas for Bigfoot in Australia, but let's stick to North America for now.
-
-### Regression
-
-```{r sup17a, fig.width = 6, fig.height = 4}
-rp <- predict(wc, rrf, na.rm = TRUE)
-plot(rp)
-```
-
-Note that the regression predictions are well-behaved, in the sense that they are between 0 and 1. However, they are continuous within that range, and if you wanted presence/absence, you would need a threshold. To get the optimal threshold, you would normally have a hold out data set, but here I use the training data for simplicity. 
-
-```{r, sup17b}
-library(predicts)
-eva <- pa_evaluate(predict(rrf, test[test$pa == 1, ]), predict(rrf, test[test$pa == 0, ]))
-eva
-```
-
-
-We can make a [ROC plot](http://gim.unmc.edu/dxtests/roc2.htm)
-```{r, sup18}
-plot(eva, "ROC")
-```
-
-This suggests that the model is (very near) perfect in disinguising presence from background points. This is perhaps better illustrated with these plots:
-
-```{r, sup18b}
-par(mfrow = c(1,2))
-plot(eva, "boxplot")
-plot(eva, "density")
-```
-
-
-To get a good threshold to determine presence/absence and plot the prediction, we can use the "max specificity + sensitivity" threshold.
-```{r, sup19}
-tr <- eva@thresholds
-tr
-plot(rp > tr$max_spec_sens)
-```
-
-
-### Classification
-
-We can also use the classification Random Forest model to make a prediction.
-
-```{r sup20a, fig.width = 6, fig.height = 4}
-rc <- predict(wc, crf, na.rm = TRUE)
-plot(rc)
-```
-
-They are different because the classification used a threshold of 0.5, which is not necessarily appropriate.
-
-You can get probabilities for the classes (in this case there are 2 classes, presence and absence, and I only plot presence) 
-
-```{r sup20b, fig.width = 6, fig.height = 4}
-rc2 <- predict(wc, crf, type = "prob", na.rm = TRUE)
-plot(rc2, 2)
-```
-
-
-## Extrapolation
-
-Now, let's see if our model is general enough to predict the distribution of the Eastern species. 
-
-```{r sup22}
-eva2 <- pa_evaluate(predict(rrf, de[de$pa == 1, ]), predict(rrf, de[de$pa == 0, ]))
-eva2
-par(mfrow = c(1,2))
-plot(eva2, "ROC")
-plot(eva2, "boxplot")
-```
-
-By this measure, it is a *terrible* model -- as we already saw on the map. So our model is really good in predicting the range of the West, but it cannot extrapolate at all to the East. 
-
-
-```{r, sup24, fig.width = 6, fig.height = 4}
-plot(rc)
-points(bf[,1:2], cex = .25)
-```
-
-
-__Question 4__: *Why would it be that the model does not extrapolate well?*
-
-An important question in the biogeography of the Bigfoot would be if it can survive in other parts of the world (it has been spotted trying to get on commerical flights leaving North America). 
-
-Let's see.
-
-```{r sup26, fig.width = 6, fig.height = 4}
-window(wc) <- NULL
-pm <- predict(wc, rrf, na.rm = TRUE)
-plot(pm)
-lines(wrld)
-```
-
-__Question 5__: *What are some countries that should consider Bigfoot as a potential invasive species?*
-
-
-## Climate change 
-
-We can also estimate range shifts due to climate change. We can use the same model, but now extrapolate in time (and space).
-
-
-```{r sup28, fig.width = 6, fig.height = 4}
-fut <- cmip6_world("CNRM-CM6-1", "585", "2061-2080", var = "bio", res = 10, path = ".")
-names(fut)
-names(wc)
-names(fut) <- names(wc)
-window(fut) <- ext_bf
-pfut <- predict(fut, rrf, na.rm = TRUE)
-plot(pfut)
-```
-
-__Question 6__: *Make a map to show where conditions are improving for western bigfoot, and where they are not. Is the species headed toward extinction?*
-
-
-## Further reading
-
-More on [Species distribution modeling with R](/terra/sdm).
-
-# Local regression
-
-
-Regression models are typically "global". That is, all date are used simultaneously to fit a single model. In some cases it can make sense to fit more flexible "local" models. Such models exist in a general regression framework (e.g. generalized additive models), where "local" refers to the values of the predictor values. In a spatial context local refers to location. Rather than fitting a single regression model, it is possible to fit several models, one for each location (out of possibly very many) locations. This technique is sometimes called "geographically weighted regression" (GWR). GWR is a data exploration technique that allows to understand changes in importance of different variables over space (which may indicate that the model used is mis-specified and can be improved). 
-
-There are two examples here. One short example with California precipitation data, and than a more elaborate example with house price data.
-
-
-## California precipitation
-
-```{r getDataLocal}
-
-if (!require("rspat")) remotes::install_github('rspatial/rspat')
-
-library(rspat)
-counties <- spat_data("counties")
-p <- spat_data("precipitation")
+p$lets <- sample(LETTERS, nrow(p))
 head(p)
-
-plot(counties)
-points(p[,c("LONG", "LAT")], col = "red", pch = 20)
 ```
 
-Compute annual average precipitation
-```{r, loca11}
-p$pan <- rowSums(p[,6:17])
+To get rid of a variable, set it to `NULL`.
+
+```{r}
+p$lets <- NULL
 ```
 
-Global regression model
-```{r, loca12}
-m <- lm(pan ~ ALT, data = p)
-m
+### Merge
+
+You can assign an attributes table (data.frame) to a SpatVector with `values <-`. To add attributes to a SpatVector that already has attributes use `merge` (or `cbind` if you know the order of the records is the same).
+
+```{r}
+dfr <- data.frame(District = p$NAME_1, Canton = p$NAME_2, Value = round(runif(length(p), 100, 1000)))
+
+dfr <- dfr[order(dfr$Canton), ]
+pm <- merge(p, dfr, by.x = c('NAME_1', 'NAME_2'), by.y = c('District', 'Canton'))
+pm
+head(pm)
 ```
 
-Create a `SpatVector` objects with a planar crs.
+Note the new variable `Value` added to `pm`
 
-```{r, loca13}
-alb <- "+proj = aea +lat_1 = 34 +lat_2 = 40.5 +lat_0 = 0 +lon_0 = -120 +x_0 = 0 +y_0 = -4000000 +datum = WGS84 +units = m"
-sp <- vect(p, c("LONG", "LAT"), crs = "+proj = longlat +datum = WGS84")
-spt <- project(sp, alb)
-ctst <- project(counties, alb)
-```
+### Records
 
+Selecting rows (records).
 
-Get the optimal bandwidth
-```{r, loca14}
-library(spgwr)
-bw <- gwr.sel(pan ~ ALT, data = as.data.frame(spt), coords = geom(spt)[,c("x", "y")])
-bw
-``` 
-
-Create a regular set of points to estimate parameters for.
-```{r, loca16}
-r <- rast(ctst, res = 10000)
-r <- rasterize(ctst, r)
-newpts <- as.points(r)
-```
-
-Run the `gwr` function
-```{r, loca17}
-g <- gwr(pan ~ ALT, data = as.data.frame(spt), coords = geom(spt)[,c("x", "y")], bandwidth = bw, fit.points = geom(newpts)[,c("x", "y")])
+```{r recs}
+i <- which(p$NAME_1 == 'Grevenmacher')
+g <- p[i,]
 g
 ```
 
-Link the results back to the raster
-```{r, loca18, fig.width = 9}
-slope <- intercept <- r
-slope[!is.na(slope)] <- g$SDF$ALT 
-intercept[!is.na(intercept)] <- g$SDF$'(Intercept)'
-s <- c(intercept, slope)
-names(s) <- c('intercept', 'slope')
-plot(s)
-```
-
-
-## California House Price Data
-
-We will use house prices data from the 1990 census, taken from "Pace, R.K. and R. Barry, 1997. Sparse Spatial Autoregressions. Statistics and Probability Letters 33: 291-297."
-
-
-```{r}
-houses <- spat_data("houses1990.csv")
-dim(houses)
-head(houses)
-```
-
-Each record represents a census "blockgroup". The longitude and latitude of the centroids of each block group are available. We can use that to make a map and we can also use these to link the data to other spatial data. For example to get county-membership of each block group. To do that, let's first turn this into a SpatialPointsDataFrame to find out to which county each point belongs.
-
-```{r}
-hvect <- vect(houses, c("longitude", "latitude"))
-```
-
-```{r, gwr1}
-plot(hvect, cex = 0.5, pch = 1, axes = TRUE)
-```
-
-Now get the county boundaries and assign CRS of the houses data matches that of the counties (because they are both in longitude/latitude!).
-
-```{r}
-crs(hvect) <- crs(counties)
-```
-
-Do a spatial query (points in polygon)
-```{r}
-cnty <- extract(counties, hvect)
-head(cnty)
-```
-
-
-## Summarize
-
-We can summarize the data by county. First combine the extracted county data with the original data. 
-
-```{r}
-hd <- cbind(data.frame(houses), cnty)
-```
-
-Compute the population by county
-```{r}
-totpop <- tapply(hd$population, hd$NAME, sum)
-totpop
-```
-
-Income is harder because we have the median household income by blockgroup. But it can be approximated by first computing total income by blockgroup, summing that, and dividing that by the total number of households.
-
-```{r}
-# total income
-hd$suminc <- hd$income * hd$households
-# now use aggregate (similar to tapply)
-csum <- aggregate(hd[, c('suminc', 'households')], list(hd$NAME), sum)
-# divide total income by number of housefholds
-csum$income <- 10000 * csum$suminc / csum$households
-# sort
-csum <- csum[order(csum$income), ]
-head(csum)
-tail(csum)
-```
-
-
-## Regression
-
-Before we make a regression model, let's first add some new variables that we might use, and then see if we can build a regression model with house price as dependent variable. The authors of the paper used a lot of log tranforms, so you can also try that.
-
-
-```{r}
-hd$roomhead <- hd$rooms / hd$population
-hd$bedroomhead <- hd$bedrooms / hd$population
-hd$hhsize <- hd$population / hd$households
-```
-
-Ordinary least squares regression:
-
-```{r}
-# OLS
-m <- glm( houseValue ~ income + houseAge + roomhead + bedroomhead + population, data = hd)
-summary(m)
-coefficients(m)
-```
-
-## Geographicaly Weighted Regression
-
-### By county
-
-Of course we could make the model more complex, with e.g. squared income, and interactions.
-But let's see if we can do Geographically Weighted regression. One approach could be to use counties.
-
-First I remove records that were outside the county boundaries
-```{r}
- hd2 <- hd[!is.na(hd$NAME), ]
-```
-
-Then I write a function to get what I want from the regression (the coefficients in this case)
-
-```{r}
-regfun <- function(x) {
- dat <- hd2[hd2$NAME == x, ]
- m <- glm(houseValue~income+houseAge+roomhead+bedroomhead+population, data = dat)
- coefficients(m)
-}
-```
-
-And now run this for all counties using sapply:
-```{r}
-countynames <- unique(hd2$NAME)
-res <- sapply(countynames, regfun)
-```
-
-
-Plot of a single coefficient
-```{r, gwr3, fig.height = 10}
-dotchart(sort(res["income", ]), cex = 0.65)
-```
-
-There clearly is variation in the coefficient ($beta$) for income. How does this look on a map?
-
-First make a data.frame of the results
-```{r}
-resdf <- data.frame(NAME = colnames(res), t(res))
-head(resdf)
-```
-
-Fix the counties object. There are too many counties because of the presence of islands. I first aggregate ('dissolve' in GIS-speak') the counties such that a single county becomes a single (multi-)polygon.
-
-```{r}
-dim(counties)
-dcounties <- aggregate(counties[, "NAME"], "NAME")
-dim(dcounties)
-```
-
-Now we can merge this SpatVector with the data.frame with the regression results. 
-
-```{r, gwr5}
-cnres <- merge(dcounties, resdf, by = "NAME")
-plot(cnres, "income")
-```
-
-To show all parameters in a 'conditioning plot', we need to first scale the values to get similar ranges.
-
-```{r, gwr6, fig.width = 10}
-# a copy of the data
-cnres2 <- cnres
-
-# scale all variables, except the first one (county name)
-values(cnres2) <- as.data.frame(scale(as.data.frame(cnres)[,-1]))
-plot(cnres2, names(cnres2)[1:6], plg = list(x = "topright"), mar = c(1,1,1,1))
-```
-
-
-Is this just random noise, or is there spatial autocorrelation?
-
-```{r, gwr10}
-lw <- adjacent(cnres2, pairs = FALSE)
-autocor(cnres$income, lw)
-autocor(cnres$houseAge, lw)
-```
-
-
-### By grid cell
-
-An alternative approach would be to compute a model for grid cells. 
-Let's use the 'Teale Albers' projection (often used when mapping the entire state of California). 
-
-```{r}
-TA <- "+proj = aea +lat_1 = 34 +lat_2 = 40.5 +lat_0 = 0 +lon_0 = -120 +x_0 = 0 +y_0 = -4000000 +datum = WGS84 +units = m"
-countiesTA <- project(counties, TA)
-```
-
-Create a SpatRaster using the extent of the counties, and setting an arbitrary resolution of 50 by 50 km cells
-```{r}
-r <- rast(countiesTA)
-res(r) <- 50000
-```
-
-Get the xy coordinates for each raster cell:
-```{r}
-xy <- xyFromCell(r, 1:ncell(r))
-```
-
-For each cell, we need to select a number of observations, let's say within 50 km of the center of each cell (thus the data that are used in different cells overlap). And let's require at least 50 observations to do a regression.
-
-First transform the houses data to Teale-Albers
-```{r}
-housesTA <- project(hvect, TA)
-crds <- geom(housesTA)[, c("x", "y")]
-```
-
-Set up a new regression function.
-```{r}
-regfun2 <- function(d) {
- m <- glm(houseValue~income+houseAge+roomhead+bedroomhead+population, data = d)
- coefficients(m)
-}
-```
-
-Run the model for al cells if there are at least 50 observations within a radius of 50 km.
-```{r}
-res <- list()
-for (i in 1:nrow(xy)) {
-	d <- sqrt((xy[i,1] - crds[,1])^2 + (xy[i,2] - crds[,2])^2)
-	j <- which(d < 50000)
-	if (length(j) > 49) {
-		d <- hd[j,]
-		res[[i]] <- regfun2(d)
-	} else {
-		res[[i]] <- NA
-	}
-}
-```
-
-For each cell get the income coefficient:
-```{r}
-inc <- sapply(res, function(x) x['income'])
-```
-
-Use these values in a SpatRaster
-```{r, gwr20}
-rinc <- setValues(r, inc)
-plot(rinc)
-plot(countiesTA, add = T)
-autocor(rinc)
-```
-
-So that was a lot of 'home-brew-GWR'. 
-
-__Question 1__: *Can you comment on weaknesses (and perhaps strengths) of the approaches I have shown?*
-
-
-## spgwr package
-
-Now use the spgwr package (and the the `gwr` function) to fit the model. You can do this with all data, as long as you supply and argument `fit.points` (to avoid estimating a model for each observation point. You can use a raster similar to the one I used above (perhaps disaggregate with a factor 2 first).
-
-This is how you can get the points to use:
-
-Create a SpatRaster with the correct extent
-```{r}
-r <- rast(countiesTA)
-```
-
-Set to a desired resolution. I choose 25 km
-```{r}
-res(r) <- 25000
-```
-
-I only want cells inside of CA, so I add some more steps.
-```{r}
-ca <- rasterize(countiesTA, r)
-```
-
-Extract the coordinates that are not `NA`.
-
-```{r}
-fitpoints <- crds(ca)
-
-```
-
-
-Now specify the model
-
-```
-gwr.model <- ______ 
-```
-
-`gwr` returns a list-like object that includes (as first element) a `SpatialPointsDataFrame` that has the model coefficients. Plot these and, after that, transfer them to a `SpatRaster`.
-
-To extract the SpatialPointsDataFrame:
-
-```
-sp <- gwr.model$SDF
-v <- vect(sp)
-v
-```
-
-To reconnect these values to the raster structure (etc.)
-
-```
-cells <- cellFromXY(r, fitpoints)
-dd <- as.matrix(data.frame(sp))
-b <- rast(r, nl = ncol(dd))
-b[cells] <- dd
-names(b) <- colnames(dd)
-plot(b)
-```
-
-__Question 2__: *spgwr shows a remarkable startup message. What is that about?*
-
-
-__Question 3__: *Briefly comment on the results and the differences (if any) with the two home-brew examples.*
-
-# Spatial regression models
-
-
-## Introduction
-
-This chapter deals with the problem of inference in (regression) models with spatial data. Inference from regression models with spatial data can be suspect. In essence this is because nearby things are similar, and it may not be fair to consider individual cases as independent (they may be pseudo-replicates). Therefore, such models need to be diagnosed before reporting them. Specifically, it is important to evaluate the for spatial autocorrelation in the residuals (as these are supposed to be independent, not correlated). 
-
-If the residuals are spatially autocorrelated, this indicates that the model is misspecified. In that case you should try to improve the model by adding (and perhaps removing) important variables. If that is not possible (either because there is no data available, or because you have no clue as to what variable to look for), you can try formulating a regression model that controls for spatial autocorrelation. We show some examples of that approach here.
-
-
-## Reading & aggregating data
-
-We use California house price data from the 2000 Census. 
-
-### Get the data
-
-```{r getDatahouses}
-
-if (!require("rspat")) remotes::install_github("rspatial/rspat")
-
-library(rspat)
-h <- spat_data('houses2000')
-```
-
-I have selected some variables on on housing and population. You can get more data from the American Fact Finder http://factfinder2.census.gov (among other web sites). 
-
-```{r}
-dim(h)
-names(h)
-```
-
-These are the variables we have:
-
-```{r, echo = FALSE}
-dv <- data.frame(matrix(c("nhousingUn", "number of housing units", "recHouses", "number of houses for recreational use", "nMobileHom", "number of mobile homes", "nBadPlumbi", "number of houses with incomplete plumbing", "nBadKitche", "number of houses with incomplete kitchens", "Population", "total population", "Males", "number of males", "Females", "number of females", "Under5", "number of persons under five", "White", "number of persons identifying themselves as white (only)", "Black", "number of persons identifying themselves African-american (only)", "AmericanIn", "number of persons identifying themselves American Indian (only)", "Asian", "number of persons identifying themselves as American Indian (only)", "Hispanic", "number of persons identifying themselves as hispanic (only)", "PopInHouse", "number of persons living in households", "nHousehold", "number of households", "Families", "number of families", "houseValue", "value of the house", "yearBuilt", "year house was built", "nRooms", "median number of rooms per house", "nBedrooms", "median number of bedrooms per house", "medHHinc", "median household income", "MedianAge", "median age of population", "householdS", "median household size", "familySize", "median family size"), ncol = 2, byrow = TRUE))
-colnames(dv) <- c("variable", "description")
-knitr::kable(dv)
-```
-
-First some data massaging. These are values for Census tracts. I want to analyze these data at the county level. So we need to aggregate the values.
-
-```{r}
-# using a tiny buffer to get a cleaner aggregation 
-hb <- buffer(h, 1)
-values(hb) <- values(h)
-hha <- aggregate(hb, "County")
-```
-
-Now we have the county outlines, but we also need to get the values of interest at the county level. Although it is possible to do everything in one step in the aggregate function, I prefer to do this step by step. The simplest case is where we can sum the numbers. For example for the number of houses. 
-
-```{r}
-d1 <- as.data.frame(h)[, c("nhousingUn", "recHouses", "nMobileHom", "nBadPlumbi", 
- "nBadKitche", "Population", "Males", "Females", "Under5", "White", 
- "Black", "AmericanIn", "Asian", "Hispanic", "PopInHouse", "nHousehold", "Families")]
-
- d1a <- aggregate(d1, list(County = h$County), sum, na.rm = TRUE)
-```
-
-In other cases we need to use a weighted mean. For example for houseValue. We should weight it by the number of houses (households) in each tract. 
-
-```{r}
-d2 <- as.data.frame(h)[, c("houseValue", "yearBuilt", "nRooms", "nBedrooms", 
-    "medHHinc", "MedianAge", "householdS", "familySize")]
-d2 <- cbind(d2 * h$nHousehold, hh = h$nHousehold)
-
-d2a <- aggregate(d2, list(County = h$County), sum, na.rm = TRUE)
-d2a[, 2:ncol(d2a)] <- d2a[, 2:ncol(d2a)] / d2a$hh
-```
-
-
-Combine these two groups:
-
-```{r}
-d12 <- merge(d1a, d2a, by = 'County')
-```
-
-And merge the aggregated (from census tract to county level) attribute data with the aggregated polygons
-
-```{r}
-hh <- merge(hha[, "County"], d12, by = 'County')
-```
-
-
-Let's make some maps, at the orignal Census tract level. First the house value, using a legend with 10 intervals.
-
-```{r, spreg2}
-library(RColorBrewer)
-grps <- 10
-brks <- quantile(h$houseValue, 0:(grps - 1)/(grps - 1), na.rm = TRUE)
-plot(h, "houseValue", breaks = brks, col = rev(brewer.pal(grps, "RdBu")), border = NA)
-lines(hh, col = "white")
-```
-
-A map of the median household income.
-
-```{r, spreg4}
-brks <- quantile(h$medHHinc, 0:(grps - 1)/(grps - 1), na.rm = TRUE)
-plot(h, "medHHinc", breaks = brks, col = rev(brewer.pal(grps, "RdBu")), border = NA)
-lines(hh, col = "white")
-```
-
-
-## Basic OLS model
-
-I now make some models with the county-level data. I first compute some new variables (that I might not all use).
-
-```{r}
-hh$fBadP <- pmax(hh$nBadPlumbi, hh$nBadKitche) / hh$nhousingUn
-hh$fWhite <- hh$White / hh$Population
-hh$age <- 2000 - hh$yearBuilt
-
-f1 <- houseValue ~ age + nBedrooms 
-m1 <- lm(f1, data = as.data.frame(hh))
-summary(m1)
-```
-
-Just for illustration, here is how you can do OLS with matrix algebra. First set up the data. I add a constant variable '1' to X, to get an intercept.
-
-```{r}
-y <- matrix(hh$houseValue)
-X <- cbind(1, hh$age, hh$nBedrooms)
-```
-
-Then use matrix algebra
-```{r}
-ols <- solve(t(X) %*% X) %*% t(X) %*% y
-rownames(ols) <- c('intercept', 'age', 'nBedroom')
-ols
-```
-
-So, according to this simple model, "age" is highly significant. The older a house, the more expensive. You pay 1,269,475 dollars more for a house that is 100 years old than a for new house! While the p-value for the number of bedrooms is not impressive, but every bedroom adds about 200,000 dollars to the value of a house.
-
-__Question 1__: *What would be the price be of a house built in 1999 with three bedrooms?*
-
-(the answer may surprise you),
-
-Let's see if the errors (model residuals) appear to be randomly distributed in space.
-
-```{r, spreg6}
-hh$residuals <- residuals(m1)
-brks <- quantile(hh$residuals, 0:(grps - 1)/(grps - 1), na.rm = TRUE)
-plot(hh, "residuals", breaks = brks, col = rev(brewer.pal(grps, "RdBu")))
-```
-
-What do think? Is this a random pattern? Let's see what Mr. Moran would say. First make a neighborhoods list. I add two links: between San Francisco and Marin County and vice versa (to consider the Golden Gate bridge).
-
-```{r, spreg8, message = FALSE}
-library(spdep)
-
-sfhh <- sf::st_as_sf(hh)
-nb <- poly2nb(sfhh, snap = 1/120)
-nb[[21]] <- sort(as.integer(c(nb[[21]], 38)))
-nb[[38]] <- sort(as.integer(c(21, nb[[38]])))
-nb
-
-par(mai = c(0,0,0,0))
-plot(hh)
-plot(nb, crds(centroids(hh)), col = 'red', lwd = 2, add = TRUE)
-```
-
-We can use the neighbour list object to get the average value for the neighbors of each polygon.
-
-```{r, spreg10}
-resnb <- sapply(nb, function(x) mean(hh$residuals[x]))
-cor(hh$residuals, resnb)
-plot(hh$residuals, resnb, xlab = "Residuals", ylab = "Mean adjacent residuals", pch = 20)
-abline(lm(resnb ~ hh$residuals), lwd = 2, lty = 2)
-```
-
-The residualso appear to be autocorrelated. A formal test:
-
-```{r}
-lw <- nb2listw(nb)
-moran.mc(hh$residuals, lw, 999)
-```
-
-Clearly, there is spatial autocorrelation. Our model cannot be trusted. so let's try SAR models. 
-
-
-## Spatial lag model
-
-Here I show a how to do spatial regression with a spatial lag model (lagsarlm), using the `spatialreg` package.
-
-
-```{r spreg, message = FALSE}
-library(spatialreg )
-```
-
-
-```{r spregplot1}
-m1s <- lagsarlm(f1, data = as.data.frame(hh), lw, tol.solve = 1.0e-30)
-
-summary(m1s)
-
-hh$residuals <- residuals(m1s)
-moran.mc(hh$residuals, lw, 999)
-
-brks <- quantile(hh$residuals, 0:(grps - 1)/(grps - 1), na.rm = TRUE)
-plot(hh, "residuals", breaks = brks, col = rev(brewer.pal(grps, "RdBu")))
-
-```
-
-
-## Spatial error model
-
-And now with a "Spatial error" (or spatial moving average) models (errorsarlm). Note the use of the `lw` argument.
-
-```{r spregplotx}
-m1e <- errorsarlm(f1, data = as.data.frame(hh), lw, tol.solve = 1.0e-30)
-summary(m1e)
-
-hh$residuals <- residuals(m1e)
-moran.mc(hh$residuals, lw, 999)
-
-brks <- quantile(hh$residuals, 0:(grps - 1)/(grps - 1), na.rm = TRUE)
-plot(hh, "residuals", breaks = brks, col = rev(brewer.pal(grps, "RdBu")))
-```
-
-
-Are the residuals spatially autocorrelated for either of these models? Let's plot them for the spatial error model.
-
-```{r spregplot3}
-brks <- quantile(hh$residuals, 0:(grps - 1)/(grps - 1), na.rm = TRUE)
-plot(hh, "residuals", breaks = brks, col = rev(brewer.pal(grps, "RdBu")))
-```
-
-
-## Questions
-__Question 2__: *The last two maps still seem to show a lot of spatial autocorrelation. But according to the tests there is none. Now why might that be?*
-
-
-__Question 3__: *One of the most important, or perhaps THE most important aspect of modeling is variable selection. A misspecified model is never going to be any good, no matter how much you do to, e.g., correct for spatial autocorrelation.*
-
-a) Which variables would you choose from the list? 
-
-b) Which new variables could you propose to create from the variables in the list. 
-
-c) Which other variables could you add, created from the geometries/location (perhaps other geographic data).
-
-d) add a lot of variables and use stepAIC to select an 'optimal' OLS model
-
-e) check for spatial autocorrelation in the residuals of that model
-
-
-# Point pattern analysis
-
-## Introduction
-
-We are using a dataset of crimes in a city. Start by reading in the data. 
-
-```{r getDatappcity}
-if (!require("rspat")) remotes::install_github("rspatial/rspat")
-library(rspat)
-city <- spat_data("city")
-crime <- spat_data("crime")
-```
-
-Here is a map of both datasets. 
-```{r, pp1, fig.width = 8, fig.height = 4}
-plot(city, col = "light blue")
-points(crime, col = "red", cex = .5, pch = "+")
-``` 
-
-A sorted table of the incidence of crime types.
-
-```{r}
-tb <- sort(table(crime$CATEGORY))[-1]
-tb
-``` 
-
-Let's get the coordinates of the crime data, and for this exercise, remove duplicate crime locations. These are the "events" we will use below (later we'll go back to the full data set).
-
-```{r}
-xy <- crds(crime)
-dim(xy)
-xy <- unique(xy)
-dim(xy)
-head(xy)
-``` 
-
-## Basic statistics
-
-Compute the mean center and standard distance for the crime data.
-```{r}
-# mean center
-mc <- apply(xy, 2, mean)
-# standard distance
-sd <- sqrt(sum((xy[,1] - mc[1])^2 + (xy[,2] - mc[2])^2) / nrow(xy))
-``` 
-
-Plot the data to see what we've got. I add a summary circle (as in Fig 5.2) by dividing the circle in 360 points and compute bearing in radians. I do not think this is particularly helpful, but it might be in other cases. And it is always fun to figure out how to do tis.
-
-```{r, pp2, fig.width = 8, fig.height = 4.5}
-plot(city, col = "light blue")
-points(crime, cex = .5)
-points(cbind(mc[1], mc[2]), pch = "*", col = "red", cex = 5)
-
-# make a circle
-bearing <- 1:360 * pi/180
-cx <- mc[1] + sd * cos(bearing)
-cy <- mc[2] + sd * sin(bearing)
-circle <- cbind(cx, cy)
-lines(circle, col = 'red', lwd = 2)
-``` 
-
-
-## Density
-
-Here is a basic approach to computing point density. 
-
-```{r, message = FALSE}
-CityArea <- expanse(city)
-dens <- nrow(xy) / CityArea
-``` 
-
-__Question 1a__:*What is the unit of 'dens'?* 
-
-__Question 1b__:*What is the number of crimes per square km?*
-
-
-To compute quadrat counts I first create quadrats (a SpatRaster). I get the extent for the raster from the city polygon, and then assign an an arbitrary resolution of 1000. (In real life one should always try a range of resolutions, I think).
-
-```{r}
-r <- rast(city, res = 1000) 
-``` 
-
-To find the cells that are in the city, and for easy display, I create polygons from the SpatRaster.
-
-```{r, pp3, fig.width = 8, fig.height = 4}
-r <- rasterize(city, r)
-plot(r)
-quads <- as.polygons(r)
-plot(quads, add = TRUE)
-points(crime, col = 'red', cex = .5)
-``` 
-
-The number of events in each quadrat can be counted using the 'rasterize' function. That function can be used to summarize the number of points within each cell, but also to compute statistics based on the 'marks' (attributes). For example we could compute the number of different crime types) by changing the 'fun' argument to another function (see ?rasterize).
-
-```{r, pp4, fig.width = 8, fig.height = 4}
-nc <- rasterize(crime, r, fun = function(i){length(i)}, background = 0)
-plot(nc)
-plot(city, add = TRUE)
-``` 
-
-`nc` has crime counts. As we only have data for the city, the areas outside of the city need to be excluded. We can do that with the mask function (see ?mask).
-
-```{r, pp5, fig.width = 8, fig.height = 4}
-ncrimes <- mask(nc, r)
-plot(ncrimes)
-plot(city, add = TRUE)
-``` 
-
-Better. Now the frequencies.
-
-```{r, pp6}
-f <- freq(ncrimes)
-head(f)
-plot(f, pch = 20)
-``` 
-
-Does this look like a pattern you would have expected? Now compute the average number of cases per quadrat.
-```{r}
-# number of quadrats
-quadrats <- sum(f[,2])
-# number of cases
-cases <- sum(f[,1] * f[,2])
-mu <- cases / quadrats
-mu
-``` 
-
-And create a table like Table 5.1 on page 130
-```{r}
-ff <- data.frame(f)
-colnames(ff) <- c('K', 'X')
-ff$Kmu <- ff$K - mu
-ff$Kmu2 <- ff$Kmu^2
-ff$XKmu2 <- ff$Kmu2 * ff$X
-head(ff)
-``` 
-
-The observed variance s^2^ is
-```{r}
-s2 <- sum(ff$XKmu2) / (sum(ff$X) - 1)
-s2
-``` 
-
-And the VMR is
-```{r}
-VMR <- s2 / mu 
-VMR
-``` 
-
-__Question 2:__*What does this VMR score tell us about the point pattern?*
-
-
-## Distance based measures
-
-As we are using a *planar coordinate system* we can use the dist function to compute the distances between pairs of points. If we were using longitude/latitude we could compute distance via spherical trigonometry functions. These are available in the sp, raster, and notably the geosphere package (among others). For example, see `terra::distance`.
-
-```{r}
-d <- dist(xy)
-class(d)
-``` 
-
-I want to coerce the dist object to a matrix, and ignore distances from each point to itself (the zeros on the diagonal).
-
-```{r}
-dm <- as.matrix(d)
-dm[1:5, 1:5]
-diag(dm) <- NA
-dm[1:5, 1:5]
-``` 
-
-To get, for each point, the minimum distance to another event, we can use the 'apply' function. Think of the rows as each point, and the columns of all other points (vice versa could also work).
-
-```{r}
-dmin <- apply(dm, 1, min, na.rm = TRUE)
-head(dmin)
-``` 
-
-Now it is trivial to get the mean nearest neighbour distance according to formula 5.5, page 131.
-```{r}
-mdmin <- mean(dmin)
-``` 
-
-Do you want to know, for each point, *Which* point is its nearest neighbour? Use the 'which.min' function (but note that this ignores the possibility of multiple points at the same minimum distance).	
-
-```{r}
-wdmin <- apply(dm, 1, which.min)
-```
-
-And what are the most isolated cases? That is the furtest away from their nearest neigbor. I plot the top 25. A bit complicated.
-
-```{r, pp10, fig.width = 8, fig.height = 4.5}
-plot(city)
-points(crime, cex = .1)
-ord <- rev(order(dmin))
-
-far25 <- ord[1:25]
-neighbors <- wdmin[far25]
-
-points(xy[far25, ], col = 'blue', pch = 20)
-points(xy[neighbors, ], col = 'red')
-
-# drawing the lines, easiest via a loop
-for (i in far25) {
-	lines(rbind(xy[i, ], xy[wdmin[i], ]), col = 'red')
-}
-``` 
-
-Note that some points, but actually not that many, are used as isolated and as a neighbor to an isolated points. 
-
-Now on to the *G* function
-```{r, pp11}
-max(dmin)
-# get the unique distances (for the x-axis)
-distance <- sort(unique(round(dmin)))
-# compute how many cases there with distances smaller that each x
-Gd <- sapply(distance, function(x) sum(dmin < x)) 
-# normalize to get values between 0 and 1
-Gd <- Gd / length(dmin)
-plot(distance, Gd)
-# using xlim to exclude the extremes
-plot(distance, Gd, xlim = c(0,500))
-``` 
-
-Here is a function to show these values in a more standard way.
-
-```{r}
-stepplot <- function(x, y, type = 'l', add = FALSE, ...) {
-	x <- as.vector(t(cbind(x, c(x[-1], x[length(x)]))))
-	y <- as.vector(t(cbind(y, y)))
- if (add) {
-   lines(x,y, ...)  
- } else {
-	  plot(x,y, type = type, ...)
- }
-}
-``` 
-
-And use it for our G function data.
-```{r, pp12}
-stepplot(distance, Gd, type = 'l', lwd = 2, xlim = c(0,500))
-``` 
-
-The steps are so small in our data, that you hardly see the difference.
-
-I use the centers of previously defined raster cells to compute the *F* function.
-
-```{r, pp13}
-c# get the centers of the 'quadrats' (raster cells)
-p <- as.points(r)
-# compute distance from all crime sites to these cell centers
-d2 <- distance(p, crime)
-d2 <- as.matrix(d2)
-# the remainder is similar to the G function
-Fdistance <- sort(unique(round(d2)))
-mind <- apply(d2, 1, min)
-Fd <- sapply(Fdistance, function(x) sum(mind < x)) 
-Fd <- Fd / length(mind)
-plot(Fdistance, Fd, type = 'l', lwd = 2, xlim = c(0,3000))
-``` 
-
-
-Compute the expected distributon (5.12 on page 145)
-```{r}
-ef <- function(d, lambda) {
- E <- 1 - exp(-1 * lambda * pi * d^2)
-}
-expected <- ef(0:2000, dens)
-```
-
-Now, let's combine F and G on one plot.
-```{r, pp14}
-plot(distance, Gd, type = 'l', lwd = 2, col = 'red', las = 1, 
-  ylab = 'F(d) or G(d)', xlab = 'Distance', yaxs = "i", xaxs = "i", ylim = c(0,1.1))
-lines(Fdistance, Fd, lwd = 2, col = 'blue')
-lines(0:2000, expected, lwd = 2)
-
-legend(1200, .3, 
-  c(expression(italic("G")["d"]), expression(italic("F")["d"]), 'expected'),
-  lty = 1, col = c('red', 'blue', 'black'), lwd = 2, bty = "n")
-``` 
-
-
-__Question 3__: *What does this plot suggest about the point pattern?*
-
-	  
-Finally, let's compute K. Note that I use the original distance matrix 'd' here.
-```{r, pp15}
-distance <- seq(1, 30000, 100)
-Kd <- sapply(distance, function(x) sum(d < x)) # takes a while
-Kd <- Kd / (length(Kd) * dens)
-plot(distance, Kd, type = 'l', lwd = 2)
-``` 
-
-
-
-
-__Question 4__: *Create a single random pattern of events for the city, with the same number of events as the crime data (object xy). Use function 'spsample'*
-
-
-__Question 5__: *Compute the G function, and plot it on a single plot, together with the G function for the observed crime data, and the theoretical expectation (formula 5.12).*
-
-
-__Question 6__: *(Difficult!) Do a Monte Carlo simulation (page 149) to see if the 'mean nearest distance' of the observed crime data is significantly different from a random pattern. Use a 'for loop'. First write 'pseudo-code'. That is, say in natural language what should happen. Then try to write R code that implements this.*
-	  
-	
-## Spatstat package
-
-Above we did some 'home-brew' point pattern analysis, we will now use the spatstat package. In research you would normally use spatstat rather than your own functions, at least for standard analysis. I showed how you make some of these functions in the previous sections, because understanding how to go about that may allow you to take things in directions that others have not gone. The good thing about spatstat is that it very well documented (see <http://spatstat.github.io/>). The bad thing is that it uses an entirly different sets of classes (ways to represent spatial data) that we we will use in all other labs (classes from sp and raster); but it is not hard to get used to that.
-
-
-```{r, message = FALSE}
-library(spatstat)
-``` 
-
-We start with making make a Kernel Density raster. I first create a 'ppp' (point pattern) object, as defined in the spatstat package. 
-
-A ppp object has the coordinates of the points **and** the analysis 'window' (study region). To assign the points locations we need to extract the coordinates from our SpatialPoints object. To set the window, we first need to to coerce our SpatialPolygons into an 'owin' object. We need a function from the maptools package for this coercion.
-
-Coerce from SpatVector to an object of class "owin" (observation window) via `sf`
-
-```{r, message = FALSE}
-cityOwin <- as.owin(sf::st_as_sf(city))
-class(cityOwin)
-cityOwin
-``` 
-
-Extract coordinates from SpatialPointsDataFrame:
-```{r}
-pts <- terra::crds(crime)
-head(pts)
-``` 
-
-Now we can create a 'ppp' (point pattern) object
-```{r, pp20}
-p <- ppp(pts[,1], pts[,2], window = cityOwin)
-class(p)
-p
+It is also possible to interactively select and query records by clicking on a plotted dataset. That is difficult to show here. See `?sel` for interactively selecting geometries and `?click` to identify attributes by clicking on a plot (map).
+
+## Append and aggregate
+
+## Append
+
+More example data. Object `z` consists of four polygons; `z2` is one of these four polygons. Run the below code in an R script.
+
+```{r, zzz}
+z <- rast(p)
+dim(z) <- c(2,2)
+values(z) <- 1:4
+names(z) <- 'Zone'
+# coerce SpatRaster to SpatVector polygons
+z <- as.polygons(z)
+z
+z2 <- z[2,]
 plot(p)
-``` 
+plot(z, add = TRUE, border = 'blue', lwd = 5)
+plot(z2, add = TRUE, border = 'red', lwd = 2, col = 'red')
+```
 
-Note the warning message about 'illegal' points. Do you see them and do you understand why they are illegal?
-
-Having all the data well organized, it is now easy to compute Kernel Density
-```{r, pp21}
-ds <- density(p)
-class(ds)
-plot(ds, main = 'crime density')
-``` 
-
-Density is the number of points per unit area. Let's ceck if the numbers makes sense, by adding them up and mulitplying with the area of the raster cells. I use terra package functions for that.
-```{r}
-nrow(pts)
-r <- rast(ds)
-s <- sum(values(r), na.rm = TRUE) 
-s * prod(res(r))
-``` 
-
-Looks about right. We can also get the information directly from the "im" (image) object
-```{r}
-str(ds)
-sum(ds$v, na.rm = TRUE) * ds$xstep * ds$ystep
-p$n
-``` 
-
-Here's another, lenghty, example of generalization. We can interpolate population density from (2000) census data; assigning the values to the centroid of a polygon (as explained in the book, but not a great technique). We use a shapefile with census data. 
+To append SpatVector objects of the same (vector) type you can use `rbind` (or `c` for older versions of terra).
 
 ```{r}
-census <- spat_data("census2000.rds")
-``` 
+b <- rbind(p, z)
+# with older versions
+# b <- c(p, z)
+head(b)
+tail(b)
+```
 
-To compute population density for each census block, we first need to get the area of each polygon. I transform density from persons per feet^2^ to persons per mile^2^, and then compute population density from POP2000 and the area
-```{r}
-census$area <- expanse(census)
-census$area <- census$area/27878400
-census$dens <- census$POP2000 / census$area
-``` 
+Note how `rbind` (`c` for older versions of terra) allows you to append `SpatVect` objects with different attribute names, unlike the standard `rbind` for `data.frame`s.
 
-Now to get the centroids of the census blocks.
+## Aggregate
 
-```{r}
-p <- terra::crds(centroids(census))
-head(p)
-``` 
+It is common to aggregate ("dissolve") polygons that have the same value for an attribute of interest. In this case, if we do not care about the second level subdivisions of Luxembourg, we could aggregate by the first level subdivisions.
 
-To create the 'window' we dissolve all polygons into a single polygon.
+Run the below in an R script.
 
-```{r}
-win <- aggregate(census)
-``` 
+```{r, agg}
+pa <- aggregate(p, by = 'NAME_1')
+za <- aggregate(z)
+plot(za, col = 'light gray', border = 'light gray', lwd = 5)
+plot(pa, add = TRUE, col = rainbow(3), lwd = 3, border = 'white')
+```
 
-Let's look at what we have:
+It is also possible to aggregate polygons without dissolving the borders.
 
-```{r, pp22}
-plot(census)
-points(p, col = 'red', pch = 20, cex = .25)
-plot(win, add = TRUE, border = 'blue', lwd = 3)
-``` 
+```{r, aggnodis}
+zag <- aggregate(z, dissolve = FALSE)
+zag
+plot(zag, col = "light gray")
+```
 
-Now we can use 'Smooth.ppp' to interpolate. Population density at the points is referred to as the 'marks'
-```{r}
-owin <- as.owin(sf::st_as_sf(win))
-pp <- ppp(p[,1], p[,2], window = owin, marks = census$dens)
-pp
-``` 
+This is a structure that is similar to what you may get for an archipelago: multiple polygons represented as one entity (one row). Use `disagg` to split these up into their parts.
 
-Note the warning message: "1 point was rejected as lying outside the specified window". That is odd, there is a polygon that has a centroid that is outside of the polygon. This can happen with, e.g., kidney shaped polygons.
+```{r diis}
+zd <- disagg(zag)
+zd
+```
 
-Let's find and remove this point that is outside the study area.
-```{r}
-sp <- vect(p, crs = crs(win))
-i <- relate(sp, win, "intersects")
-i <- which(!i)
-i
-``` 
+## Overlay
 
-Let's see where it is:
-```{r, pp23}
-plot(census)
-points(sp)
-points(sp[i,], col = 'red', cex = 3, pch = 20)
-``` 
+There are many different ways to "overlay" vector data. Here are some examples:
 
-You can zoom in using the code below. After running the next line, click on your map twice to zoom to the red dot, otherwise you cannot continue:
+### Erase
 
-```zoom(census)```
+Erase a part of a SpatVector
 
-And add the red points again
+```{r raser}
+e <- erase(p, z2)
+plot(e)
+```
 
-```points(sp[i,], col = 'red')```
+### Intersect
 
-To only use points that intersect with the window polygon, that is, where 'i == TRUE':
+Intersect SpatVectors
 
-```{r, pp24}
-pp <- ppp(p[i,1], p[i,2], window = owin, marks = census$dens[i])
-plot(pp)
-plot(city, add = TRUE)
-``` 
+```{r, int}
+i <- intersect(p, z2)
+plot(i)
+```
 
-And to get a smooth interpolation of population density.
-```{r, pp25}
-s <- Smooth.ppp(pp)
-plot(s)
-plot(city, add = TRUE)
-``` 
+You can also `intersect` or `crop` with a SpatExtent (rectangle). The difference between `intersect` and `crop` is that with `crop` the geometry of the second argument is not added to the output.
 
-Population density could establish the "population at risk" (to commit a crime) for certain crimes, but not for others. 
+Run the below in an R script.
 
-Maps with the city limits and the incidence of 'auto-theft', 'drunk in public', 'DUI', and 'Arson'.
+```{r, intext}
+e <- ext(6, 6.4, 49.7, 50)
+pe <- crop(p, e)
+plot(p)
+plot(e, add = TRUE, lwd = 3, col = "red")
+plot(pe, col = 'light blue', add = TRUE)
+plot(e, add = TRUE, lwd = 3, border = "blue")
+```
 
-```{r, pp26, fig.width = 9}
-par(mfrow = c(2,2), mai = c(0.25, 0.25, 0.25, 0.25))
-for (offense in c("Auto Theft", "Drunk in Public", "DUI", "Arson")) {
- plot(city, col = 'grey')
-	acrime <- crime[crime$CATEGORY == offense, ]
-	points(acrime, col = "red")
-	title(offense)
-}
-``` 
+### Union
 
-Create a marked point pattern object (ppp) for all crimes. It is important to coerce the marks to a factor variable.
+Get the union of two SpatVectors.
 
 ```{r}
-crime$fcat <- as.factor(crime$CATEGORY)
-w <- as.owin(sf::st_as_sf(city))
-xy <- terra::crds(crime)
-mpp <- ppp(xy[,1], xy[,2], window = w, marks = as.factor(crime$fcat))
-``` 
+u <- union(p, z)
+u
+```
 
-We can split the mpp object by category (crime)
-```{r, pp27, fig.width = 9}
-spp <- split(mpp)
+Note that there are many more polygons now. One for each unique combination of polygons (and attributes in this case).
 
-plot(spp[1:4], main = )
-``` 
+```{r unionplot}
+set.seed(5)
+plot(u, col = sample(rainbow(length(u))))
+```
 
-The crime density by category:
-```{r, pp28, fig.width = 9}
-plot(density(spp[1:4]), main = '')
-``` 
+### Cover
 
-And produce K-plots (with an envelope) for 'drunk in public' and 'Arson'. Can you explain what they mean?
+`cover` is a combination of `intersect` and `union`. `intersect` returns new (intersected) geometries with the attributes of both input datasets. `union` appends the geometries and attributes of the input. `cover` returns the intersection and appends the other geometries and attributes of both datasets.
+
+```{r, cov}
+cov <- cover(p, z[c(1,4),])
+cov
+plot(cov)
+```
+
+### Difference
+
+The symmetrical difference of two SpatVectors
+
+```{r, dif}
+dif <- symdif(z,p)
+plot(dif, col = rainbow(length(dif)))
+dif
+```
+
+## Spatial queries
+
+We can query polygons with points ("point-in-polygon query"). Run the below in an R script.
+
+```{r, pts}
+pts <- matrix(c(6, 6.1, 5.9, 5.7, 6.4, 50, 49.9, 49.8, 49.7, 49.5), ncol = 2)
+spts <- vect(pts, crs = crs(p))
+plot(z, col = 'light blue', lwd = 2)
+points(spts, col = 'light gray', pch = 20, cex = 6)
+text(spts, 1:nrow(pts), col = 'red', font = 2, cex = 1.5)
+lines(p, col = 'blue', lwd = 2)
+```
+
+`extract` is used for queries between SpatVector and SpatRaster objects, and also for queries between SpatVectors.
+
 ```{r}
-spatstat.options(checksegments = FALSE)
-ktheft <- Kest(spp$"Auto Theft")
-ketheft <- envelope(spp$"Auto Theft", Kest)
-ktheft <- Kest(spp$"Arson")
-ketheft <- envelope(spp$"Arson", Kest)
-``` 
+extract(spts, p)
+extract(spts, z)
+```
 
-```{r, pp29, fig.width = 10}
-par(mfrow = c(1,2))
-plot(ktheft)
-plot(ketheft)
-``` 
+# Raster data manipulation
 
-Let's try to answer the question you have been wanting to answer all along. Is population density a good predictor of being (booked for) "drunk in public" and for "Arson"? One approach is to do a Kolmogorov-Smirnov ('kstest') on 'Drunk in Public' and 'Arson', using population density as a covariate:
+## Creating SpatRaster objects
 
-```{r}
-KS.arson <- cdf.test(spp$Arson, ds)
-KS.arson
-KS.drunk <- cdf.test(spp$'Drunk in Public', ds)
-KS.drunk
-``` 
+A `SpatRaster` can easily be created from scratch using the function `rast`. The default settings will create a global raster data structure with a longitude/latitude coordinate reference system and 1 by 1 degree cells. You can change these settings by providing additional arguments such as `xmin`, `nrow`, `ncol`, and/or `crs`, to the function. You can also change these parameters after creating the object. If you set the projection, this is only to properly define it, not to change it. To transform a `SpatRaster` to another coordinate reference system (projection) you can use the `project` function.
 
-__Question 7__: *Why is the result surprising, or not surprising?*
+Here is an example of creating and changing a `SpatRaster` object 'r' from scratch.
 
-We can also compare the patterns for "drunk in public" and for "Arson" with the KCross function.
-```{r, pp30}
-kc <- Kcross(mpp, i = "Drunk in Public", j = "Arson")
-ekc <- envelope(mpp, Kcross, nsim = 50, i = "Drunk in Public", j = "Arson")
-plot(ekc)
-``` 
+```{r, raster-1a}
+library(terra)
+# SpatRaster with the default parameters
+x <- rast()
+x
+```
 
+With some other parameters
 
-Much more about point pattern analysis with spatstat is [available here](https://research.csiro.au/software/r-workshop-notes/)
+```{r, raster-1b}
+x <- rast(ncol = 36, nrow = 18, xmin = -1000, xmax = 1000, ymin = -100, ymax = 900)
+```
 
+These parameters can be changed. Resolution:
+
+```{r, raster-1c}
+res(x)
+res(x) <- 100
+res(x)
+```
+
+Change the number of columns (this affects the resolution).
+
+```{r, raster-1d}
+ncol(x)
+ncol(x) <- 18
+ncol(x)
+res(x)
+```
+
+Set the coordinate reference system (CRS) (i.e., define the projection).
+
+```{r, raster-1e}
+crs(x) <- "+proj=utm +zone=48 +datum=WGS84"
+x
+```
+
+The object `x` created in the examples above only consists of the raster *geometry*, that is, we have defined the number of rows and columns, and where the raster is located in geographic space, but there are no cell-values associated with it. Setting and accessing values is illustrated below.
+
+First another example empty raster geometry.
+
+```{r, raster-1h }
+r <- rast(ncol = 10, nrow = 10)
+ncell(r)
+hasValues(r)
+```
+
+Use the 'values' function.
+
+```{r, raster-1i }
+values(r) <- 1:ncell(r)
+```
+
+Another example.
+
+```{r, raster-1j, fig.width = 9, fig.height = 4 }
+set.seed(0)
+values(r) <- runif(ncell(r))
+
+hasValues(r)
+sources(r)
+values(r)[1:10]
+plot(r, main = 'Raster with 100 cells')
+```
+
+In some cases, for example when you change the number of columns or rows, you will lose the values associated with the `SpatRaster` if there were any (or the link to a file if there was one). The same applies, in most cases, if you change the resolution directly (as this can affect the number of rows or columns). Values are not lost when changing the extent as this change adjusts the resolution, but does not change the number of rows or columns.
+
+```{r, raster-1x}
+hasValues(r)
+res(r)
+dim(r)
+# extent
+ext(r)
+```
+
+Now change the maximum x coordinate of the extent (bounding box) of the `SpatRaster`.
+
+```{r, raster-1y}
+xmax(r) <- 0
+hasValues(r)
+res(r)
+dim(r)
+```
+
+And the number of columns (the values disappear)
+
+```{r, raster-1z}
+ncol(r) <- 6
+hasValues(r)
+res(r)
+dim(r)
+xmax(r)
+```
+
+While we can create a `SpatRaster` from scratch, it is more common to do so from a file. The `terra` package can use raster files in several formats, including GeoTiff, ESRI, ENVI, and ERDAS.
+
+A notable feature of the `terra` package is that it can work with raster datasets that are stored on disk and are too large to be loaded into memory (RAM). The package can work with large files because the objects it creates from these files only contain information about the structure of the data, such as the number of rows and columns, the spatial extent, and the filename, but it does not attempt to read all the cell values in memory. In computations with these objects, data is processed in chunks. If no output filename is specified to a function, and the output raster is too large to keep in memory, the results are written to a temporary file.
+
+Below we first we get the name of an example raster file that is installed with the "terra" package. Do **not** use this `system.file` construction for your own files. Just type the file name as you would do for any other file, but don't forget to use forward slashes as path separators.
+
+```{r, raster-2a1 }
+filename <- system.file("ex/elev.tif", package = "terra")
+basename(filename)
+```
+
+```{r, raster-2a2 }
+r <- rast(filename)
+sources(r)
+hasValues(r)
+plot(r, main = "SpatRaster from file")
+```
+
+Multi-layer objects can be created in memory or from files.
+
+Create three identical `SpatRaster` objects
+
+```{r, raster-2b1}
+r1 <- rast(nrow = 10, ncol = 10)
+r2 <- r1
+r3 <- r1
+# Assign random cell values 
+values(r1) <- runif(ncell(r1))
+values(r2) <- runif(ncell(r2))
+values(r3) <- runif(ncell(r3))
+```
+
+Combine three `SpatRaster`s:
+
+```{r, raster-2b2}
+s <- c(r1, r2, r3)
+s
+nlyr(s)
+```
+
+You can also create a multilayer object from a file.
+
+```{r, raster-2b5}
+filename <- system.file("ex/logo.tif", package = "terra")
+basename(filename)
+b <- rast(filename)
+b
+nlyr(b)
+```
+
+Extract a single layer (the second one on this case)
+
+```{r, raster-2b6}
+r <- b[[2]]
+```
+
+## Raster algebra
+
+Many generic functions that allow for simple and elegant raster algebra have been implemented for `Raster` objects, including the normal algebraic operators such as `+`, `-`, `*`, `/`, logical operators such as `>`, `> =`, `<`, `= =`, `!` and functions like `abs`, `round`, `ceiling`, `floor`, `trunc`, `sqrt`, `log`, `log10`, `exp`, `cos`, `sin`, `atan`, `tan`, `max`, `min`, `range`, `prod`, `sum`, `any`, `all`. In these functions you can mix `raster` objects with numbers, as long as the first argument is a `raster` object.
+
+Create an empty `SpatRaster` and assign values to cells.
+
+```{r, raster-3a1}
+r <- rast(ncol = 10, nrow = 10)
+values(r) <- 1:ncell(r)
+```
+
+Now some raster algebra.
+
+```{r, raster-3a2}
+s <- r + 10
+s <- sqrt(s)
+s <- s * r + 5
+values(r) <- runif(ncell(r))
+r <- round(r)
+r <- r == 1
+```
+
+You can also use replacement functions.
+
+```{r, raster-3b}
+#Not yet implemented
+s[r] <- -0.5
+s[!r] <- 5
+s[s == 5] <- 15
+```
+
+If you use multiple `SpatRaster` objects (in functions where this is relevant, such as `range`), these must have the same resolution and origin. The origin of a `Raster` object is the point closest to (0, 0) that you could get if you moved from a corner of a `SpatRaster` toward that point in steps of the `x` and `y` resolution. Normally these objects would also have the same extent, but if they do not, the returned object covers the spatial intersection of the objects used.
+
+When you use multiple multi-layer objects with different numbers or layers, the 'shorter' objects are 'recycled'. For example, if you multiply a 4-layer object (`a1`, `a2`, `a3`, `a4`) with a 2-layer object (`b1`, `b2`), the result is a four-layer object (`a1*b1`, `a2*b2`, `a3*b1`, `a3*b2`).
+
+```{r, raster-3c}
+r <- rast(ncol = 5, nrow = 5)
+values(r) <- 1
+s <- c(r, r + 1)
+q <- c(r, r + 2, r + 4, r + 6)
+x <- r + s + q
+x
+```
+
+Summary functions (`min`, `max`, `mean`, `prod`, `sum`, `median`, `cv`, `range`, `any`, `all`) always return a `SpatRaster` object. Perhaps this is not obvious when using functions like `min`, `sum` or `mean`.
+
+```{r, raster-3d}
+a <- mean(r, s, 10)
+b <- sum(r, s)
+st <- c(r, s, a, b)
+sst <- sum(st)
+sst
+```
+
+Use `global` if you want a single number summarizing the cell values of each layer.
+
+```{r, raster-3e}
+global(st, 'sum')
+global(sst, 'sum')
+```
+
+## 'High-level' functions
+
+Several 'high level' functions have been implemented for `SpatRaster` objects. 'High level' functions refer to functions that you would normally find in a computer program that supports the analysis of raster data. Here we briefly discuss some of these functions. All these functions work for raster datasets that cannot be loaded into memory. See the help files for more detailed descriptions of each function.
+
+The high-level functions have some arguments in common. The first argument is typically a `SpatRaster` 'x' or 'object'. It is followed by one or more arguments specific to the function (either additional `SpatRaster` objects or other arguments), followed by `filename` and `...` arguments.
+
+The default filename is an empty character `""`. If you do not specify a filename, the default action for the function is to return a `raster` object that only exists in memory. However, if the function deems that the `raster` object to be created would be too large to hold in memory, it is written to a temporary file instead.
+
+The `...` argument allows for setting additional arguments that are relevant when writing values to a file: the file format, datatype (e.g. integer or real values), and a to indicate whether existing files should be overwritten.
+
+### Modifying a SpatRaster object
+
+There are several functions that deal with modifying the spatial extent of `SpatRaster` objects.
+
+`crop`: lets you take a geographic subset of a larger `raster` object. You can crop a `SpatRaster` by providing an extent object or another spatial object from which an extent can be extracted.
+
+`drawExtent`: An easy way to get an extent object is to plot a `SpatRaster` and then use `drawExtent` to visually determine the new extent (bounding box) to provide to the crop function.
+
+`trim`: crops a `SpatRaster` by removing the outer rows and columns that only contain `NA` values.
+
+`extend`: adds new rows and/or columns with `NA` values.
+
+`merge`: merge 2 or more SpatRaster objects into a single new object. The input objects must have the same resolution and origin (such that their cells neatly fit into a single larger raster). If this is not the case you can first adjust one of the SpatRaster objects with `aggregate`/`disagg` or `resample`.
+
+`aggregate` and `disagg`: allow for changing the resolution (cell size) of a `SpatRaster` object. In the case of `aggregate`, you need to specify a function determining what to do with the grouped cell values' `mean`. It is possible to specify different (dis)aggregation factors in the x and y direction. `aggregate` and `disagg` are the best functions when adjusting cells size only, with an integer step (e.g. each side 2 times smaller or larger), but in some cases that is not possible.
+
+`resample`: alter the cell centers but keep a similar cell size. It can do either nearest neighbour assignments (for categorical data) or bilinear interpolation (for numerical data).
+
+`shift` or `extent`: can perform simple linear shifts of a Raster object.
+
+`warp`: transform values of `SpatRaster` object to a new object with a different coordinate reference system.
+
+Here are some simple examples.
+
+Aggregate and disaggregate.
+
+```{r, raster-5, fig.width = 9, fig.height = 4 }
+r <- rast()
+values(r) <- 1:ncell(r)
+ra <- aggregate(r, 20)
+rd <- disagg(ra, 20)
+```
+
+Crop and merge example.
+
+```{r, raster-5b, fig.width = 9, fig.height = 4 }
+r1 <- crop(r, ext(-50,0,0,30))
+r2 <- crop(r, ext(-10,50,-20, 10))
+m <- merge(r1, r2, filename = "test.tif", overwrite = TRUE)
+plot(m)
+```
+
+```{r, echo = FALSE, include = FALSE}
+ff <- list.files(patt = "^test")
+file.remove(ff)
+```
+
+`flip`: lets you flip the data (reverse order) in horizontal or vertical direction -- typically to correct for a 'communication problem' between different R packages or a misinterpreted file.
+
+`rotate`: lets you rotate longitude/latitude rasters that have longitudes from 0 to 360 degrees (often used by climatologists) to the standard -180 to 180 degrees system.
+
+`t`: you can rotate a `SpatRaster` object 90 degrees.
+
+### Overlay
+
+`app` (short for "apply") allows you to do a computation for a single `SpatRaster` object by providing a function, e.g. `sum`.
+
+The `lapp` (layer-apply) function can be used as an alternative to the raster algebra discussed above.
+
+### Classify
+
+You can use `classify` to replace ranges of values with single values, or to substitute (replace) single values with other values.
+
+```{r, raster-6a}
+r <- rast(ncol = 3, nrow = 2)
+values(r) <- 1:ncell(r)
+values(r)
+```
+
+Set all values above 4 to `NA`
+
+```{r, raster-6b}
+s <- app(r, fun = function(x){ x[x < 4] <- NA; return(x)} )
+as.matrix(s)
+```
+
+Divide the first raster with two times the square root of the second raster and add five.
+
+```{r, raster-6c}
+rs <- c(r, s)
+w <- lapp(rs, fun = function(x, y){ x / (2 * sqrt(y)) + 5 } )
+as.matrix(w)
+```
+
+Remove from `r` all values that are `NA` in `w`.
+
+```{r, raster-6d}
+u <- mask(r, w)
+as.matrix(u)
+```
+
+Identify the cell values in `u` that are the same as in `s`.
+
+```{r, raster-6e}
+v <- u == s
+as.matrix(v)
+```
+
+Replace `NA` values in `w` with values of `r`.
+
+```{r, raster-6f}
+cvr <- cover(w, r)
+as.matrix(w)
+```
+
+Change value between 0 and 2 to 1, etc.
+
+```{r, raster-6g}
+x <- classify(w, rbind(c(0,2,1), c(2,5,2), c(4,10,3)))
+as.matrix(x)
+```
+
+Substitute 2 with 40 and 3 with 50.
+
+```{r, raster-6h}
+y <- classify(x, cbind(id = c(2,3), v = c(40,50)))
+as.matrix(y)
+```
+
+### Focal methods
+
+The `focal` methods compute new values based on the values in a neighbourhood of cells around a focal cell, and putting the result in the focal cell of the output SpatRaster. The neighbourhood is a user-defined matrix of weights and could approximate any shape by giving some cells zero weight. It is possible to only computes new values for cells that are `NA` in the input SpatRaster.
+
+### Distance
+
+There are a number of distance related functions. For example, you can compute the shortest distance to cells that are not `NA`, the shortest distance to any point in a set of points, or the distance when following grid cells that can be traversed (e.g. excluding water bodies). `direction` computes the direction toward (or from) the nearest cell that is not `NA`. `adjacency` determines which cells are adjacent to other cells. See the `gdistance` package for more advanced distance calculations (cost distance, resistance distance).
+
+### Spatial configuration
+
+`patches` identifies groups of cells that are connected. `boundaries` identifies edges, that is, transitions between cell values. `area` computes the size of each grid cell (for unprojected rasters), this may be useful to, e.g. compute the area covered by a certain class on a longitude/latitude raster.
+
+```{r, raster-7}
+r <- rast(nrow = 45, ncol = 90)
+values(r) <- round(runif(ncell(r))*3)
+a <- cellSize(r)
+zonal(a, r, "sum")
+```
+
+### Predictions
+
+The `terra` package has two functions to make model predictions to (potentially very large) rasters. `predict` takes a multilayer raster and a fitted model as arguments. Fitted models can be of various classes, including glm, gam, and RandomForest. The function `interpolate` is similar but is for models that use coordinates as predictor variables, for example in Kriging and spline interpolation.
+
+### Vector to raster conversion
+
+The terra package supports point, line, and polygon to raster conversion with the `rasterize` function. For vector type data (points, lines, polygons), `SpatVector` objects are used; but points can also be represented by a two-column matrix (x and y).
+
+Point to raster conversion is often done with the purpose to analyze the point data. For example to count the number of distinct species (represented by point observations) that occur in each raster cell. `rasterize` takes a `SpatRaster` object to set the spatial extent and resolution, and a function to determine how to summarize the points (or an attribute of each point) by cell.
+
+Polygon to raster conversion is typically done to create a `SpatRaster` that can act as a mask, i.e. to set to `NA` a set of cells of a `SpatRaster` object, or to summarize values on a raster by zone. For example a country polygon is transferred to a raster that is then used to set all the cells outside that country to `NA`; whereas polygons representing administrative regions such as states can be transferred to a raster to summarize raster values by region.
+
+It is also possible to convert the values of a `SpatRaster` to points or polygons, using `as.points` and `as.polygons`. Both functions only return values for cells that are not `NA`.
+
+## Summarizing functions
+
+When used with a `SpatRaster` object as first argument, normal summary statistics functions such as `min`, `max` and `mean` return a `SpatRaster`. You can use `global` if, instead, you want to obtain a summary for all cells of a single `SpatRaster` object. You can use `freq` to make a frequency table, or to count the number of cells with a specified value. Use `zonal` to summarize a `SpatRaster` object using zones (areas with the same integer number) defined in a `SpatRaster` and `crosstab` to cross-tabulate two `SpatRaster` objects.
+
+```{r, raster-10a}
+r <- rast(ncol = 36, nrow = 18)
+values(r) <- runif(ncell(r))
+global(r, mean)
+```
+
+Zonal stats, below `r` has the cells we want to summarize, `s` defines the zones, and the last argument is the function to summarize the values of `r` for each zone in `s`.
+
+```{r, raster-10b}
+s <- r
+values(s) <- round(runif(ncell(r)) * 5)
+zonal(r, s, 'mean')
+```
+
+Count cells
+
+```{r, raster-10c}
+freq(s)
+freq(s, value = 3)
+```
+
+Cross-tabulate
+
+```{r, raster-10d}
+ctb <- crosstab(c(r*3, s))
+head(ctb)
+```
+
+## Helper functions
+
+The cell number is an important concept in the terra package. Raster data can be thought of as a matrix, but in a `SpatRaster` it is more commonly treated as a vector. Cells are numbered from the upper left cell to the upper right cell and then continuing on the left side of the next row, and so on until the last cell at the lower right side of the raster. There are several helper functions to determine the column or row number from a cell and vice versa, and to determine the cell number for x, y coordinates and vice versa.
+
+```{r, raster-15}
+r <- rast(ncol = 36, nrow = 18)
+ncol(r)
+nrow(r)
+ncell(r)
+rowFromCell(r, 100)
+colFromCell(r, 100)
+cellFromRowCol(r,5,5)
+xyFromCell(r, 100)
+cellFromXY(r, cbind(0,0))
+colFromX(r, 0)
+rowFromY(r, 0)
+```
+
+## Accessing cell values
+
+Cell values can be accessed with several methods. Use `values` to get all values or a subset such as a single row or a block (rectangle) of cell values.
+
+```{r, raster-20}
+r <- rast(system.file("ex/elev.tif", package = "terra"))
+v <- values(r)
+v[3075:3080, ]
+values(r, row = 33, nrow = 1, col = 35, ncol = 6)
+```
+
+You can also read values using cell numbers or coordinates (xy) using the `extract` method.
+
+```{r, raster-21}
+cells <- cellFromRowCol(r, 33, 35:40)
+cells
+r[cells]
+xy <- xyFromCell(r, cells)
+xy
+extract(r, xy)
+```
+
+You can also extract values using `SpatVector` objects. The default approach for extracting raster values with polygons is that a polygon has to cover the center of a cell, for the cell to be included. However, you can use argument `weights = TRUE` in which case you get, apart from the cell values, the percentage of each cell that is covered by the polygon, so that you can apply, e.g., a "50% area covered" threshold, or compute an area-weighted average.
+
+In the case of lines, any cell that is crossed by a line is included. For lines and points, a cell that is only 'touched' is included when it is below or to the right (or both) of the line segment/point (except for the bottom row and right-most column).
+
+In addition, you can use standard *R* indexing to access values, or to replace values (assign new values to cells) in a `SpatRaster` object. If you replace a value in a `SpatRaster` object based on a file, the connection to that file is lost (because it now is different from that file). Setting raster values for very large files will be very slow with this approach as each time a new (temporary) file, with all the values, is written to disk. If you want to overwrite values in an existing file, you can use `update` (with caution!)
+
+```{r, raster-32}
+r[cells] 
+r[1:4]
+sources(r)
+r[2:5] <- 10
+r[1:4]
+sources(r)
+```
+
+Note that in the above examples values are retrieved using cell numbers. That is, a raster is represented as a (one-dimensional) vector. Values can also be inspected using a (two-dimensional) matrix notation. As for *R* matrices, the first index represents the row number, the second the column number.
+
+```{r, raster-33}
+r[1:3]
+r[1,1:3]
+r[1, 1:5]
+r[1:5, 2]
+r[1:3,1:3]
+
+# get a vector instead of a a matrix
+r[1:3, 1:3, drop = TRUE]
+
+# or a raster like matrix 
+as.matrix(r, wide = TRUE)[1:3, 1:4]
+```
+
+Accessing values through this type of indexing should be avoided inside functions as it is less efficient than accessing values via functions like `getValues`.
+
+## Coercion to other classes
+
+You can convert `SpatRaster` objects to `Raster*` objects defined in the `raster` package.
+
+```{r, raster-120}
+r <- rast(ncol = 36, nrow = 18)
+values(r) <- runif(ncell(r))
+library(raster)
+x <- raster(r)
+```
 
