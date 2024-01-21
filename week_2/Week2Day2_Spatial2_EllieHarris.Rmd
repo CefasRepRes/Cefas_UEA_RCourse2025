@@ -15,12 +15,13 @@ The following is from rspatial.org by Robert Hijmans, with modifications.
 
 # Vector data manipulation
 
-Read in the lux shapefile from yesterday.
+Read in the lux shapefile from yesterday and call it p.
 
 ```{r, vec1}
 library(terra)
 f <- system.file("ex/lux.shp", package = "terra")
-#p <- # fill in this part
+
+# turn f into spatvector p
 
 ```
 
