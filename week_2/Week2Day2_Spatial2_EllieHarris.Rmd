@@ -800,7 +800,9 @@ library(raster)
 x <- raster(r)
 ```
 
-# [Exercises:]{.underline}
+# Exercises: {.underline}
+
+(answers are at the end)
 
 1.  Install the rnatural earth package and create two sf maps of Germany (shown below). Convert these to SpatVectors
 
@@ -812,9 +814,9 @@ x <- raster(r)
 
 5.  Plot the average temperature but only for the areas in map3
 
-6.   What is the average minimum temperature, for each month over the entirety of Germany
+6.  What is the average minimum temperature, for each month over the entirety of Germany
 
-7.   Practice plotting, and using the functions from this session on data or your own. Think about practical applications of these functions and how you may want to use it in your own work.
+7.  Practice plotting, and using the functions from this session on data or your own. Think about practical applications of these functions and how you may want to use it in your own work.
 
 8.  If you're a bit more advanced than this, check out the other chapters in <https://www.paulamoraga.com/book-spatial/> or <https://rspatial.org/analysis/index.html>
 
