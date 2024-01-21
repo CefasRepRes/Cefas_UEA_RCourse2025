@@ -440,3 +440,104 @@ bg <- get_tiles(ext(p))
 plotRGB(bg)
 lines(p, col = "blue", lwd = 3)
 ```
+
+# Exercises
+
+#### [Exercise 1]{.underline}
+
+1.  Read in the shapefile 'ex/lux.shp' from the terra package using the system.file function. Save it as a spatvector called 'lux'.
+
+2.  Check the current crs of the spatvector, and note the EPSG code it has
+
+3.  Plot the spatvector
+
+4.  What is the spatial extent of the spatvector?
+
+5.   Project the spatvector into EPSG: 2169 and plot it
+
+6.  Does the new projection have the same units? True /False
+
+7.  Save this new spatvector
+
+#### [Exercise 2]{.underline}
+
+1.   Load in the raster 'ex/elev.tif' as a spatRaster called luxrast
+
+2.  Check the CRS of the raster, and make sure this and your original lux spatvector are both EPSG : 4326
+
+3.   Plot your spatraster and overlay the spatvector country outline (*hint: you will probably need to do this in an R script, not R markdown*)
+
+4.  Plot the Lux spatvector showing a) colours for different population sizes and b) colours for different area sizes
+
+#### [Exercise 3]{.underline} 
+
+1.  Follow this link to a quick tutorial on how to make your own spatraster in `terra` :<https://rspatial.org/pkg/3-objects.html#:~:text=A%20SpatRaster%20can%20easily%20be,1%20by%201%20degree%20cells.>
+
+2.  Have a go at creating your own spatraster - no answers for this one - just play around!
+
+Exercise 4
+
+1.  Follow this link to see how to create your own vector using `sf`: <https://www.paulamoraga.com/book-spatial/the-sf-package-for-spatial-vector-data.html#creating-a-sf-object>
+
+2.  Have a go at creating your own vector - no answers for this one - just play around!
+
+# Resources:
+
+<https://rspatial.org/> : contains excellent tutorials and examples with terra
+
+<https://www.paulamoraga.com/book-spatial/index.html> : tutorials and examples with both terra and sf
+
+# Exercise answers
+
+Exercise 1
+
+```{r exercise 1 answers}
+# library(terra)
+
+# 1
+f <- system.file("ex/lux.shp", package ="terra")
+
+lux <- vect(f)
+
+# 2 
+crs(lux) #EPSG 4326
+
+
+# 3 
+plot(lux)
+
+# 4 
+lux # 5.74414, 6.528252, 49.44781, 50.18162  (xmin, xmax, ymin, ymax)
+
+# 5
+lux2 <- project(lux, "EPSG:2169")
+
+plot(lux2) 
+
+# 6
+lux2 #extent : 49540.31, 105922, 57009.53, 138631.1  (xmin, xmax, ymin, ymax)
+
+# FALSE
+```
+
+Exercise 2
+
+```{r exercise 2 answers}
+
+# 1 
+
+luxrast <- rast(system.file("ex/elev.tif", package = "terra"))
+
+
+# 2
+crs(luxrast) # EPSG 4326
+crs(lux) # EPSG 4326
+
+# 3 (in an R script)
+plot(luxrast)
+plot(lux, add = TRUE)
+
+# 4
+plot(lux, "POP", col = rainbow(5))
+plot(lux, "AREA", col = rainbow(5))
+```
