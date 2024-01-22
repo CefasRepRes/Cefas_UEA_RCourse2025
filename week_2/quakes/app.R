@@ -37,9 +37,12 @@ ui <- fluidPage(
 
 # Define server logic required to draw a leaflet map
 server <- function(input, output) {
+  
     output$map <- renderLeaflet({
+      #browser()
       leaflet() %>%
         addTiles() %>% 
+      
         addCircleMarkers(data = quakes[quakes$mag > input$mag[1] & quakes$mag < input$mag[2],],
                          lng = ~long,
                          lat = ~lat,

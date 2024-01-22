@@ -252,8 +252,7 @@ This works well for smaller datasets or where you have a small number of inputs,
 In this case we can wrap our code in an observeEvent. This sits there quietly observing until it is triggered (for example by the user clicking a button), and only then will it run the code. Let's do that for the example above
 
 ```{r observe event example}
-here
-runApp(here("quakes"))
+
 
 ```
 
@@ -262,13 +261,21 @@ runApp(here("quakes"))
 renderplot, rendertable, renderleaflet etc. Explain how to call inputs to produce outputs
 
 ```{r leaflet example}
-#basic example for interactive map, maybe with zoom to functionality
-
+runApp(here("quakes"))
 ```
 
 ## Debugging
 
-Explain how to use browser() to debug
+Shiny apps are easy to break, and it can be confusing to figure out what is going wrong outside of the reactive shiny environment.
+You can use browser statements in your server script to help with debugging. This will run the app to where it gets to the browser statement, then your console will show Browse[1]> and you will be able to access everything in your app at that point.
+
+As an example lets uncomment the browser statement in line 42 of the quakes app, then run it again.
+
+```{r browser}
+runApp(here("quakes"))
+```
+Try typing input$mag in your console now and you will be able to see what that actually is. You can even look at  its class, and anything else you could normally do in R.
+
 
 ## Shiny with multiple files
 
