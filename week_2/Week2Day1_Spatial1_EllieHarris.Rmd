@@ -1,0 +1,543 @@
+---
+title: "Spatial Data 1"
+author: "Ellie Harris"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In this session we will cover **what spatial data is**, the two main **data types**, **basic analyses,** and **mapping**.
+
+A good starting point to understand spatial data in R is Paula Moraga's book '**Spatial Statistics for Data Science: Theory and Practice with R**' [https://www.paulamoraga.com/book-spatial](https://www.paulamoraga.com/book-spatial/spatial-data-in-r.html){.uri}
+
+The below content is from <https://rspatial.org/spatial/index.html>, with modifications.
+
+# Spatial data
+
+There are two types of spatial data that we work with in R: *vector* data and *raster* data.
+
+## Vector data
+
+Vector data represents discrete objects with clear boundaries (eg. a road, rivers, towns). It consists of a description of the "geometry" or "shape" of the objects, and normally also includes additional variables. For example, a vector data set may represent the borders of the countries of the world (geometry), and also store their names and the size of their population in 2015; or it may have the geometry of the roads in an area, as well as their type and names. These additional variables are often referred to as "attributes".
+
+The main vector data types are points, lines and polygons. In all cases, the geometry of these data structures consists of sets of coordinate pairs (x, y).
+
+[**Points**]{.underline} are the simplest case. Each point has one coordinate pair, and *n* associated variables (attributes). It is also possible to combine several points into a [multi-point]{.underline} structure, with a single attribute record.
+
+For example: a point might represent the location of a coffee shop, and the attributes are the shop name, year it was founded, and the number of customers it can seat. But, a multipoint example would have a point for each coffee shop in a town under the same geometry and they would all share the same attributes, which could be the town name and population size.
+
+[**Lines**]{.underline} have a more complex geometry. The term 'line' refers to a set of one or more polylines (connected series of line segments). Lines are represented as ordered sets of coordinates (nodes). The actual line segments can be computed (and drawn on a map) by connecting the points. Thus, the representation of a line is very similar to that of a multi-point structure, except that the ordering of the points is important, because we need to know in which order the points should be connected.
+
+For example: a river and all its tributaries could be considered as a single 'line', but they could also also be several lines, perhaps one for each tributary river.
+
+[**Polygons**]{.underline} are a set of closed polylines. The geometry is very similar to that of lines, but to close a polygon the last coordinate pair coincides with the first pair. A complication with polygons is that they can have holes (that is a polygon entirely enclosed by another polygon, that serves to remove parts of the enclosing polygon). Again, [multiple polygons]{.underline} can be considered as a single geometry.
+
+For example: A lake could be represented with a polgon, and an island on the lake would also be represented by a polygon. This would create a 'hole' in the lake polygon.
+
+For example: Indonesia consists of many islands. Each island can be represented by a single polygon, but together then can be represent a single (multi-) polygon representing the entire country.
+
+## Raster data
+
+Raster data is commonly used to represent spatially continuous phenomena such as elevation. A raster divides the world into a grid of equally sized rectangles (referred to as cells or, in the context of satellite remote sensing, pixels) that all have one or more values (or missing values) for the variables of interest. A raster cell value should normally represent the average (or majority) value for the area it covers. However, in some cases the values are actually estimates for the center of the cell (in essence becoming a regular set of points with an attribute).
+
+In contrast to vector data, in raster data the geometry is not explicitly stored as coordinates. It is implicitly set by knowing the spatial extent and the number or rows and columns in which the area is divided. From the extent and number of rows and columns, the size of the raster cells (spatial resolution) can be computed. While raster cells can be thought of as a set of regular polygons, it would be very inefficient to represent the data that way as coordinates for each cell would have to be stored explicitly. Doing so would also dramatically increase processing time.
+
+# Working with spatial data in R
+
+In R, we tend to use the package 'sf' to analyse vector data, and 'terra' to analyse raster data (although 'terra' also has functionality to work with vectors).
+
+```{r install packages}
+
+#install.packages("terra")
+#install.packages("sf")
+```
+
+# Reading and writing spatial data
+
+```{r, echo = FALSE, include = FALSE}
+library(knitr)
+opts_chunk$set(fig.width = 5, fig.height = 5, fig.cap = '', collapse = TRUE)
+library(terra)
+library(sf)
+```
+
+## Introduction
+
+Reading and writing spatial data is complicated by the fact that there are many different file formats. However, there are a few formats that are most common that we discuss here.
+
+## Vector files
+
+The `shapefile` is the most commonly used file format for vector data. If you are not familiar with this file format, an important thing to understand is that a [shapefile](https://en.wikipedia.org/wiki/Shapefile) is really a set of at least three (ideally four) files, with all the same name, but different extension. For shapefile `x` you *must* have, in the same directory, these three files: `x.shp`, `x.shx`, `x.dbf`, and ideally also `x.prj`.
+
+### Reading and writing vectors with sf
+
+In sf, we use the [`st_read()`](https://r-spatial.github.io/sf/reference/st_read.html) function to read in a shapefile.
+
+The following command reads the `nc` dataset from a file that is contained in the `sf` package:
+
+```{r}
+# install.packages("sf")
+library(sf)
+
+nc1 <- st_read(system.file("shape/nc.shp", package = "sf"))
+
+# examine the class of the vector
+class(nc1)
+
+```
+
+This means it extends (and "is" a) `data.frame`, but with a single list-column with geometries, which is held in the column with name geometry.
+
+If we print the first 6 features, we see their attribute values and an abridged version of the geometry
+
+```{r, echo=TRUE, eval=FALSE}
+
+head(nc1)
+
+```
+
+To save a vector as a shapefile, using sf, we use `st_write()`:
+
+```{r}
+# save to current directory
+st_write(nc1, "nc.shp")
+
+```
+
+### Reading and writing vectors with terra
+
+In terra, vector files are read in with the function 'vect()'
+
+```{r, shp1, message=FALSE}
+library(terra)
+
+# repeat the steps above, but using 'vect' instead of 'st_read'
+nc2 <- vect(system.file("shape/nc.shp", package = "sf"))
+
+# explore how the vectors are stored differently when read in by sf vs terra
+class(nc2)
+
+head(nc2)
+
+```
+
+The `vect` function returns `SpatVector` objects.
+
+You can save vectors as new shapefiles with the `writeVector` method. You need to add argument `overwrite = TRUE` if you want to overwrite an existing file.
+
+```{r, shp3}
+#function arguments are: object, name you want to save under (dont forget .shp extension), whether you want to overwrite files with the same name
+
+writeVector(nc2, "shp_test.shp", overwrite = TRUE)
+```
+
+## Raster files
+
+The terra package can read and write several raster file formats. Raster data often come in GeoTIFF format which has extension '.tif'.
+
+### Reading raster data
+
+In terra, we read in raster data using the `rast()` function. The below is another example using a built in dataset.
+
+```{r, ras1}
+f <- system.file("ex/logo.tif", package = "terra")
+basename(f)
+
+# load in the raster
+r <- rast(f)
+class(r)
+r
+```
+
+Note that `x` is a SpatRaster of three layers ("bands"). We can subset it to get a single layer using '[[]]'
+
+```{r, ras2}
+r2 <- r[[2]]
+r2
+```
+
+The same approach holds for other raster file formats, including NetCDF and ESRI Grid formats.
+
+### Writing raster data
+
+Use `writeRaster()` to save raster data. You must provide a SpatRaster and a filename. The file format will be guessed from the filename extension. If that does not work you can provide an argument like `format = GTiff`.
+
+```{r, ras5}
+x <- writeRaster(r, "test_output.tif", overwrite = TRUE)
+x
+```
+
+```{r, echo = FALSE, include = FALSE}
+# you can remove the file with file.remove() but be careful using this!!
+file.remove("test_output.tif")
+```
+
+# Coordinate Reference Systems
+
+## Introduction
+
+A very important aspect of spatial data is the coordinate reference system (CRS) that is used. For example, a location of (140, 12) is not meaningful if you don't know where the origin (0,0) is and if the x-coordinate is 140 meters, feet, nautical miles, kilometers, or perhaps degrees away from the x-origin.
+
+A great explanation of CRS is in Paula Moraga's 'Spatial Statistics for Data Science: Theory and Practice with R':
+
+Follow the link and we'll take a look! <https://www.paulamoraga.com/book-spatial/spatial-data-in-r.html#coordinate-reference-systems>
+
+Another explanation is below:
+
+### Angular coordinates
+
+The earth has an irregular spheroid-like shape. The natural coordinate reference system for geographic data is longitude/latitude. This is an *angular* coordinate reference system. The latitude $\phi$ (phi) of a point is the angle between the equatorial plane and the line that passes through a point and the center of the Earth. Longitude $\lambda$ (lambda) is the angle from a reference meridian (lines of constant longitude) to a meridian that passes through the point.
+
+Obviously we cannot actually measure these angles. But we can estimate them. To do so, you need a model of the shape of the earth. Such a model is called a "datum". The simplest datums are a spheroid (a sphere that is "flattened" at the poles and bulges at the equator). More complex datums allow for more variation in the earth's shape. The most commonly used datum is called WGS84 (World Geodesic System 1984). This is very similar to NAD83 (The North American Datum of 1983). Other, local datums exist to more precisely record locations for a single country or region.
+
+So the basic way to record a location is a coordinate pair in degrees and a reference datum. Sometimes people say that their coordinates are "in WGS84". That does not tell us much; they typically mean to say that they are longitude/latitude relative to the WGS84 datum. Likewise longitude/latitude coordinates are sometimes referred to as "geographic" coordinates. That is rather odd, if planar coordinate reference systems (see below) are not geographic, what are they?
+
+### Projections
+
+A major question in spatial analysis and cartography is how to transform this three dimensional angular system to a two dimensional planar (sometimes called "Cartesian") system. A planar system is easier to use for certain calculations and required to make maps (unless you have a 3-d printer). The different types of planar coordinate reference systems are referred to as "projections". Examples are "Mercator", "UTM", "Robinson", "Lambert", "Sinusoidal" and "Albers".
+
+There is not one best projection. Some projections can be used for a map of the whole world; other projections are appropriate for small areas only. One of the most important characteristics of a map projection is whether it is "equal area" (the scale of the map is constant) or "conformal" (the shapes of the geographic features are as they are seen on a globe). No two dimensional map projection can be both conformal and equal-area (but they can be approximately both for smaller areas, e.g. UTM, or Lambert Equal Area for a larger area), and some are neither.
+
+### Notation
+
+A planar CRS is defined by a projection, datum, and a set of parameters. The parameters determine things like where the center of the map is. The number of parameters depends on the projection. It is therefore not trivial to document a projection used, and several systems exist.
+
+To document this, you have to use a EPSG code (if available) or a Well-Known-Text notation.
+
+Most commonly used CRSs have been assigned an "EPSG code" (EPSG stands for European Petroleum Survey Group). This is a unique ID that can be a simple way to identify a CRS. For example `EPSG:27561` is equivalent to `+proj = lcc +lat_1 = 49.5 +lat_0 = 49.5 +lon_0 = 0 +k_0 = 0.999877341 +x_0 = 6 +y_0 = 2 +a = 6378249.2 +b = 6356515` `+towgs84 = -168,-60,320,0,0,0,0 +pm = paris +units = m +no_defs`.
+
+Now let's look at an example with a spatial data set in *R*.
+
+```{r, crs1}
+f <- system.file("ex/lux.shp", package = "terra")
+p <- st_read(f) #or Vect(f) for terra
+p
+```
+
+We can inspect the coordinate reference system like this.
+
+```{r}
+st_crs(p) #or crs(p) for terra
+```
+
+## Assigning a CRS
+
+Sometimes we have data without a CRS. This can be because the file used was incomplete, or perhaps because we created the data ourselves with R code. You can use sf and terra to assign CRS but only **if you are certain of know what it should be**.
+
+We can use **terra** to read and get the CRS, and transform the data to a new CRS of a raster as follows:
+
+```{r}
+pp <- vect(p)
+crs(pp) <- ""
+crs(pp)
+crs(pp) <- "EPSG:4326"
+crs(pp)
+```
+
+Note that you should **not** use this approach to change the CRS of a data set from what it **is** to what you **want it to be**. Assigning a CRS is like labeling something. You need to provide the label that corresponds to the item. Not to what you would like it to be. For example if you label a bicycle, you can write "bicycle". Perhaps you would prefer a car, and you can label your bicycle as "car" but that would not do you any good. It is still a bicycle.
+
+## Transforming vector data
+
+We can transform these data to a new data set with another CRS using the `st_transform()` method in sf, or `project` method in terra.
+
+Here we use the Robinson projection. First we need to find the correct notation.
+
+```{r}
+newcrs <- "EPSG:4326"
+```
+
+Now use it
+
+```{r}
+# sf
+rob1 <- sf::st_transform(p, newcrs)
+rob1 
+
+# terra
+q <- vect(p)
+rob2 <- terra::project(q, newcrs)
+rob2
+
+plot(rob2)
+```
+
+## Transforming raster data
+
+Vector data can be transformed from lon/lat coordinates to planar and back without loss of precision. This is not the case with raster data.
+
+Because projection of rasters affects the cell values, in most cases you will want to avoid projecting raster data and rather project vector data. If you would like to learn how to do this refer to <https://rspatial.org/spatial/6-crs.html#transforming-raster-data>
+
+# Maps (using `terra`)
+
+You can make a map with `plot(x)`, where `x` is a `SpatRaster` or a `SpatVector`. You can add additional spatial data or text with functions such as `points`, `lines`, `text`
+
+You can zoom in using `zoom(x)` and clicking on the map twice (to indicate where to zoom to). Or use `sel(x)` to save a spatial subset to a new object. With `click(x)` it is possible to interactively query a SpatRaster by clicking once or several times on a map plot.
+
+## SpatVector
+
+Example data
+
+```{r, vect_1}
+library(terra)
+p <- vect(system.file("ex/lux.shp", package = "terra"))
+```
+
+If you plot a `SpatVector` without further arguments, you get black points, lines or polygons, and no legend.
+
+```{r, maps_1, fig.height = 5}
+plot(p)
+```
+
+You can add colours like this
+
+```{r, maps_2, fig.height = 5}
+n <- nrow(p)
+plot(p, col = rainbow(n))
+```
+
+But if you want colours it is probably easiest to use an attribute.
+
+```{r, maps_3}
+plot(p, "NAME_2", col = rainbow(25))
+```
+
+You can request maps for multiple variables
+
+```{r, maps_4a, fig.width = 10}
+plot(p, c("NAME_1", "NAME_2"), col = rainbow(25))
+```
+
+Below we also make two maps, but do it "by hand". We adjust the spacing, and put the legends inside the map area, and use non-rotated text for the vertical axis.
+
+```{r, maps_4b, fig.width = 10}
+par(mfrow = c(1,2))
+m <- c(3.1, 3.1, 2.1, 2.1)
+plot(p, "NAME_1", col = rainbow(25), mar = m, plg = list(x = "topright"), pax = list(las = 1))
+plot(p, "NAME_2", col = rainbow(25), mar = m, plg = list(x = "topright", cex = .75), pax = list(las = 1))
+```
+
+More customization. Choose the axes to draw, add a label and a box to the legend. **Run the below in a separate R script to ensure functionality.**
+
+```{r, maps_5, fig.width = 10}
+par(mfrow = c(1,2))
+m <- c(3.1, 3.1, 1.1, 1.1)
+plot(p, "NAME_1", col = rainbow(25), mar = m, plg = list(x = "topright", title = "District", bty = "o"), main = "", axes = FALSE)
+axis(1, at = c(5,7)); axis(1)
+axis(2, at = c(49,51)); axis(2, las = 1)
+
+plot(p, "NAME_2", col = rainbow(25), mar = m, plg = list(x = "topright", cex = .75, title = "Canton", bty = "o"), main = "", axes = FALSE)
+axis(1, at = c(5, 7)); axis(1)
+```
+
+We can combine multiple SpatVectors using `lines` and `points` to draw on top of what we plotted first.
+
+```{r, maps_6}
+d <- aggregate(p, "NAME_1")
+plot(p, col = "light blue", lty = 2, border = "red", lwd = 2)
+lines(d, lwd = 5)
+lines(d, col = "white", lwd = 1)
+text(p, "NAME_2", cex = .8, halo = TRUE)
+```
+
+The `rasterVis` package provides a lot of very nice plotting options as well.
+
+## SpatRaster
+
+Example data
+
+```{r, maps_10}
+f <- system.file("ex/elev.tif", package = "terra")
+r <- rast(f)
+```
+
+The default display of a single layer SpatRaster depends on the data type, but there will always be a legend.
+
+```{r, maps_11}
+plot(r)
+```
+
+After plotting a `SpatRaster` you can add vector type spatial data (points, lines, polygons). You can do this with functions `points`, `lines`, `polys` or `plot(object, add = TRUE)`.
+
+**Run the below in an R script:**
+
+```{r, maps_12}
+plot(r)
+
+lines(p, lwd = 2)
+set.seed(12)
+xy <- spatSample(r, 20, "random", na.rm = TRUE, xy = TRUE)
+points(xy, pch = 20, col = "red", cex = 2)
+```
+
+Or use a different legend type
+
+```{r, maps_13}
+m <- c(3.1, 3.1, 1.1, 1.1)
+plot(r, type = "interval", plg = list(x = "topright"), mar = m)
+```
+
+If there are only a few values, the default is to show "classes"
+
+```{r, maps_14}
+rr <- round(r/100)
+plot(rr, plg = list(x = "topright"), mar = m)
+```
+
+If the raster is categorical you get the category labels in the legend.
+
+Make a categorical (factor) raster
+
+```{r, maps_15, fig.height = 5, fig.width = 9}
+x <- classify(r, c(140, 300, 400, 550))
+levels(x) <- data.frame(id = 0:2, elevation = c("low", "intermediate", "high"))
+is.factor(x)
+x
+
+plot(x, col = c("green", "blue", "light gray"))
+```
+
+When plot is used with a multi-layer object, all layers are plotted (up to 16), unless the layers desired are indicated with an additional argument.
+
+```{r, maps_16}
+library(terra)
+b <- rast(system.file("ex/logo.tif", package = "terra"))
+plot(b)
+```
+
+```{r, maps_17}
+r <- rast(p, res = 0.01 )
+values(r) <- 1:ncell(r)
+r <- mask(r, p)
+```
+
+In this case, it makes sense to combine the three layers into a single image, by assigning individual layers to one of the three colour channels (red, green and blue):
+
+```{r, maps_20}
+plotRGB(b, r = 1, g = 2, b = 3)
+```
+
+You can also use a number of other plotting functions with SpatRasters, including `hist`, `persp`, `contour`}, and `density`. See the help files for more info.
+
+The `rasterVis` and `tmap` packages provides a lot of very nice mapping options as well.
+
+## Basemaps
+
+You can get many different base-maps with the maptiles package. Reading the data again. Run in a separate R script.
+
+```{r, maps_data}
+library(terra)
+f <- system.file("ex/lux.shp", package = "terra")
+p <- vect(f)
+```
+
+```{r, maps_21}
+#install.packages("maptiles")
+library(maptiles)
+bg <- get_tiles(ext(p))
+plotRGB(bg)
+lines(p, col = "blue", lwd = 3)
+```
+
+# Exercises
+
+#### [Exercise 1]{.underline}
+
+1.  Read in the shapefile 'ex/lux.shp' from the terra package using the system.file function. Save it as a spatvector called 'lux'.
+
+2.  Check the current crs of the spatvector, and note the EPSG code it has
+
+3.  Plot the spatvector
+
+4.  What is the spatial extent of the spatvector?
+
+5.   Project the spatvector into EPSG: 2169 and plot it
+
+6.  Does the new projection have the same units? True /False
+
+7.  Save this new spatvector
+
+#### [Exercise 2]{.underline}
+
+1.   Load in the raster 'ex/elev.tif' as a spatRaster called luxrast
+
+2.  Check the CRS of the raster, and make sure this and your original lux spatvector are both EPSG : 4326
+
+3.   Plot your spatraster and overlay the spatvector country outline (*hint: you will probably need to do this in an R script, not R markdown*)
+
+4.  Plot the Lux spatvector showing a) colours for different population sizes and b) colours for different area sizes
+
+#### [Exercise 3]{.underline} 
+
+1.  Follow this link to a quick tutorial on how to make your own spatraster in `terra` :<https://rspatial.org/pkg/3-objects.html#:~:text=A%20SpatRaster%20can%20easily%20be,1%20by%201%20degree%20cells.>
+
+2.  Have a go at creating your own spatraster - no answers for this one - just play around!
+
+Exercise 4
+
+1.  Follow this link to see how to create your own vector using `sf`: <https://www.paulamoraga.com/book-spatial/the-sf-package-for-spatial-vector-data.html#creating-a-sf-object>
+
+2.  Have a go at creating your own vector - no answers for this one - just play around!
+
+# Resources:
+
+<https://rspatial.org/> : contains excellent tutorials and examples with terra
+
+<https://www.paulamoraga.com/book-spatial/index.html> : tutorials and examples with both terra and sf
+
+# Exercise answers
+
+Exercise 1
+
+```{r exercise 1 answers}
+# library(terra)
+
+# 1
+f <- system.file("ex/lux.shp", package ="terra")
+
+lux <- vect(f)
+
+# 2 
+crs(lux) #EPSG 4326
+
+
+# 3 
+plot(lux)
+
+# 4 
+lux # 5.74414, 6.528252, 49.44781, 50.18162  (xmin, xmax, ymin, ymax)
+
+# 5
+lux2 <- project(lux, "EPSG:2169")
+
+plot(lux2) 
+
+# 6
+lux2 #extent : 49540.31, 105922, 57009.53, 138631.1  (xmin, xmax, ymin, ymax)
+
+# FALSE
+```
+
+Exercise 2
+
+```{r exercise 2 answers}
+
+# 1 
+
+luxrast <- rast(system.file("ex/elev.tif", package = "terra"))
+
+
+# 2
+crs(luxrast) # EPSG 4326
+crs(lux) # EPSG 4326
+
+# 3 (in an R script)
+plot(luxrast)
+plot(lux, add = TRUE)
+
+# 4
+plot(lux, "POP", col = rainbow(5))
+plot(lux, "AREA", col = rainbow(5))
+```
