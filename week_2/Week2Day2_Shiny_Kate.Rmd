@@ -12,6 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r packages}
 library("shiny")
 library("leaflet")
+library("here")
 
 ```
 
@@ -83,13 +84,32 @@ These are usually combined into one script called app.R
 
 The ui script is used to set up the user interface. It defines the layout, user inputs and output types.
 
-```{r ui example}
-
-```
-
 ### Layout
 
 There are many different ways to define the layout of a shiny app, but the simplest is with a sidebar panel with inputs and a main panel with outputs.
+
+```{r ui layout}
+
+ui <- fluidPage(
+
+  # App title ----
+  titlePanel("Title"),
+
+  # Sidebar layout with input and output definitions ----
+  sidebarLayout(
+
+    # Sidebar panel for inputs ----
+    sidebarPanel(
+      
+    ),
+
+    # Main panel for displaying outputs ----
+    mainPanel(
+
+    )
+  )
+)
+```
 
 ### Inputs
 
@@ -105,8 +125,7 @@ radioButtons
 
 selectInput
 
-sliderInput
-sliderInput("rng", "Range", value = c(10, 20), min = 0, max = 100)
+sliderInput sliderInput("rng", "Range", value = c(10, 20), min = 0, max = 100)
 
 actionButton
 
@@ -115,17 +134,12 @@ and many more besides!
 [Chapter 2 of Mastering Shiny goes into more detail on these](mastering-shiny.org)
 
 ### Outputs
+
 The UI defines outputs which you want your app to generate. In the UI you are just defining the type and creating a placeholder.
 
-Some examples of output types are:
-textOutput
-tableOutput
-plotOutput
-leafletOutput
-
+Some examples of output types are: textOutput tableOutput plotOutput leafletOutput
 
 Similarly to with inputs, outputs are referred to by their unique outputId.
-
 
 [Chapter 2 of Mastering Shiny goes into more detail on these](mastering-shiny.org)
 
@@ -180,17 +194,56 @@ ui <- fluidPage(
 
 ## Server
 
-The server script is where outputs are generated based on user inputs. Here we can set up code which is "reactive". Reactivity is probably the most important concept to understand when working with shiny.
+The server script is where outputs are generated based on user inputs.
+
+Inputs are referred to with input\$nameofinput (as you defined it in the ui)
+
+Outputs are assigned using output\$nameofoutput (this needs to be assigned in the ui otherwise it won't appear in the app). We then use a render function to render the output.
+
+It is also possible to put lots of other bits of code into the server where necessary to generate the outputs. In the example below we first assign the dataset we will be using based on what the user selected.
+
+```{r Server example, eval = FALSE}
+server <- function(input, output) {
+
+  # Return the requested dataset ----
+  datasetInput <- reactive({
+    switch(input$dataset,
+           "rock" = rock,
+           "pressure" = pressure,
+           "cars" = cars)
+  })
+
+  # Create caption ----
+
+  output$caption <- renderText({
+    input$caption
+  })
+
+  # Generate a summary of the dataset ----
+
+  output$summary <- renderPrint({
+    dataset <- datasetInput()
+    summary(dataset)
+  })
+
+  # Show the first "n" observations ----
+
+  output$view <- renderTable({
+    head(datasetInput(), n = input$obs)
+  })
+
+}
+
+#runExample("03_reactivity")
+```
 
 ### Reactivity
+
+In the server we set up code which is "reactive". Reactivity is probably the most important concept to understand when working with shiny.
 
 -   this means it automatically reruns when the user input changes. Give an overview of reactivity <https://shiny.posit.co/r/articles/build/reactivity-overview/>
 
 If you run the example below you will see that as you change the inputs on the sidebar the outputs reevaluate.
-
-```{r Server example}
-#runExample("03_reactivity")
-```
 
 *Observe - not sure if I should include this or not, maybe not necessary:*
 
@@ -199,7 +252,8 @@ This works well for smaller datasets or where you have a small number of inputs,
 In this case we can wrap our code in an observeEvent. This sits there quietly observing until it is triggered (for example by the user clicking a button), and only then will it run the code. Let's do that for the example above
 
 ```{r observe event example}
-
+here
+runApp(here("quakes"))
 
 ```
 
