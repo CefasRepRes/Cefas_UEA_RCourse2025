@@ -112,6 +112,8 @@ ui <- fluidPage(
 )
 ```
 
+You can view more complex layouts [here](https://mastering-shiny.org/action-layout.html)
+
 ### Inputs
 
 Shiny apps can have several different types of input, which are defined in the ui using input functions
@@ -126,7 +128,7 @@ radioButtons
 
 selectInput
 
-sliderInput sliderInput("rng", "Range", value = c(10, 20), min = 0, max = 100)
+sliderInput
 
 actionButton
 
@@ -138,7 +140,15 @@ and many more besides!
 
 The UI defines outputs which you want your app to generate. In the UI you are just defining the type and creating a placeholder.
 
-Some examples of output types are: textOutput tableOutput plotOutput leafletOutput
+Some examples of output types are:
+
+textOutput
+
+tableOutput
+
+plotOutput
+
+leafletOutput
 
 Similarly to with inputs, outputs are referred to by their unique outputId.
 
@@ -240,10 +250,9 @@ server <- function(input, output) {
 
 ### Reactivity
 
-In the server we set up code which is "reactive". Reactivity is probably the most important concept to understand when working with shiny.
-Reactivity means that outputs automatically rerun when the user input changes (unless you tell them not to). Shiny apps are not linear!
+In the server we set up code which is "reactive". Reactivity is probably the most important concept to understand when working with shiny. Reactivity means that outputs automatically rerun when the user input changes (unless you tell them not to). Shiny apps are not linear, and they are very lazy, code will only be run when necessary. The order you place things in the server script is not important.
 
-There is an overview of reactivity here <https://shiny.posit.co/r/articles/build/reactivity-overview/>
+There is an [overview of reactivity here](https://shiny.posit.co/r/articles/build/reactivity-overview/) and [here](https://mastering-shiny.org/basic-reactivity.html)
 
 If you run the example below you will see that as you change the inputs on the sidebar the outputs reevaluate.
 
@@ -253,14 +262,7 @@ If you run the example below you will see that as you change the inputs on the s
 
 ```
 
-*Observe - not sure if I should include this or not, maybe not necessary:*
-
 If you don't want your outputs to be constantly updating whenever your user does anything, you do have the option to wrap parts of the server code in an observeEvent. This sits there quietly observing until it is triggered (for example by the user clicking a button), and only then will it run the code.
-
-```{r observe event example}
-
-
-```
 
 ### Leaflet
 
@@ -280,11 +282,13 @@ As an example lets uncomment the browser statement in line 42 of the quakes app,
 runApp(here("quakes"))
 ```
 
-Try typing input\$mag in your console now and you will be able to see what that actually is. You can even look at its class, and anything else you could normally do in
+Try typing input\$mag in your console now and you will be able to see what that actually is. You can even look at its class, and anything else you could normally do in.
+
+Note that in order to use browser debugging you need to run the app in the console, not as a background job.
 
 # Shiny with multiple files
 
-You can also use shiny with the ui and server in separate files called ui.R and server.R. In this case you can also add a global script
+You can also use shiny with the ui and server in separate files called ui.R and server.R. In this case you can also add a global script, global.R
 
 ## Global
 
@@ -293,8 +297,6 @@ The global script is optional but can be quite useful if there is any preprocess
 You should use the global script to do all the things you would at the beginning of an R markdown, such as loading packages, defining functions, loading data, doing basic data processing.
 
 If you have more complex data preprocessing it is usually best to do this outside the app so it doesn't take too long to load.
-
-
 
 Let's go back to the loop above which produced loads of plots and see how we would make it into a shiny app.
 
@@ -310,15 +312,13 @@ For those of us at Cefas we have PositConnect servers available which can host R
 
 ## Further reading
 
-The Shiny package has eleven built-in examples that each demonstrate how Shiny works. Each example is a self-contained Shiny app. 
+The Shiny package has eleven built-in examples that each demonstrate how Shiny works. Each example is a self-contained Shiny app.
 
 ```{r hello shiny}
 runExample("01_hello")
 ```
 
-# 
-
-This book is free and online and might be helpful: <https://mastering-shiny.org/index.html>
+This book is free and online, and goes into a lot more detail than we have here: <https://mastering-shiny.org/index.html>
 
 The Shiny website features a whole range of useful content: <https://shiny.posit.co/r/getstarted/shiny-basics/lesson1/index.html>
 
