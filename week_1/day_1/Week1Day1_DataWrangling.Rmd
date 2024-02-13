@@ -128,11 +128,14 @@ iris <- iris_ori
 
 ```
 
+Notice the use of 'gsub()' in the code above - this is an example of one
+way that you can manipulate character data. Functions like gsub, grep
+and more, allow you to search for a pattern in a string and then either
+find the position of it, or replace it.
 
-Notice the use of 'gsub()' in the code above - this is an example of one way that you can manipulate character data. Functions like gsub, grep and more, allow you to search for a pattern in a string and then either find the position of it, or replace it. 
-
-Pattern matching uses regular expressions such as   **.**  ,   **\***   or   **^**   which act as wildcards or placement matching tools for the pattern.
-
+Pattern matching uses regular expressions such as **.** , **\*** or
+**\^** which act as wildcards or placement matching tools for the
+pattern.
 
 ```{r regex, eval=TRUE}
 # make a string
@@ -152,7 +155,9 @@ grep(pattern = ".*ern", example) # found in the 4th element
 example3 <- gsub(".*ern", "cat", example)
 example3
 ```
-We can also use string tools on character columns in a dataset. Say we wanted to add the genus name to the iris dataset
+
+We can also use string tools on character columns in a dataset. Say we
+wanted to add the genus name to the iris dataset
 
 ```{r genus}
 genus <- "Iris"
@@ -173,10 +178,10 @@ iris %>%
 
 ```
 
-
-There are many pattern matching tools and regular expressions to get your head around - this [cheat sheet](https://rstudio.github.io/cheatsheets/html/strings.html?_gl=1*1bshcje*_ga*MTg0OTY1NjUzMi4xNjk4MTYwNTAz*_ga_2C0WZ1JHG0*MTcwNDM4NTAxMy41LjAuMTcwNDM4NTAxMy4wLjAuMA..#regular-expressions) has a list of regex and their meanings.
-
-
+There are many pattern matching tools and regular expressions to get
+your head around - this [cheat
+sheet](https://rstudio.github.io/cheatsheets/html/strings.html?_gl=1*1bshcje*_ga*MTg0OTY1NjUzMi4xNjk4MTYwNTAz*_ga_2C0WZ1JHG0*MTcwNDM4NTAxMy41LjAuMTcwNDM4NTAxMy4wLjAuMA..#regular-expressions)
+has a list of regex and their meanings.
 
 ### Expanding vs reducing your datasets
 
@@ -247,9 +252,9 @@ iris$LWRatio <- iris$Petal.Length / iris$Petal.Width
 
 ### Duplicates
 
-It is important to check your dataset for duplicate data.
-In the case of the `iris` dataset, we expect to see duplicate entries when we look
-at individual columns -- we would assume that the same petal length or
+It is important to check your dataset for duplicate data. In the case of
+the `iris` dataset, we expect to see duplicate entries when we look at
+individual columns -- we would assume that the same petal length or
 width will show up multiple times. However, sometimes we need to check
 if we have true duplicates in our data. We can do this by creating a
 'unique identifier' and then using this column to check for duplicates.
@@ -295,9 +300,9 @@ nrow(iris) # We now have only 149 rows, we have lost the duplicate.
 
 ### Wide vs long format
 
-As explained in the tidyverse session, there are two main ways to store datasets - wide and long. Datasets are
-usually easier to work with in R in long format, but you may need to
-switch between them.
+As explained in the tidyverse session, there are two main ways to store
+datasets - wide and long. Datasets are usually easier to work with in R
+in long format, but you may need to switch between them.
 
 Long format is where you have data in an identifying column (or columns)
 which repeats, and then your response data all in one column. For
@@ -343,7 +348,7 @@ reshape2::dcast(ChickWeight, Chick + Diet ~ Time, value.var = "weight")
 ```
 
 There are various terms for converting between these formats. The most
-common are `pivot_long` or `melt`  for wide\>long, and `pivot_wider` or
+common are `pivot_long` or `melt` for wide\>long, and `pivot_wider` or
 `cast` for long\>wide.
 
 Casting a dataset is simple where each unique entity only has one of
@@ -380,7 +385,6 @@ ChickWeight_wide <- dcast(ChickWeight, Chick + Diet ~ Time, value.var = "weight"
 
 ```
 
-
 There may also be situations where you want to go from wide to long
 format
 
@@ -406,8 +410,6 @@ ChickWeight_long <- ChickWeight_long[!is.na(ChickWeight_long$weight),]
 ```
 
 Now we are back to the orginal 578 rows.
-
-
 
 ### Merging datasets
 
@@ -497,7 +499,8 @@ schools3 <- cbind(schools2, NewRating)
 
 #### Sorting
 
-Sometimes we need to sort a data frame. Say we wanted to have the town names in alphabetical order
+Sometimes we need to sort a data frame. Say we wanted to have the town
+names in alphabetical order
 
 ```{r sort}
 data(mtcars)
@@ -669,7 +672,6 @@ date4 <- "8th Jan 2024"
 
 ```
 
-
 What about when we also have times? Let's look at how to format these
 
 ```{r datetime parsing}
@@ -756,7 +758,6 @@ course_dates$day <- format(course_dates$StartDateTime,"%d")
 Read in the example dataset and create a posixct datetime field. Create
 a "Year" and "Month" column
 
-
 ```{r exercise datetime}
 # This data is part of the environment agencies water quality archive https://environment.data.gov.uk/water-quality/view/download
 ea <- read.csv("../data/ENS-2023.csv")
@@ -776,7 +777,7 @@ data thanks to packages that have been developed over the years. Up
 until very recently, the packages most people were using to import and
 handle spatial data were `rgdal`, `rgeos` and `terra`. These packages
 are being retired and are being replaced by [`sf` - Simple
-Features](<https://r-spatial.github.io/sf/>).
+Features](https://r-spatial.github.io/sf/).
 
 ```{r quakes}
 library(sf)
@@ -828,5 +829,3 @@ We will go into spatial data analysis in more detail in week 2.
 
 You may also have data which is already in a spatial format, for example
 a shapefile. sf has functions to read these data types in.
-
-

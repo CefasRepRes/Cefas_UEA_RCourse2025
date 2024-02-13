@@ -12,7 +12,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r packages}
 library("shiny")
 library("leaflet")
-library("here")
 library("ggplot2")
 
 ```
@@ -258,7 +257,7 @@ If you run the example below you will see that as you change the inputs on the s
 
 ```{r reactivity}
 
-#runExample("03_reactivity")
+runExample("03_reactivity")
 
 ```
 
@@ -269,7 +268,7 @@ If you don't want your outputs to be constantly updating whenever your user does
 Leaflet works really well with shiny. Here we take one of the examples from the leaflet session and embed it in a shiny app.
 
 ```{r leaflet example}
-runApp(here("quakes"))
+runApp("quakes")
 ```
 
 # Debugging
@@ -279,7 +278,7 @@ Shiny apps are easy to break, and it can be confusing to figure out what is goin
 As an example lets uncomment the browser statement in line 42 of the quakes app, then run it again.
 
 ```{r browser}
-runApp(here("quakes"))
+runApp("quakes")
 ```
 
 Try typing input\$mag in your console now and you will be able to see what that actually is. You can even look at its class, and anything else you could normally do in.
@@ -304,13 +303,13 @@ Let's go back to the loop above which produced loads of plots and see how we wou
 #Show shiny app for the OSPAR Eutrophication status results
 ```
 
-## Sharing shiny apps
+# Sharing shiny apps
 
 Once you have finalised your shiny app you will want to be able to share it with people. While it is possible to share the code and any data files by email or using git, this will require your users to have R and the necessary packages installed. The best way is to host your app on a server. You can [view various options for hosting shiny apps on the shiny website](%5Bhttps://shiny.posit.co/r/deploy.htmlhttps://shiny.posit.co/r/deploy.html). Be aware that the free options usually mean your app will be public.
 
 For those of us at Cefas we have PositConnect servers available which can host R shiny apps and many more things besides. We have a development server where you can easily share apps with colleagues internally, and a live server where apps can be shared externally, after going through an [approval process](https://shiny.posit.co/r/deploy.html). Please make sure any apps you create are catalogued on the [Information Asset Register](https://mdr.cefas.co.uk/view/19069).
 
-## Further reading
+# Further reading
 
 The Shiny package has eleven built-in examples that each demonstrate how Shiny works. Each example is a self-contained Shiny app.
 
