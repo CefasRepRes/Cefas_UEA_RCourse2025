@@ -32,6 +32,7 @@ packages:
 library(tidyverse)
 library(reshape2)
 library(ViewPipeSteps)
+library(sf)
 ```
 
 ### Investigating your data
@@ -130,7 +131,7 @@ iris <- iris_ori
 
 Notice the use of 'gsub()' in the code above - this is an example of one
 way that you can manipulate character data. Functions like gsub, grep
-and more, allow you to search for a pattern in a string and then either
+and more allow you to search for a pattern in a string and then either
 find the position of it, or replace it.
 
 Pattern matching uses regular expressions such as **.** , **\*** or
@@ -151,8 +152,8 @@ example2
 # find a partial string
 grep(pattern = ".*ern", example) # found in the 4th element
 
-# replace a partial string
-example3 <- gsub(".*ern", "cat", example)
+# replace an element based on a partial string
+example3 <- gsub(".*ern", "bird", example)
 example3
 ```
 
@@ -160,6 +161,9 @@ We can also use string tools on character columns in a dataset. Say we
 wanted to add the genus name to the iris dataset
 
 ```{r genus}
+
+unique(iris$Species) # currently they only contain the second part of the species name
+
 genus <- "Iris"
 
 iris$Species <- paste(genus, iris$Species, sep = "_")
@@ -176,6 +180,8 @@ strsplit(iris$Species, "_")
 iris %>%
   tidyr::separate(Species, c("Genus", "Species"), "_")
 
+# Let's reverse these changes for now
+iris <- iris_ori
 ```
 
 There are many pattern matching tools and regular expressions to get
@@ -276,7 +282,7 @@ test
 # we can remove one of the two entries using the row number:
 iris <- iris[-143,]
 
-#An simpler way to do this is by using dplyr package:
+#A simpler way to do this is by using dplyr package:
 
 iris <- iris_ori
 
@@ -333,7 +339,8 @@ total. This is a good format for many r functions, but it does repeat
 information and is not so easy to read.
 
 The other way to store this data is in wide format, where each chick
-just has one row, and each time it is weighed goes in a separate column
+just has one row, and each time it is weighed goes in a separate column.
+We can convert the dataset into this wide format.
 
 ```{r wide}
 #In tidyverse
@@ -351,8 +358,8 @@ There are various terms for converting between these formats. The most
 common are `pivot_long` or `melt` for wide\>long, and `pivot_wider` or
 `cast` for long\>wide.
 
-Casting a dataset is simple where each unique entity only has one of
-each measurement, but sometimes that isn't the case. Maybe it was a bit
+Casting a dataset is simple where each unique entry only has one of each
+measurement, but sometimes that isn't the case. Maybe it was a bit
 difficult to get the chicks to stay still for weighing and you actually
 had more than one measurement for each chick in order to take an
 average. If you tried to cast such a dataset then you would get an
@@ -367,7 +374,7 @@ ChickWeight
 ChickWeight <- ChickWeight %>% add_row(Chick = "1", Diet = "1", Time = 6, weight = 66)
 
 ChickWeight_wide <- ChickWeight %>% tidyr::pivot_wider(names_from = Time, values_from = weight)
-# See how we get a nonsensical result here, because row 4 and 579 both contain weights for chick 1, diet 1, day 6, and it hasn't been able to do the pivot and has just put the number of observations.
+# See how we get a nonsensical result here, because row 4 and 579 both contain weights for chick 1, diet 1, day 6, and it hasn't been able to do the pivot and has just put the number of observations. (The error you get here might differ based on which version of tidyverse you are using)
 
 # We need to specify a function to use where there are multiple values
 
@@ -378,8 +385,8 @@ ChickWeight_wide <- ChickWeight %>% tidyr::pivot_wider(names_from = Time, values
 
 reshape2::dcast(ChickWeight, Chick + Diet ~ Time, value.var = "weight")
 
-#In dcast it does run but says "Aggregation function missing: defaulting to length", and you will see all but one cells have a length of 1.
-#If we add fun.aggregate = mean the error goes away and where there are duplicates it calculates an average
+# In dcast it does run but says "Aggregation function missing: defaulting to length", and you will see all but one cells have a length of 1.
+# If we add fun.aggregate = mean the error goes away and where there are duplicates it calculates an average
 
 ChickWeight_wide <- dcast(ChickWeight, Chick + Diet ~ Time, value.var = "weight", fun.aggregate = mean)
 
@@ -404,6 +411,7 @@ may have noticed in the wide table, several of the chicks weren't
 measured every time step (let's imagine they escaped part way through
 the experiment), for example chick 16 was only weighed up to day 12. So
 by pivoting from wide to long format we have introduced some extra rows.
+We can remove these as they are not useful
 
 ```{r remove NAs}
 ChickWeight_long <- ChickWeight_long[!is.na(ChickWeight_long$weight),]
@@ -413,7 +421,7 @@ Now we are back to the orginal 578 rows.
 
 ### Merging datasets
 
-Before we can merge or join two datasets together, we need to check that
+Before we can merge or join two datasets together, we should check that
 they are compatible. The `janitor` package allows us to compare columns
 between two datasets. Let's create an example by setting up two subsets
 of the `iris` dataset and renaming one column in one of the subsets to
@@ -458,9 +466,9 @@ Source and further info:
 An example:
 
 ```{r rbind}
-#set the name back to species for subset 2
+# Set the name back to species for subset 2
 names(subset2)[names(subset2) == "Type"] <- "Species"
-
+# Combine subsets to form the full dataset again.
 fullDF <- rbind(subset1, subset2)
 fullDF
 
@@ -491,7 +499,7 @@ names(schools)[names(schools) == "City"] <- "Town"
 
 schools2 <- merge(schools, towns)
 
-# Suppose the schools have been rated again and we want to add the new ratings, we can use cbind
+# Suppose the schools have been rated again and we want to add the new ratings, we can use cbind to add the column
 
 schools3 <- cbind(schools2, NewRating)
 
@@ -503,8 +511,6 @@ Sometimes we need to sort a data frame. Say we wanted to have the town
 names in alphabetical order
 
 ```{r sort}
-data(mtcars)
-newdata <- mtcars[order(mpg),]
 
 schools3[order(schools3$Town),]
 # Or we can order by rating in descending order
@@ -645,11 +651,11 @@ str(date1) # now stored as a date
 date <- "01/08/2024"
 date2 <- as.Date(date)
 str(date2)
-# Yyou can see something has gone wrong, it has confused the year and the day. This is because the format wasn't what it expected, so we need to specify the format.
+# You can see something has gone wrong, it has confused the year and the day. This is because the format wasn't what it expected, so we need to specify the format.
 
 date2 <- as.Date(date, format = "%d/%m/%Y")
 str(date2)
-# Now it is correct as we told it what to expect.
+# Now it is correct as we told it to expect day/month/year.
 
 # as.Date is a base R function, we can also use the very similar lubridate::as_date function
 
@@ -675,6 +681,7 @@ date4 <- "8th Jan 2024"
 What about when we also have times? Let's look at how to format these
 
 ```{r datetime parsing}
+
 datetime <- "08/01/2024 14:03:00"
 
 # Parse this to posixct, specifying the format
@@ -736,7 +743,8 @@ course_dates$duration <- difftime()
 
 ```
 
-Once you have your dates parsed you can then extract info from them.
+Once you have your dates parsed you can then extract info from them,
+such as the year or month.
 
 ```{r extract date components}
 # Extract the year
@@ -744,7 +752,7 @@ Once you have your dates parsed you can then extract info from them.
 course_dates$Year <- lubridate::year(course_dates$StartDateTime)
 course_dates$Month <- lubridate::month(course_dates$StartDateTime, label = TRUE) #Label = TRUE gives it as month abbr (Jan etc), false gives it as a number
 
-# You can also convert between formats e.g.
+# You can convert between formats e.g.
 
 course_dates$Month_long <- month.name[course_dates$Month]
 
@@ -775,12 +783,12 @@ is also spatial.
 R has become a very powerful tool to handle, process and map spatial
 data thanks to packages that have been developed over the years. Up
 until very recently, the packages most people were using to import and
-handle spatial data were `rgdal`, `rgeos` and `terra`. These packages
+handle spatial data were `rgdal`, `rgeos` and `raster`. These packages
 are being retired and are being replaced by [`sf` - Simple
-Features](https://r-spatial.github.io/sf/).
+Features](https://r-spatial.github.io/sf/) and `terra`.
 
 ```{r quakes}
-library(sf)
+
 
 # Let's use the quakes dataset, which contains the locations of earthquakes off Fiji
 
@@ -809,7 +817,8 @@ systems to deal with.
 st_crs(quakes_sf)
 
 # You will see that it is NA, so let's fix that
-st_crs(quakes_sf) <- st_crs(4326) #4326 is the EPSG code for WGS84. This is the most commonly used lat/lon projection
+st_crs(quakes_sf) <- st_crs(4326) #4326 is the EPSG code for WGS84. This is the most commonly used lat/lon projection. 
+# Only set your CRS if you are sure it is correct!
 st_crs(quakes_sf) 
 
 # The other most common CRS is the British National Grid which uses eastings and northings.
@@ -828,4 +837,5 @@ We will go into spatial data analysis in more detail in week 2.
 ### Reading in spatial data
 
 You may also have data which is already in a spatial format, for example
-a shapefile. sf has functions to read these data types in.
+a shapefile. sf has functions to read these data types in, and they
+should have the CRS specified in the .prj file.
