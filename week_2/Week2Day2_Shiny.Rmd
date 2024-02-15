@@ -24,7 +24,6 @@ Often we want to be able to share outputs from R with colleagues who lack the sk
 
 For example, when I am working with water quality assessments we need to look at plots for multiple parameters over multiple assessment areas. I can set up a script that will loop through these and export them into a folder. This might be fine if there are half a dozen plots, but it becomes impractical when there are hundreds. A shiny app can be a good way to share these, as the user can select each parameter and region to show the relevant plot.
 
-
 # Components of an R shiny app
 
 R shiny apps have 2 essential parts: the ui (user interface) and the server
@@ -37,7 +36,7 @@ The ui script is used to set up the user interface. It defines the layout, user 
 
 ### Layout
 
-There are many different ways to define the layout of a shiny app, but the simplest is with a sidebar panel with inputs and a main panel with outputs.
+There are many different ways to define the layout of a shiny app, but the simplest is to have a sidebar panel with inputs and a main panel with outputs.
 
 ```{r ui layout}
 
@@ -88,7 +87,7 @@ and many more besides!
 
 ### Outputs
 
-The UI defines outputs which you want your app to generate. In the UI you are just defining the type and creating a placeholder.
+The UI defines outputs which you want your app to generate. In the UI you are just defining the type and creating a placeholder where the output will go.
 
 Some examples of output types are:
 
@@ -204,7 +203,7 @@ In the server we set up code which is "reactive". Reactivity is probably the mos
 
 There is an [overview of reactivity here](https://shiny.posit.co/r/articles/build/reactivity-overview/) and [here](https://mastering-shiny.org/basic-reactivity.html)
 
-If you run the example below you will see that as you change the inputs on the sidebar the outputs reevaluate.
+If you run the example below (which is included in the shiny package) you will see that as you change the inputs on the sidebar the outputs reevaluate.
 
 ```{r reactivity}
 
@@ -219,40 +218,34 @@ If you don't want your outputs to be constantly updating whenever your user does
 Leaflet works really well with shiny. Here we take one of the examples from the leaflet session and embed it in a shiny app.
 
 ```{r leaflet example}
-runApp("quakes")
+runApp("quakes") #(this will only work if you have the quakes subfolder in your project directory with the app script)
 ```
 
 # Debugging
 
 Shiny apps are easy to break, and it can be confusing to figure out what is going wrong outside of the reactive shiny environment. You can use browser statements in your server script to help with debugging. This will run the app to where it gets to the browser statement, then your console will show Browse[1]\> and you will be able to access everything in your app at that point.
 
-As an example lets uncomment the browser statement in line 42 of the quakes app, then run it again.
+As an example go and uncomment the browser statement in line 42 of the quakes app.R script, then run it again.
 
 ```{r browser}
 runApp("quakes")
 ```
 
-Try typing input\$mag in your console now and you will be able to see what that actually is. You can even look at its class, and anything else you could normally do in.
+Try typing input\$mag in your console now and you will be able to see what that actually is. You can even look at its class, and anything else you could normally do in R.
 
-Note that in order to use browser debugging you need to run the app in the console, not as a background job.
+Note that in order to use browser debugging you need to run the app in the console, not as a background job. Click the dropdown arrow next to the `Run app` button on the top right to change this.
 
 # Shiny with multiple files
 
-You can also use shiny with the ui and server in separate files called ui.R and server.R. In this case you can also add a global script, global.R
+You can also create shiny apps with the ui and server in separate files called ui.R and server.R. In this case you can also add a global script, global.R
 
 ## Global
 
-The global script is optional but can be quite useful if there is any preprocessing to do on your data or you have lots of datasets to use. The global script is run once at the start of loading the app.
+The global script is optional but can be quite useful if there is any preprocessing to do on your data or you have lots of datasets to load. The global script is run once at the start of loading the app.
 
 You should use the global script to do all the things you would at the beginning of an R markdown, such as loading packages, defining functions, loading data, doing basic data processing.
 
 If you have more complex data preprocessing it is usually best to do this outside the app so it doesn't take too long to load.
-
-Let's go back to the loop above which produced loads of plots and see how we would make it into a shiny app.
-
-```{r looped plots 2}
-#Show shiny app for the OSPAR Eutrophication status results
-```
 
 # Sharing shiny apps
 
