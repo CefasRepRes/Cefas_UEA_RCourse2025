@@ -22,57 +22,8 @@ Shiny is an R package that allows us to take anything done in R and make it into
 
 Often we want to be able to share outputs from R with colleagues who lack the skills to run or edit R scripts themselves, or we have many different outputs that they want to explore.
 
-For example, when I am working with water quality assessments we need to look at plots for multiple parameters over multiple assessment areas. I can set up a script that will loop through these and export them into a folder. This might be fine if there are half a dozen plots, but it becomes impractical when there are hundreds. A shiny app can be a good way to share these.
+For example, when I am working with water quality assessments we need to look at plots for multiple parameters over multiple assessment areas. I can set up a script that will loop through these and export them into a folder. This might be fine if there are half a dozen plots, but it becomes impractical when there are hundreds. A shiny app can be a good way to share these, as the user can select each parameter and region to show the relevant plot.
 
-```{r looped plots, eval = FALSE}
-
-#if you run this loop you will find it generates 52 plots - quite a lot to look through, and this is only for one parameter! (only run if you want to sit here a few minutes!)
-
-wk3 <- read.csv("assessment_results.csv")
-
-#Plot of oxygen 5th percentile through time
-for (u in unique(wk3$UnitCode)) {
-  wk <- wk3[wk3$IndicatorID == 4 & wk3$UnitCode == u,]
-  
-  #unitID <- st_drop_geometry(units)[Code == u]$UnitID
-  unitCode <- u
-  unitName <- unique(wk[wk$Code.x == u,]$UnitName)
-  
-  title <- paste0("Eutrophication State [ES] and Threshold [ET] ", 1990, "-", 2020)
-  subtitle <- paste0("Oxygen Deficiency (DOXY) in ", unitName, " (", unitCode, ")", "\n")
-  subtitle <- paste0(subtitle, "Months: 7-10, Depths: 0-500m, Metric: 5th percentile of deepest sample within 10 meters from bottom, Unit: mg/l")
-  
-  fileName <- gsub(":", "", paste0("Annual_Indicator_Line_DOXY_", unitCode, ".png"))
-  
-  ggplot(wk, aes(x = as.Date(as.character(Period), "%Y"), y = ES, group = UnitCode, color = UnitCode)) +
-    labs(title = title , subtitle = subtitle) +
-    geom_point() +
-    geom_line() +
-    #geom_text(aes(label = N), vjust = -0.25, hjust = -0.25) +
-    #adding lines for boundaries between high/good/moderate etc
-    geom_hline(aes(yintercept = ET)) +
-    geom_hline(aes(yintercept = 7.75), linetype = 2) +
-    geom_hline(aes(yintercept = 4.25), linetype = 2) +
-    geom_hline(aes(yintercept = 2.5), linetype = 2) +
-    #labelling high/good/moderate etc
-    annotate("text", x = as.Date("2005", "%Y"), y = 5, label = "italic(Moderate)", parse = 2, size = 3.5, color = "grey") + 
-    annotate("text", x = as.Date("2005", "%Y"), y = 6.75, label = "italic(Good)", parse = 2, size = 3.5, color = "grey") +
-    annotate("text", x = as.Date("2005", "%Y"), y = 3.5, label = "italic(Poor)", parse = 2, size = 3.5, color = "grey") +
-    annotate("text", x = as.Date("2005", "%Y"), y = 1.5, label = "italic(Bad)", parse = 2, size = 3.5, color = "grey") +
-    annotate("text", x = as.Date("2005", "%Y"), y = 8.75, label = "italic(High)", parse = 2, size = 3.5, color = "grey") +
-    scale_x_date(date_labels = "%Y") +
-    xlab("Year") +
-    ylab("Oxygen (mg/l)") +
-    scale_y_continuous(limits = c(0,9), breaks = c(0,2,4,6,8))
-  if (nrow(wk) >0) {
-    ggsave(file.path("plots/", fileName), width = 15, height = 9, dpi = 300)
-    }
-  
-  
-}
-```
-
-We will come back to this example in a bit, but first lets explore the basics of shiny apps.
 
 # Components of an R shiny app
 
