@@ -1,0 +1,412 @@
+---
+title: "Week2Day2_parallel_computing_in_r_JS"
+output: html_document
+date: "2024-01-22"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+list.of.packages <- c("foreach", "doParallel", "tidyverse", "microbenchmark")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+
+if(length(new.packages)) install.packages(new.packages)
+
+library("foreach")
+library("doParallel")
+library("microbenchmark")
+
+
+```
+
+# Parallel computing in R (+apply functions)
+
+( FROM AN ECOLOGIST!!! )
+
+## Introduction
+
+Let's start with CTRL+ALT+DELETE
+
+```{r}
+
+(total_cores <- detectCores())
+
+```
+
+Here we can look at our processor and cores!
+
+But what exactly is parallel computing? Well this explains it better with some nice images: <https://nceas.github.io/oss-lessons/parallel-computing-in-r/parallel-computing-in-r.html>
+
+## When to parallelize?
+
+*(from above github link)*
+
+It's not as simple as it may seem. While in theory each added processor would linearly increase the throughput of a computation, there is overhead that reduces that efficiency.
+
+For example, the code and, importantly, the data need to be copied to each additional CPU, and this takes time and bandwidth. Plus, new processes and/or threads need to be created by the operating system, which also takes time.
+
+This overhead reduces the efficiency enough that realistic performance gains are much less than theoretical, and usually do not scale linearly as a function of processing power. For example, if the time that a computation takes is short, then the overhead of setting up these additional resources may actually overwhelm any advantages of the additional processing power, and the computation could potentially take longer!
+
+so.........
+
+When you have a list of repetitive tasks, you may be able to speed it up by adding more computing power. If each task is completely independent of the others, then it is a prime candidate for executing those tasks in parallel, each on its own core.
+
+## Parallel loops!
+
+### A basic loop
+
+do really basic stuff..
+
+```{r, warning = FALSE}
+
+for (i in 1:10) {
+  
+  a <- i * i
+  
+}
+
+```
+
+### but lets time it
+
+```{r, warning = FALSE}
+
+start.time <- Sys.time()
+
+x <- vector()
+
+for (i in 1:10000){
+  
+  x[i] <- i * i
+  
+}
+
+end.time <- Sys.time()
+
+(time.taken <- end.time - start.time)
+
+```
+
+### Now lets use most our cores
+
+Firstly we need to tell R how many cores we want it to use. It probably is not wise to use all the cores as windows and other processes need some space too!
+
+For me, depending on what other work I am doing I tend to use 70% to 90% of my cores (15 or 19)
+
+To do this we:
+
+```{r, warning = FALSE}
+
+(total_cores <- detectCores())
+
+cl <- parallel::makeCluster(total_cores - 2)
+doParallel::registerDoParallel(cl)
+
+```
+
+Okay now we have told R was can run the loop again, except using the correct syntax for parallel, its simple!
+
+And include the time cost of registering the cores..
+
+cl \<- parallel::makeCluster(18)
+
+doParallel::registerDoParallel(cl)
+
+```{r, warning = FALSE}
+
+start.time <- Sys.time()
+
+(total_cores <- detectCores())
+
+cl <- parallel::makeCluster(18)
+doParallel::registerDoParallel(cl)
+
+
+
+
+
+
+
+for (i in 1:10000){
+  
+  x[i] <- i * i
+  
+}
+
+
+
+
+
+
+
+
+
+
+x_par <- foreach (i=1:10000) %dopar% {
+  
+ i * i
+  
+}
+
+
+
+
+
+
+
+
+
+
+
+
+end.time <- Sys.time()
+
+(time.taken <- end.time - start.time)
+
+```
+
+# OH NO!
+
+### It is really tricky to show an example where code will be sped up by parallel processing without taking up the whole hour! It is more useful when you doing big operations
+
+A naughty example:
+
+(<https://stackoverflow.com/questions/53054366/how-can-i-run-a-for-loop-in-parallel-in-r>)
+
+```{r}
+
+cl <- parallel::makeCluster(18)
+doParallel::registerDoParallel(cl)
+
+
+f <- function(x) dexp(x, 2)
+d <- runif(10, 1, 5)
+dnew <- numeric(length(d))
+
+dnew2 <- f(d)
+
+dnew3 <- foreach(i=seq_along(dnew), .combine=c) %dopar% {
+    f(d[i])
+}
+
+f <- function(x){
+    Sys.sleep(.3)
+    dexp(x, 2)
+}
+
+microbenchmark(
+  # writing the code for the normal loop
+  'for loop' = for (i in seq_along(dnew))
+    {
+    dnew[i] <- f(d[i])
+    },
+  # writing the code for the par loop
+  'foreach' = {
+    dnew3 <- foreach(i=seq_along(dnew),
+                     .combine=c) %dopar% 
+      {
+        f(d[i])
+        }
+    },
+  times=2)
+
+
+
+```
+
+## Passing functions
+
+a simple function
+
+```{r, warning = FALSE}
+
+timeXby100 <- function(x){
+  
+  return(x * 100)
+  
+}
+
+timeXby100(10)
+
+```
+
+Adding it into a parallel loop:
+
+```{r, warning = FALSE}
+
+numbersmultiplied <- foreach(i=1:1000) %dopar% {
+  
+  timeXby100(i)
+ 
+}
+
+head(unlist(numbersmultiplied))
+
+```
+
+## Passing packages
+
+If you use a specific function you will need to pass the packages to the for loop to be sent to the 'children'
+
+```{r, warning = FALSE}
+
+library(tidyverse)
+
+df_maker <- function(aaaa){
+  
+  df <- data.frame(numbers = c(aaaa,2,3,4,5,6,7))
+  
+  return(df)
+  
+}
+
+
+# Here we pass the package
+foreach(i=1:3,
+        .packages=c('dplyr', "vegan")) %dopar% {
+  
+  a_df <- df_maker(i)
+  
+  a_df %>% 
+    filter(numbers < i+3)
+  
+}
+
+
+
+```
+
+# A quick bit on apply
+
+## (and parallel lapply)
+
+Maybe we don't need to paralellize, in R there are another group of functions we can use to speed up our code!
+
+(<https://ademos.people.uic.edu/Chapter4.html>)
+
+```{r}
+
+?apply()
+
+# getting only numeric data from mtcars
+get_names = names(mtcars)[sapply(mtcars, is.numeric)]
+df = mtcars[,get_names]
+
+df
+
+```
+
+Look at rows and columns with apply
+
+```{r}
+
+apply(df,   # our data frame from above!
+      1,    # index 1, this means rows
+      sum)  # sum = sum 
+
+
+# now columns
+apply(df, 2, sum)
+
+apply(df, 2, mean)
+
+
+```
+
+Using custom functions
+
+```{r}
+
+# dont forget 2 = columns
+
+apply(df, 2,
+      function (x) length(x) - 1)
+
+
+
+```
+
+Or adding a function in from outside the apply:
+
+```{r}
+
+
+
+st.err <- function(x){
+  sd(x)/sqrt(length(x))
+}
+
+
+
+
+
+apply(df,
+      2, 
+      st.err)
+
+```
+
+### lapply and sapply
+
+```{r}
+A<-c(1:9)
+B<-c(1:12)
+C<-c(1:15)
+
+my.lst<-list(A,B,C)
+
+lapply(my.lst, sum)
+
+# using our own function
+lapply(my.lst, st.err)
+
+# Simple output as a vector
+sapply(my.lst, sum)
+
+```
+
+## parLapply from parallel package 
+
+```{r}
+
+cl <- parallel::makeCluster(18)
+doParallel::registerDoParallel(cl)
+
+
+f <- function(x){
+    Sys.sleep(.3)
+    dexp(x, 2)
+}
+
+num_list <- c(1:10)
+
+parLapply(cl, num_list, f)
+
+
+```
+
+### Quick benchmark test
+
+```{r}
+
+microbenchmark(
+  # writing the code for the normal loop
+  'lapply' = lapply(num_list, f),
+  # writing the code for the par loop
+  'parLapply' = parLapply(cl, num_list, f),
+  times=2)
+
+
+```
+
+### For sapply and tapply (And more): 
+
+<https://ademos.people.uic.edu/Chapter4.html>
+
+# Other bits and bobs! 
+
+## GLMS
+
+<https://cran.r-project.org/web/packages/parglm/parglm.pdf>
+
+## RandomForests
