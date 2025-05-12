@@ -1,0 +1,369 @@
+---
+title: "Week1, Day2: Basic Data Visualisation"
+author: "Kate Collingridge and Kathrin Vossen"
+date: "`r format(Sys.time(), '%d/%m/%y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE)
+# knitr::opts_chunk$set(eval = FALSE) ## have set this to FALSE for now, might have to change that if we want to show outputs
+```
+
+## Basic example plots
+
+Let's visualise our data using three different types of plots. This can also be a great way to explore your data, for example by plotting a simple histogram or boxplot. You have already heard of the package 'ggplot2'. This is a very powerful package to create great looking plots very quickly. However, sometimes base R code is perfectly sufficient - and may actually give you more flexibility to fully customise your plots - and therefore we will also cover some base R functions as well.
+
+First we will load the `ggplot2` package so we can compare base R functions with `ggplot` functions:
+
+```{r package, warning=FALSE, message=FALSE}
+library(ggplot2)
+```
+
+Now let's start with some simple examples for different types of plots. Using the `iris` example data, we can plot some simple histograms, boxplots and scatter plots which allow us to explore our data.
+
+<u>**Histogram**</u>
+
+```{r hist}
+## First we create our simple dataframe again:
+
+iris <- as.data.frame(iris)
+
+## Then we can plot a histogram of petal lengths:
+hist(iris$Petal.Length)
+
+## and the same using ggplot:
+ggplot(data = iris) +
+  geom_histogram(aes(x = Petal.Length))
+```
+
+<u>**Boxplot**</u>
+
+```{r box}
+## this is how a boxplot looks using base R functions:
+boxplot(iris$Petal.Length~iris$Species)
+
+## and this is how a boxplot looks using ggplot:
+ggplot(data = iris,aes(x = Species, y = Petal.Length)) +
+  stat_boxplot(geom = "errorbar", width = 0.15) +
+  geom_boxplot()
+```
+
+<u>**Scatterplot**</u>
+
+```{r scatter}
+## A scatterplot using base R -- note here a scatterplot is the default that R will return if we don't specify a specific plot and we are plotting two numerical variables
+plot(iris$Petal.Width~iris$Petal.Length)
+## Alternative way of writing this:
+# plot(x = iris$Petal.Length, y = iris$Petal.Width)
+
+## This is how a scatterplot looks using ggplot:
+
+ggplot() +
+  geom_point(data = iris, aes(x = Petal.Length, y = Petal.Width))
+```
+
+When we don't specify the type of plot we want, the base function gives us different results based on the class of our variable - this isn't always informative!!
+
+```{r plot1}
+plot(x = iris$Species) # plotting factors for x
+
+plot(x = iris$Petal.Length) # looks a bit like a histogram? but R returns a scatterplot because it's a numerical value...
+
+plot(x = iris$Species, y = iris$Petal.Length) # here we get a boxplot because one of our variables is a factor
+```
+
+<u>**Line plot**</u>
+
+Let's revisit the chicks from yesterday
+
+```{r chickweight}
+data("ChickWeight")
+
+# Let's plot the weight of chick 2 through time.
+chick2 <- ChickWeight[ChickWeight$Chick == 2, ]
+plot(x = chick2$Time, y = chick2$weight, type = "l")
+
+# Now let's plot several chicks using ggplot
+ggplot() +
+  geom_line(data = ChickWeight[ChickWeight$Chick < 20,], aes(x = Time, y = weight, col = Chick)) # col = Chick tells it to use a different color for each chick so they get their own lines
+
+# Maybe it is clear now what happened to chicks 16 and 18. Perhaps they didn't escape after all.
+```
+
+<u>**So what's the difference?**</u>
+
+The two most obvious differences between base R `plot` and `ggplot` are:
+
+-   the code/syntax
+-   the layout and look of the resulting plot
+
+With base R plots, a lot of editing is done with additional lines of code that are technically independent from each other. With ggplot, you add 'layers' to your plot object and with each new layer you can either add more data to your plot or change settings.
+
+We will now look at some simple examples on how to customise plots.
+
+## Customising base R plots
+
+Let's change some basic things about our plot. We'll start with the base R `plot` function first before we move on to the `ggplot` function.
+
+```{r base-plot}
+# Load the data:
+iris <- as.data.frame(iris)
+
+## Let's remind us of what the plot looks like if we specify nothing else:
+
+plot(iris$Petal.Length, iris$Petal.Width)
+
+## Now we change the axis titles:
+
+plot(iris$Petal.Length, iris$Petal.Width,
+     xlab = "Petal Length (cm)",
+     ylab = "Petal Width (cm)")
+
+# And what about a title?
+
+mtext(side=3, line=2, at=0.5, adj=0, cex=2, "Sepal width as a function of sepal length") # Note using mtext will only work in a basic R script, not in markdown. If you get an error about plot.new try running this section directly in the console
+```
+
+What if we want to change the colour of our points? Or change the type of symbol completely? R has the following options built in for point symbols:
+
+![Point types](./pch.png)
+
+To use one of these options in our plot, here is how we do it:
+
+```{r base-plot2}
+plot(iris$Petal.Length, iris$Petal.Width,
+     xlab = "Petal Length (cm)",
+     ylab = "Petal Width (cm)",
+     pch = 17)
+
+## Or to change the colour on top of it:
+plot(iris$Petal.Length, iris$Petal.Width,
+     xlab = "Petal Length (cm)",
+     ylab = "Petal Width (cm)",
+     pch = 17,
+     col = "blue")
+
+```
+
+Just as we can change the point symbol, we can also change the line type. Here are the built in options:
+
+![Line types](./lty.png)
+
+So if we want to change the line type in our chick plot from earlier it would look like this:
+
+```{r lty}
+# data("ChickWeight")
+
+chick2 <- ChickWeight[ChickWeight$Chick == 2, ]
+plot(x = chick2$Time, y = chick2$weight, type = "l", lty = 3)
+```
+
+There are many aspects of a plot that can be edited. Things that directly affect parts of the plot - such as the colour of points - can be specified *within* the `plot` function. Anything that concerns the general layout of the plot - such as margins, font size of labels, position of the legend - need to be specified *outside* the `plot` function. We've seen this with the title - we used `mtext()` for this. Another important function is `par()`. Within this function, we can specific parameters that define the general layout of our plot. For example, let's create very large outer margins, and change the colour of our axis labels to green:
+
+```{r base-plot3}
+# We have to define out plotting window BEFORE we plot:
+par(oma = c(5,5,5,5), col.lab = "darkgreen") # for reference: c(bottom, left, top, right)
+
+plot(iris$Petal.Length, iris$Petal.Width,
+     xlab = "Petal Length (cm)",
+     ylab = "Petal Width (cm)",
+     pch = 17,
+     col = "blue")
+```
+
+The documentation for this function gives you an overview of all the different parameters that can be changed with this function: <https://www.rdocumentation.org/packages/graphics/versions/3.6.2/topics/par>
+
+You will find a lot of things will be learned by 'trial and error'...
+
+**An important note:** the `par` function changes *global* settings for ALL subsequent plots -- that means if you want to reset your settings to the default, or you get lost down a rabbit hole and want to start fresh, use `dev.off()`
+
+Final example - let's group colourings by factor, and add a legend.
+
+```{r base-plot4}
+plot(iris$Petal.Length, iris$Petal.Width, col=iris$Species,
+     xlab = "Petal length (cm)", ylab = "Petal width (cm)")
+legend('bottomright', legend = levels(iris$Species), col = 1:3, cex = 0.8, pch = 1)
+
+
+```
+
+## ggplots and how to customise them
+
+As you can probably tell by the previous examples, `ggplot` code looks different to base R plotting, and we need to write our code differently to achieve the same effects.
+
+`ggplot` builds up a plot layer by layer. If we were to call an empty `ggplot()` function, we are essentially telling R to set up an empty plotting window:
+
+```{r ggplot1}
+ggplot()
+```
+
+Now we can add content to that empty box. You can specify which data to use in two places -- if you are only using one dataset, you can define your data at the start, if you will be plotting multiple datasets on top of each other (yes this is possible), you can define the data within each layer. Example:
+
+```{r ggplot2}
+ggplot(data = iris) +
+  geom_point(aes(x = Petal.Length, y = Petal.Width))
+
+# This gives the same results:
+
+ggplot() +
+  geom_point(data = iris, aes(x = Petal.Length, y = Petal.Width))
+```
+
+Different types of plots in `ggplot` are defined by different *geoms*. Here is a list to give you an overview:
+
+<https://ggplot2.tidyverse.org/reference/>
+
+This also shows us that in our example *geom_point* is the first layer that we add to our ggplot. The second important thing to understand about `ggplot` is the `aes()` function -- here we define *aethetics* of our variables. Just like with the `plot()` function we need to learn where in the function we define our parameters. For example, let's recreate our scatterplot to demonstrate:
+
+```{r ggplot3}
+ggplot(data = iris) + # define data, we could even add x and y definitions here
+  # changing point colour AND symbol based on factor
+  geom_point(aes(x = Petal.Length, y = Petal.Width, colour = Species, pch = Species))+
+  labs(title = "Petal Width as a function of petal length",
+       x = "Petal length (cm)",
+       y = "Petal width (cm)") +
+  theme_bw()+ # NOTE: here the order matters! We set the overall theme first then overwrite parts of it
+  theme(axis.title = element_text(size=10, face="bold", color = "black"))
+  
+```
+
+Things that directly affect our variables - the colour and point shape - are defined within the `aes()` function. General settings need to be defined *outside* of the plotting function and added as new layers with a +
+
+`ggplot` was developed to make plotting easier -- note for example that a legend was added automatically. For the vast majority of plots, this additional functionality is great and will allow you to do whatever you need. For some plots, the base R functions are better suited because they allow you to build up plots bit by bit, completely manually and from scratch.
+
+## Using ggplot Theme Assist
+
+This user-friendly addin is a bit of a cheat for using ggplot. As a whole, it is best not to rely on it, or at least to only change one thing at a time then study the code, otherwise you wont understand the underlying plot code that is generated. BUT! If you need a quick and easy way to edit your ggplot or you aren't sure how to write the code to do so, it is very handy to install this addin.
+
+```{r ggplot Theme Assist}
+
+#install.packages("ggThemeAssist")
+
+library(ggThemeAssist)
+
+```
+
+To use ggplot Theme Assist, you need to have the code for at least a basic graph. Highlight the plotting code, go to 'addins' (just below the help button on the toolbar), and click **ggplot Theme Assist**.
+
+Here is an example or the code you start out with, and the code you can finish with.
+
+```{r ggplot Theme Assist example}
+
+# Create our simple dataframe again
+iris <- as.data.frame(iris)
+
+
+# Create our simple plot
+gg <- ggplot(data = iris) +
+  geom_histogram(aes(x = Petal.Length))
+
+# either highlight plot code above or assign the plot and use ggThemeAssistGadget()
+#ggThemeAssistGadget(gg)
+
+gg + theme(plot.background = element_rect(fill = "antiquewhite"))# it will automatically output the code, eg:
+ggplot(data = iris) +
+  geom_histogram(aes(x = Petal.Length)) + theme(axis.line = element_line(colour = "purple1",
+    linetype = "solid"), panel.grid.major = element_line(colour = "aquamarine4",
+    linetype = "dashed"), panel.grid.minor = element_line(linetype = "blank"),
+    axis.title = element_text(family = "serif",
+        size = 14, face = "bold"), axis.text = element_text(size = 15,
+        colour = "lightgoldenrod4"), plot.title = element_text(family = "serif",
+        size = 20, face = "bold"), legend.text = element_text(colour = "bisque1"),
+    panel.background = element_rect(fill = "honeydew2")) +labs(x = "Petal Length", y = "Count")
+
+
+
+```
+
+## Interactive plots
+
+It is possible to create interactive plots using packages such as `plotly`. This is a whole universe in its own which we won't go into in any detail, but if you want to keep it simple you can just pass a ggplot object to plotly
+
+```{r plotly}
+
+library(plotly)
+p <- ggplot() +
+  geom_line(data = ChickWeight[ChickWeight$Chick < 20,], aes(x = Time, y = weight, col = Chick))
+
+ggplotly(p)
+
+# Magic! Try hovering over the plot to see what happens
+```
+
+## Maps
+
+We can use also ggplot to create maps
+
+```{r ggplot map}
+
+# Let's use the quakes dataset again
+
+data("quakes")
+quakes_sf <- sf::st_as_sf(quakes, coords = c("long","lat")) 
+
+ggplot(quakes_sf) +
+  geom_polygon(data = map_data("world"),
+                 aes(x=long, y=lat, group = group),
+                 color = '#9c9c9c', fill = 'green') +
+  geom_sf(size = 1, color = 'dark grey') +
+  xlim(165, 190)+
+  ylim(-40, -10 )
+  
+```
+
+An alternative package for maps is leaflet. This can be used to create interactive maps. We will go into this in more detail in week 2.
+
+```{r leaflet}
+
+library(leaflet)
+
+leaflet(quakes_sf) %>%
+  addTiles() %>%
+  addCircles()
+```
+
+## How to save plots
+
+There are several options to save plots. In an R script, you can use the 'save plot' button above the plotting window. For ggplot, you can use `ggsave()` where you can define the location, format (jpeg, png, pdf) and dimensions of your outputs. You can also "print" to pdfs and pngs.
+
+```{r ggsave}
+ggplot(quakes_sf) +
+  geom_polygon(data = map_data("world"),
+                 aes(x=long, y=lat, group = group),
+                 color = '#9c9c9c', fill = 'green') +
+  geom_sf(size = 1, color = 'dark grey') +
+  xlim(165, 190)+
+  ylim(-40, -10 )
+
+ggsave("plot.png")
+```
+
+## Some further thoughts on plotting and online resources
+
+There are many other things you can customise about your plots - both using base R functions and ggplot. There are also many other base R functions to produce specific statistical plots. Some examples of other things you can do when plotting:
+
+-   add labels/textboxes
+
+-   add trendlines
+
+-   plot outputs from statistical models, or plot error distributions
+
+-   customise the colour palette used in your plots -- there are many palettes to choose from!
+
+-   arrange multiple plots, either using the `par` function, or using packages such as `cowplot`
+
+-   change the font size, style and angle of axis lables and tick marks
+
+-   plot spatial data using base R, ggplot or packages such as `leaflet`
+
+-   create animations and gifs which can be embedded into documents or exported as gifs
+
+Like with many other things you can do in R, there are endless resources out there to help you! It is safe to assume that any plot customisation you want to do, someone else has already tried it and has asked the internet community for help (or went and wrote a book about it). Here are some links to get you started and to give you an idea of all the things you can look up online:
+
+<https://www.datanovia.com/en/lessons/introduction-to-ggplot2/>
+
+<https://datacarpentry.org/R-ecology-lesson/04-visualization-ggplot2.html>
+
+<https://stackoverflow.com/questions/57153428/r-plot-color-combinations-that-are-colorblind-accessible>

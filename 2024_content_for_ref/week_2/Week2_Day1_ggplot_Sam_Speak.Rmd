@@ -1,0 +1,388 @@
+---
+title: "Week 2 - Lecture 1 - ggplot"
+author: "Sam Speak"
+date: "2024-01-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Lecture 1 - ggplot
+
+##### Load in packages
+
+```{r install packages}
+#install.packages("ggplot2")
+#install.packages("ggThemeAssist")
+#install.packages("ggpubr")
+#install.packages("wesanderson")
+#install.packages("ggpattern")
+#install.packages("ggVennDiagram")
+#install.packages("ggcorrplot")
+#install.packages("ggforce")
+#install.packages("cowplot")
+#install.packages("magick")
+
+```
+
+### Quick recap
+
+We covered a lot in the last week of the course, but one of the main things that we did was introduce you to two different ways of plotting data, using base R and using ggplot.
+
+We talked about how we can create plots with ggplot, how we have to express the aesthetics of a plot with `aes()` and how we can add labels with `lab`.
+
+We also showed you the useful tool `ggThemeAssist()` which is an interactive way to edit figures.
+
+```{r}
+library(ggplot2)
+library(ggThemeAssist)
+
+ggplot(data = iris) + # define data, we could even add x and y definitions here
+  # changing point colour AND symbol based on factor
+  geom_point(aes(x = Petal.Length, y = Petal.Width, colour = Species, pch = Species))+
+  labs(title = "Petal Width as a function of petal length",
+       x = "Petal length (cm)",
+       y = "Petal width (cm)") +
+  theme_bw()+ # NOTE: here the order matters! We set the overall theme first then overwrite parts of it
+  theme(axis.title = element_text(size=10, face="bold", color = "black"))
+
+```
+
+### Adding trends
+
+Quite often we don't want to just display a scatter of points on a plot we need more information.
+
+A good way to determine trends is by using the `geom_smooth()` function to add a trend line.
+
+```{r }
+ggplot(data = iris) +
+  geom_point(aes(x = Petal.Length, y = Petal.Width, colour = Species, pch = Species))+
+  labs(title = "Petal Width as a function of petal length",
+       x = "Petal length (cm)",
+       y = "Petal width (cm)") +
+  geom_smooth(aes(x = Petal.Length, y = Petal.Width, colour = Species),method = glm) +
+  theme_bw()+ 
+  theme(axis.title = element_text(size=10, face="bold", color = "black"))
+
+```
+
+We can turn off the standard errors and also edit the statistical method used.
+
+```{r }
+ggplot(data = iris) +
+  geom_point(aes(x = Petal.Length, y = Petal.Width, colour = Species, pch = Species))+
+  labs(title = "Petal Width as a function of petal length",
+       x = "Petal length (cm)",
+       y = "Petal width (cm)") +
+  geom_smooth(aes(x = Petal.Length, y = Petal.Width, colour = Species), se = FALSE , method = loess) +
+  theme_bw()+ 
+  theme(axis.title = element_text(size=10, face="bold", color = "black"))
+
+```
+
+### Plotting distribution
+
+Quite often we don't want to plot just points but distributions.
+
+There are some functions in ggplot for this `geom_boxplot()` and `geom_violin()`
+
+```{r }
+
+ggplot(data = iris) +
+  geom_violin(aes(y = Petal.Length, x = Species, fill = Species)) +
+  labs(title = "Petal Width as a function of petal length",
+       x = "Species",
+       y = "Petal length (cm)") +
+  theme_bw() + 
+  theme(axis.title = element_text(size=10, face="bold", color = "black"))
+```
+
+### Adding pattern
+
+There are a wide range of packages available that work with `ggplot()` an example would be `ggpatterns` which provides patterned fills for every ggplot geom that has fill regions.
+
+```{r }
+#install.packages("ggpattern")
+library(ggpattern)
+
+ggplot(data = iris) +
+  geom_violin_pattern(aes(y = Petal.Length, x = Species, fill = Species, pattern = Species)) +
+  labs(title = "Petal Width as a function of petal length",
+       x = "Species",
+       y = "Petal length (cm)") +
+  theme_bw() + 
+  theme(axis.title = element_text(size=10, face="bold", color = "black"))
+
+```
+
+## Colour palettes
+
+As we have discussed last week you can change the colour of your plots by either typing the name of a colour or by also using a `hex code`.
+
+You can search a specific colours code in Google. A useful website is <https://encycolorpedia.com>.
+
+We can also import some colour palettes that are pre-made for us.
+
+One example of this is all of the Wes Anderson palettes.
+
+```{r }
+#install.packages("wesanderson")
+library(wesanderson)
+
+wes_palettes
+```
+
+```{r }
+#install.packages("wesanderson")
+library(wesanderson)
+
+life_aquatic <- wes_palettes$Zissou1
+
+ggplot(data = iris) +
+  geom_violin(aes(y = Petal.Length, x = Species, fill = Species)) +
+  labs(title = "Petal Width as a function of petal length",
+       x = "Species",
+       y = "Petal length (cm)") +
+   scale_fill_manual(values = c(life_aquatic[c(1,3,5)])) +
+  theme_bw() + 
+  theme(axis.title = element_text(size=10, face="bold", color = "black"))
+
+```
+
+My advice would be that as good as some of these are use them sparingly and you should always consider the application of your figure and the accessibility.
+
+```{r }
+
+cbpalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7")
+
+```
+
+## Some thoughts on Theme
+
+```{r }
+#install.packages("ggpubr")
+library(ggpubr)
+
+Petal_plot <- ggplot(data = iris) +
+  geom_point(aes(x = Petal.Length, y = Petal.Width, colour = Species, pch = Species))+
+  labs(title = "Petal Width as a function of petal length",
+       x = "Petal length (cm)",
+       y = "Petal width (cm)") 
+
+Petal_plot +  theme_classic2()+ 
+  theme(axis.title = element_text(size=10, face="bold", color = "black"))
+
+Petal_plot +  theme_pubclean()+ 
+  theme(axis.title = element_text(size=10, face="bold", color = "black"))
+
+Petal_plot +  theme_light()+ 
+  theme(axis.title = element_text(size=10, face="bold", color = "black"))
+
+```
+
+## ggpubr
+
+To make quick and clean looking plots we can use an extension to `ggplot` called `ggpubr`. This provides quick and customised plots that are on the way to be publication ready.
+
+```{r }
+#install.packages("ggpubr")
+library(ggpubr)
+
+df <-  data.frame(group = c("ARIES","CEFAS","Demonstrators"),
+            Lunches = c(13,15,6))
+
+ggdonutchart(df,x = "Lunches", label = "group", fill = "group")
+
+ggdensity(iris, x = "Petal.Length", fill = "Species")
+
+ggviolin(iris, y = "Petal.Length", x = "Species", fill = "Species")
+```
+
+### Multiple plots
+
+When we want to create a plot quite often we don't want to show just one figure we want to see multiple to understand the data better
+
+#### Facet_wrap
+
+One quick way we can compare and split apart a plot is by using the `facet_wrap()` function.
+
+```{r }
+#### To demonstrate here is a basic histogram of Petal Length
+
+ggplot(iris) +
+  geom_histogram(aes(x = Petal.Length)) +
+  scale_x_continuous(name = "Petal Length (cm)") +
+  scale_y_continuous(name = "Frequency")  +
+  theme_pubclean()
+```
+
+But what if we wanted to get a histogram of each species respectively to compare them?
+
+```{r }
+
+ggplot(iris) +
+  geom_histogram(aes(x = Petal.Length)) +
+  scale_x_continuous(name = "Petal Length (cm)") +
+  scale_y_continuous(name = "Frequency")  +
+  facet_wrap(~ Species) +
+  theme_pubclean()
+```
+
+#### ggarrange
+
+We can now create many types of plots but what if we want to compare different types of plots in one figure?
+
+We can use the function `ggarrange()` which is part of the `ggpubr` package we looked at before.
+
+```{r }
+library(ggpubr)
+library(wesanderson)
+
+pallet <- wes_palettes$FantasticFox1
+
+### Make multiple different plots
+iris_boxplot <- ggboxplot(iris, x = "Species", y = "Sepal.Length",
+    color = "Species", palette = pallet)
+
+iris_points_plot <- ggdotplot(iris, x = "Species", y = "Sepal.Length",
+    color = "Species", palette = pallet)
+
+iris_density <- ggdensity(iris, x = "Sepal.Length", 
+                          fill = "Species", palette = pallet  )
+
+
+### Then create a multi panel plot
+ggarrange(iris_boxplot, iris_points_plot, iris_density, ncol = 2, nrow = 2)
+```
+
+```{r}
+### We can combine multiple ggarrange plots together 
+
+iris_top_plot <- ggarrange(iris_boxplot, iris_points_plot, ncol = 2, nrow = 1)
+
+ggarrange(iris_top_plot, iris_density, ncol = 1, nrow = 2)
+```
+
+We may want to share the legends of multiple plots to make them more read able
+
+```{r}
+ggarrange(iris_boxplot, iris_points_plot, ncol = 2, nrow = 1, common.legend = TRUE)
+```
+
+We can also adjust the size of each plot relative to each other
+
+```{r}
+
+iris_scatter <- ggscatter(iris, x = "Sepal.Width",
+                       y = "Sepal.Length",
+                       group = "Species",
+                       color = "Species",
+                       palette = pallet)
+ggarrange(iris_scatter,iris_boxplot,ncol = 2, nrow = 1, common.legend = TRUE, widths = c(3,1))
+```
+
+### Zooming into a plot
+
+```{r }
+library(ggforce)
+
+iris_scatter <- ggscatter(iris, x = "Petal.Width",
+                       y = "Petal.Length",
+                       group = "Species",
+                       color = "Species",
+                       palette = pallet)
+iris_scatter
+
+iris_scatter + facet_zoom(x = Species == "versicolor")
+```
+
+### How to add images to plot
+
+We could want to import an image into a plot that we have created. To do this we need to load in the image that we want and the packages `cowplot` and `magic`.
+
+```{r }
+library(cowplot)
+library(magick)
+
+iris_density <-  ggplot(iris) + geom_density(aes(x= Sepal.Length, fill = Species)) + 
+  scale_fill_manual(values = pallet) + theme_cowplot()
+
+logo_file <- file.path(R.home(), "doc", "html", "Rlogo.pdf")
+
+image_behind_plot <- ggdraw() +
+  draw_image(logo_file) +
+  draw_plot(iris_density)
+
+image_behind_plot
+
+#### But we can alter where we are putting the image 
+
+cow_logo_file <- system.file("extdata", "logo.png", package = "cowplot")
+
+image_on_plot <- ggdraw() +
+  draw_image(cow_logo_file,  x = 0.3, y = 0.4, scale = .2) +
+  draw_plot(iris_density)
+
+image_on_plot
+
+```
+
+### Some interesting plot types
+
+#### Venn diagrams
+
+```{r }
+library(ggVennDiagram)
+
+cbpalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7")
+
+fish_data <- paste("fish",1:1000,sep="")
+set.seed(20231214)
+sample_data <- list(A=sample(fish_data,300),
+          B=sample(fish_data,525),
+          C=sample(fish_data,440),
+          D=sample(fish_data,350),
+          E=sample(fish_data,374))
+
+ggVennDiagram(sample_data) + scale_fill_gradient(low=cbpalette[5],high = cbpalette[2])
+
+
+```
+
+#### Correlation plots
+
+```{r }
+library(ggcorrplot)
+corr <- round(cor(mtcars), 1)
+
+ggcorrplot(corr)
+
+```
+
+We can alter many aspects of the plot as well as to identify which correlations are not significant.
+
+```{r }
+p.mat <- cor_pmat(mtcars)
+
+ggcorrplot(corr, type = "lower", method = "circle",hc.order = TRUE, outline.col = "white" ,p.mat = p.mat)
+```
+
+## Exercises
+
+```{r }
+
+```
+
+Useful links:
+
+Searching colours: <https://encycolorpedia.com>
+
+Changing colours: <http://www.sthda.com/english/wiki/ggplot2-colors-how-to-change-colors-automatically-and-manually>
+
+Colour blind accessibility: <https://stackoverflow.com/questions/57153428/r-plot-color-combinations-that-are-colorblind-accessible>
+
+ggplot basics: <https://www.datanovia.com/en/lessons/introduction-to-ggplot2/> <https://datacarpentry.org/R-ecology-lesson/04-visualization-ggplot2.html>
+
+ggpubr: <https://rpkgs.datanovia.com/ggpubr/>
