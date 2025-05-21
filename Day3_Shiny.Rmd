@@ -1,0 +1,270 @@
+---
+title: "Introduction to R shiny"
+author: "Kate Collingridge"
+date: "2025-05-21"
+output: html_document
+---
+
+```{r setup, include=FALSE, eval = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages}
+library("shiny")
+library("leaflet")
+library("ggplot2")
+
+```
+
+# What is R shiny
+
+Shiny is an R package that allows us to take anything done in R and make it into an interactive web app available to users, without them needing knowledge of R. An app can even be set to fetch data remotely, do all the processing on the fly and display the outputs.
+
+Often we want to be able to share outputs from R with colleagues who lack the skills to run or edit R scripts themselves, or we have many different outputs that they want to explore.
+
+For example, when I am working with water quality assessments we need to look at plots for multiple parameters over multiple assessment areas. I can set up a script that will loop through these and export them into a folder. This might be fine if there are half a dozen plots, but it becomes impractical when there are hundreds. A shiny app can be a good way to share these, as the user can select each parameter and region to show the relevant plot.
+
+# Components of an R shiny app
+
+R shiny apps have 2 essential parts: the ui (user interface) and the server
+
+These are usually combined into one script called app.R
+
+## UI
+
+The ui script is used to set up the user interface. It defines the layout, user inputs and output types.
+
+### Layout
+
+There are many different ways to define the layout of a shiny app, but the simplest is to have a sidebar panel with inputs and a main panel with outputs.
+
+```{r ui layout}
+
+ui <- fluidPage(
+
+  # App title ----
+  titlePanel("Title"),
+
+  # Sidebar layout with input and output definitions ----
+  sidebarLayout(
+
+    # Sidebar panel for inputs ----
+    sidebarPanel(
+      
+    ),
+
+    # Main panel for displaying outputs ----
+    mainPanel(
+
+    )
+  )
+)
+```
+
+You can view more complex layouts [here](https://mastering-shiny.org/action-layout.html)
+
+### Inputs
+
+Shiny apps can have several different types of input, which are defined in the ui using input functions
+
+Each input has an inputId, which is a unique string used to refer to the input, and usually a label, which is how it is displayed in the app, along with various other options depending on the input type. Some examples of input types are:
+
+numericInput
+
+textInput
+
+radioButtons
+
+selectInput
+
+sliderInput
+
+actionButton
+
+and many more besides!
+
+[Chapter 2 of Mastering Shiny goes into more detail on these](mastering-shiny.org)
+
+### Outputs
+
+The UI defines outputs which you want your app to generate. In the UI you are just defining the type and creating a placeholder where the output will go.
+
+Some examples of output types are:
+
+textOutput
+
+tableOutput
+
+plotOutput
+
+leafletOutput
+
+Similarly to with inputs, outputs are referred to by their unique outputId.
+
+[Chapter 2 of Mastering Shiny goes into more detail on these](mastering-shiny.org)
+
+Here is a simple example of a ui script
+
+```{r ui, eval = FALSE}
+# Define UI for dataset viewer app ----
+ui <- fluidPage(
+
+  # App title ----
+  titlePanel("Reactivity"),
+
+  # Sidebar layout with input and output definitions ----
+  sidebarLayout(
+
+    # Sidebar panel for inputs ----
+    sidebarPanel(
+
+      # Input: Text for providing a caption ----
+      textInput(inputId = "caption",
+                label = "Caption:",
+                value = "Data Summary"),
+
+      # Input: Selector for choosing dataset ----
+      selectInput(inputId = "dataset",
+                  label = "Choose a dataset:",
+                  choices = c("rock", "pressure", "cars")),
+
+      # Input: Numeric entry for number of obs to view ----
+      numericInput(inputId = "obs",
+                   label = "Number of observations to view:",
+                   value = 10)
+
+    ),
+
+    # Main panel for displaying outputs ----
+    mainPanel(
+
+      # Output: Formatted text for caption ----
+      h3(textOutput("caption", container = span)),
+
+      # Output: Verbatim text for data summary ----
+      verbatimTextOutput("summary"),
+
+      # Output: HTML table with requested number of observations ----
+      tableOutput("view")
+
+    )
+  )
+)
+```
+
+## Server
+
+The server script is where outputs are generated based on user inputs.
+
+Inputs are referred to with input\$nameofinput (as you defined it in the ui)
+
+Outputs are assigned using output\$nameofoutput (this needs to be assigned in the ui otherwise it won't appear in the app). We then use a render function to render the output.
+
+It is also possible to put lots of other bits of code into the server where necessary to generate the outputs. In the example below we first assign the dataset we will be using based on what the user selected.
+
+```{r Server example, eval = FALSE}
+server <- function(input, output) {
+
+  # Return the requested dataset ----
+  datasetInput <- reactive({
+    switch(input$dataset,
+           "rock" = rock,
+           "pressure" = pressure,
+           "cars" = cars)
+  })
+
+  # Create caption ----
+
+  output$caption <- renderText({
+    input$caption
+  })
+
+  # Generate a summary of the dataset ----
+
+  output$summary <- renderPrint({
+    dataset <- datasetInput()
+    summary(dataset)
+  })
+
+  # Show the first "n" observations ----
+
+  output$view <- renderTable({
+    head(datasetInput(), n = input$obs)
+  })
+
+}
+
+
+```
+
+### Reactivity
+
+In the server we set up code which is "reactive". Reactivity is probably the most important concept to understand when working with shiny. Reactivity means that outputs automatically rerun when the user input changes (unless you tell them not to). Shiny apps are not linear, and they are very lazy, code will only be run when necessary. The order you place things in the server script is not important.
+
+There is an [overview of reactivity here](https://shiny.posit.co/r/articles/build/reactivity-overview/) and [here](https://mastering-shiny.org/basic-reactivity.html)
+
+If you run the example below (which is included in the shiny package) you will see that as you change the inputs on the sidebar the outputs reevaluate.
+
+```{r reactivity}
+
+runExample("03_reactivity")
+
+```
+
+If you don't want your outputs to be constantly updating whenever your user does anything, you do have the option to wrap parts of the server code in an observeEvent. This sits there quietly observing until it is triggered (for example by the user clicking a button), and only then will it run the code.
+
+### Leaflet
+
+Leaflet works really well with shiny. Here we take one of the examples from the leaflet session and embed it in a shiny app.
+
+```{r leaflet example}
+runApp("quakes") #(this will only work if you have the quakes subfolder in your project directory with the app script)
+```
+
+# Debugging
+
+Shiny apps are easy to break, and it can be confusing to figure out what is going wrong outside of the reactive shiny environment. You can use browser statements in your server script to help with debugging. This will run the app to where it gets to the browser statement, then your console will show Browse[1]\> and you will be able to access everything in your app at that point.
+
+As an example go and uncomment the browser statement in line 42 of the quakes app.R script, then run it again.
+
+```{r browser}
+runApp("quakes")
+```
+
+Try typing input\$mag in your console now and you will be able to see what that actually is. You can even look at its class, and anything else you could normally do in R.
+
+Note that in order to use browser debugging you need to run the app in the console, not as a background job. Click the dropdown arrow next to the `Run app` button on the top right to change this.
+
+# Shiny with multiple files
+
+You can also create shiny apps with the ui and server in separate files called ui.R and server.R. In this case you can also add a global script, global.R
+
+## Global
+
+The global script is optional but can be quite useful if there is any preprocessing to do on your data or you have lots of datasets to load. The global script is run once at the start of loading the app.
+
+You should use the global script to do all the things you would at the beginning of an R markdown, such as loading packages, defining functions, loading data, doing basic data processing.
+
+If you have more complex data preprocessing it is usually best to do this outside the app so it doesn't take too long to load.
+
+# Sharing shiny apps
+
+Once you have finalised your shiny app you will want to be able to share it with people. While it is possible to share the code and any data files by email or using git, this will require your users to have R and the necessary packages installed. The best way is to host your app on a server. You can [view various options for hosting shiny apps on the shiny website](%5Bhttps://shiny.posit.co/r/deploy.htmlhttps://shiny.posit.co/r/deploy.html). Be aware that the free options usually mean your app will be public.
+
+For those of us at Cefas we have PositConnect servers available which can host R shiny apps and many more things besides. We have a development server where you can easily share apps with colleagues internally, and a live server where apps can be shared externally, after going through an [approval process](https://shiny.posit.co/r/deploy.html). Please make sure any apps you create are catalogued on the [Information Asset Register](https://mdr.cefas.co.uk/view/19069).
+
+# Further reading
+
+The Shiny package has eleven built-in examples that each demonstrate how Shiny works. Each example is a self-contained Shiny app.
+
+```{r hello shiny}
+runExample("01_hello")
+```
+
+This book is free and online, and goes into a lot more detail than we have here: <https://mastering-shiny.org/index.html>
+
+The Shiny website features a whole range of useful content: <https://shiny.posit.co/r/getstarted/shiny-basics/lesson1/index.html>
+
+A website explaining how to use leaflet with Shiny: <https://rstudio.github.io/leaflet/>
+
+Another introduction to Shiny: <https://www.r-bloggers.com/2021/03/a-gentle-introduction-to-r-shiny/>
