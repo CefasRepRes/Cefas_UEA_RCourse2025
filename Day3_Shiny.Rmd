@@ -1,12 +1,15 @@
 ---
 title: "Introduction to R shiny"
-author: "Kate Collingridge"
+author: "Kate Collingridge and Kathrin Vossen"
 date: "2025-05-21"
-output: html_document
+output: 
+  html_document:
+    theme: flatly
 ---
 
-```{r setup, include=FALSE, eval = FALSE}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(eval = FALSE)
 ```
 
 ```{r packages}
@@ -16,27 +19,61 @@ library("ggplot2")
 
 ```
 
+```{css, echo=FALSE, eval = TRUE}
+
+.lightgrey {
+
+background-color:#F6F6F6;
+
+color: #000; font-size:
+
+16px; text-align:left;
+
+font-family: Helvetica;
+
+vertical-align: middle;
+
+border-radius: 5px;
+
+padding: 20px;
+
+80px
+
+}
+
+
+body{
+  font-family: Helvetica;
+  font-size: 14pt;
+}
+
+```
+
+:::lightgrey
 # What is R shiny
 
 Shiny is an R package that allows us to take anything done in R and make it into an interactive web app available to users, without them needing knowledge of R. An app can even be set to fetch data remotely, do all the processing on the fly and display the outputs.
 
 Often we want to be able to share outputs from R with colleagues who lack the skills to run or edit R scripts themselves, or we have many different outputs that they want to explore.
 
-For example, when I am working with water quality assessments we need to look at plots for multiple parameters over multiple assessment areas. I can set up a script that will loop through these and export them into a folder. This might be fine if there are half a dozen plots, but it becomes impractical when there are hundreds. A shiny app can be a good way to share these, as the user can select each parameter and region to show the relevant plot.
+For example, Kate sometimes work with water quality assessments and needs to look at plots for multiple parameters over multiple assessment areas. You could set up a script that will loop through these and export them into a folder. This might be fine if there are half a dozen plots, but it becomes impractical when there are hundreds. A shiny app can be a good way to share these, as the user can select each parameter and region to show the relevant plot.
+:::
 
 # Components of an R shiny app
 
-R shiny apps have 2 essential parts: the ui (user interface) and the server
+R Shiny apps have 2 essential parts: the **ui** (= user interface) and the **server**. Both are essentially two very large functions that wrap around everything needed to run the app.
 
-These are usually combined into one script called app.R
+These two components are usually combined into one script called app.R, but can also be kept as two separate scripts (in which case you would call them ui.R and server.R). You might decide to keep the ui and server separate if your app gets complicated, but you need to make sure they are in the same folder so when you call the function to run the app R knows where to look for them!
 
-## UI
+---------------------------------------------------------------------------------
+
+## **UI**
 
 The ui script is used to set up the user interface. It defines the layout, user inputs and output types.
 
-### Layout
+### **Layout**
 
-There are many different ways to define the layout of a shiny app, but the simplest is to have a sidebar panel with inputs and a main panel with outputs.
+There are many different ways to define the layout of a shiny app, but the simplest is to have a sidebar panel with inputs and a main panel with outputs. A basic, empty, skeleton of a ui function can look like this:
 
 ```{r ui layout}
 
@@ -62,48 +99,50 @@ ui <- fluidPage(
 ```
 
 You can view more complex layouts [here](https://mastering-shiny.org/action-layout.html)
+<br>
 
-### Inputs
+### **Inputs**
 
-Shiny apps can have several different types of input, which are defined in the ui using input functions
+Shiny apps can have several different types of input, which are defined within the ui using input functions.
 
 Each input has an inputId, which is a unique string used to refer to the input, and usually a label, which is how it is displayed in the app, along with various other options depending on the input type. Some examples of input types are:
 
-numericInput
+- numericInput
 
-textInput
+- textInput
 
-radioButtons
+- radioButtons
 
-selectInput
+- selectInput
 
-sliderInput
+- sliderInput
 
-actionButton
+- actionButton
 
 and many more besides!
 
-[Chapter 2 of Mastering Shiny goes into more detail on these](mastering-shiny.org)
+[Chapter 2 of Mastering Shiny](https://mastering-shiny.org/basic-ui.html) goes into more detail on these.
+<br>
 
-### Outputs
+### **Outputs**
 
-The UI defines outputs which you want your app to generate. In the UI you are just defining the type and creating a placeholder where the output will go.
+The UI defines outputs which you want your app to generate. In the UI you are just defining the *type* of output (whether it's a map, a bar chart or a table) and creating a *placeholder* where the output will go. The actual content of each output will be later defined in the server function.
 
 Some examples of output types are:
 
-textOutput
+- textOutput
 
-tableOutput
+- tableOutput
 
-plotOutput
+- plotOutput
 
-leafletOutput
+- leafletOutput
 
 Similarly to with inputs, outputs are referred to by their unique outputId.
 
-[Chapter 2 of Mastering Shiny goes into more detail on these](mastering-shiny.org)
+[Chapter 2 of Mastering Shiny](https://mastering-shiny.org/basic-ui.html) also has more details on this.
 
-Here is a simple example of a ui script
+Here is a simple example of a ui script:
 
 ```{r ui, eval = FALSE}
 # Define UI for dataset viewer app ----
@@ -151,6 +190,9 @@ ui <- fluidPage(
   )
 )
 ```
+
+This might give you a first idea why it can sometimes be tricky of keeping track with everything that goes on within a Shiny app! We haven't even added a lot of content yet and you can already see a very nested structure of several layers of functions taking shape!
+<br>
 
 ## Server
 
@@ -205,7 +247,7 @@ There is an [overview of reactivity here](https://shiny.posit.co/r/articles/buil
 
 If you run the example below (which is included in the shiny package) you will see that as you change the inputs on the sidebar the outputs reevaluate.
 
-```{r reactivity}
+```{r reactivity, eval = FALSE}
 
 runExample("03_reactivity")
 
