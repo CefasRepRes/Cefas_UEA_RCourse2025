@@ -192,13 +192,14 @@ ui <- fluidPage(
 ```
 
 This might give you a first idea why it can sometimes be tricky of keeping track with everything that goes on within a Shiny app! We haven't even added a lot of content yet and you can already see a very nested structure of several layers of functions taking shape!
-<br>
 
-## Server
+--------------------------------------------------------------------------------
 
-The server script is where outputs are generated based on user inputs.
+## **Server**
 
-Inputs are referred to with input\$nameofinput (as you defined it in the ui)
+The server script is where we now "fill the app with content", aka outputs are generated based on user inputs. We need to link the server function with the ui function and tell the app what content is meant to be displayed in what ui feature or output.
+
+Inputs are referred to with input\$nameofinput (the inputID you defined in the ui)
 
 Outputs are assigned using output\$nameofoutput (this needs to be assigned in the ui otherwise it won't appear in the app). We then use a render function to render the output.
 
@@ -238,6 +239,7 @@ server <- function(input, output) {
 
 
 ```
+<br>
 
 ### Reactivity
 
