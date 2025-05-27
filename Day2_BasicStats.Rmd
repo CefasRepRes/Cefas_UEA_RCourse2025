@@ -1,0 +1,150 @@
+---
+title: "Basic Statistics in R"
+author: "Teresa Vaz Martins and Karolina Zalewska"
+output: 
+  html_document:
+    theme: flatly 
+    code_folding: show
+    #toc: true
+    #toc_float: true
+editor_options: 
+  markdown: 
+    wrap: 80
+    canonical: true
+date: ""
+---
+
+```{css, echo=FALSE}
+
+.lightgrey {
+background-color:#F6F6F6;
+color: #000; 
+font-size:16px; 
+text-align:left;
+vertical-align: middle;
+border-radius: 5px;
+padding: 20px; 
+80px
+
+}
+
+body{
+font-family: Helvetica;
+font-size: 14pt;
+}
+
+
+```
+
+# Introduction
+
+In this session, we will give you a brief introduction and an overview of how to
+perform some basic statistics in R.
+
+**R is a statistical programming language:** by default, it includes many
+statistical functions. These are held in the {stats} package, which is
+pre-installed with R.
+
+# Exploratory data analysis - summary statistics
+
+Before you run any tests, you should familiarise yourself with the data! Some
+things to think about: - how many variables are there? what type of data are
+they? check the *class* of each variable and make sure that all data is coded as
+expected (e.g. categorical variables are factors) - calculate some summary
+statistics of the variables (mean, minimum, maximum), plot histograms. Does
+everything look as expected? - how many observations are there? are there any
+missing values? how are missing values coded in your data?
+
+We are going to have a quick look at some data using functions you should
+already be mostly familiar with.
+
+First we will load a dataset that is stored within a package. The data were
+collected and made available by Dr. Kristen Gorman and the Palmer Station,
+Antarctica LTER [palmerpenguins
+(allisonhorst.github.io)](https://allisonhorst.github.io/palmerpenguins/index.html)
+
+Below are a few examples of things you might do to explore your data. This is by
+no means an exhaustive list - the methods you use to explore your data will be
+dependent on the data itself (e.g. the type of variables present). While I look
+at only two variables, you should always check all variables that you are
+planning to include in your analysis.
+
+```{r EDA, eval = FALSE}
+
+# install.packages("palmerpenguins") # uncomment (remove '#' at the start of the line) only if {palmerpenguins} not installed on your machine
+library(palmerpenguins)
+
+str(penguins) # the structure function gives a summary of the dataset
+
+# check for missing values
+# is.na(penguins$bill_length_mm) # the output of this will be a boolean (true/false) vector of the same size as there are rows in the dataset
+table(is.na(penguins$bill_length_mm))
+
+# summary statistics 
+mean(penguins$bill_length_mm) # what is the issue here?
+mean(penguins$bill_length_mm, na.rm = TRUE) # remove NAs from mean calculation
+
+summary(penguins$bill_length_mm)
+
+hist(penguins$bill_length_mm)
+
+
+class(penguins$species)
+
+# species is a categorical variable, we can see how many species are in the dataset (factor levels) and how many observations per species
+unique(penguins$species) # list unique values of variable
+length(unique(penguins$species)) #
+table(penguins$species) 
+
+```
+
+There are also more efficient ways of checking your data - have a look at the
+materials from other sessions of this course. Additionally, as a starting point
+and to get ideas on what to explore, you can use packages such as
+{DataExplorer}. This will give you a summarised report of your data.
+
+```{r DataExplorer, eval = FALSE}
+
+# install.packages("DataExplorer")
+
+DataExplorer::create_report(penguins)
+
+```
+
+**Further reading:**
+
+[Simple Fast Exploratory Data Analysis in R with DataExplorer Package\|by
+AbdulMajedRaja RS \| Towards Data
+Science](%5Bhttps://towardsdatascience.com/simple-fast-exploratory-data-analysis-in-r-with-dataexplorer-package-e055348d9619)](<https://towardsdatascience.com/simple-fast-exploratory-data-analysis-in-r-with-dataexplorer-package-e055348d9619>))
+
+# Parametric and non-parametrics tests
+
+**What is "parametric"?**
+
+statistical tests come with assumptions that need to be met for any inference
+drawn from them to be valid. In particular, parametric tests make an assumption
+about the distribution of the data
+
+**A quick note on hypothesis testing** one-way vs two-way
+
+## Comparing groups
+
+### I want to compare my data to a single value: 1-sample t-test / Wilcoxon rank test
+
+### I want to compare before and after data: paired t-test / Wilcoxon rank test
+
+### I want to compare values between two independent groups: (unpaired) t-test / Mann Whitney U test
+
+### I want to compare more than two independent groups: ANOVA / Kruskal-Wallis
+
+## Association: chi-square
+
+## Relationship: correlation
+
+# Linear model
+
+## single explanatory variable
+
+## more than one explanatory variable
+
+## assumptions
