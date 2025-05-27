@@ -137,14 +137,100 @@ about the distribution of the data
 
 ### I want to compare more than two independent groups: ANOVA / Kruskal-Wallis
 
+The variable \`Species\` can be seen as an independent variable to conduct an
+ANOVA test. This is a statistical test to check three or more differences in
+group means. The code snippet below performs an ANOVA test using the
+`palmerpenguins` dataset (specified by the `data` parameter), specifically, we
+will compare the bill length (measured in mm) among the species. (`formula`
+parameter defines the relationship to be tested).
+
+```{r}
+
+anova_model <- aov(formula = bill_length_mm ~ species, data = penguins)
+
+summary(anova_model)
+
+#' you could plot the model to check if it meets some ANOVA assumptions (eg normality)
+# plot(anova_model)
+```
+
+The low p-value ($<2 \times 10^{-16}$) indicates strong evidence against the
+null hypothesis, suggesting that at least one group mean is significantly
+different from the others. The F-statistic measures the ratio of the variance
+between group means to the variance within groups. A higher F-value indicates a
+greater difference between group means.
+
 ## Association: chi-square
 
 ## Relationship: correlation
 
 # Linear model
 
+$y = mx + c$
+
 ## single explanatory variable
+
+$y = \beta_0 + \beta_1 \times x_1$
+
+```{r LM1}
+
+mod1 <- lm(bill_length_mm ~ species, data = penguins)
+
+summary(mod1)
+
+```
 
 ## more than one explanatory variable
 
-## assumptions
+$y = \beta_0 + \beta_1 \times x_1 + \beta_2 \times x_2$
+
+```{r LM1}
+
+mod2 <- lm(bill_length_mm ~ species + body_mass_g + year, data = penguins)
+
+summary(mod2)
+
+```
+
+We can quickly plot the modelled relationship by predicting from the model. We
+could obtain a predicted bill length for a given species, body mass, and year,
+from our model using the formula
+$bill \ length = \beta_0 + \beta_1 \times species + \beta_2 \times body \ mass + \beta_3 \times year$.
+If we want plot the relationship between
+
+```{r predicting}
+library(ggplot2)
+library(ggeffects)
+
+pred <- ggpredict(mod2, terms = "species", ci_level = 0.95)
+
+ggplot(data = pred, aes(x = x, y = predicted)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.4)
+
+```
+
+## Checking model assumptions
+
+```{r assumptions}
+
+# install.packages(car)
+# install.packages(performance)
+
+library(car)
+library(performance)
+
+
+par(mfrow = c(2, 2))
+plot(mod2)
+
+
+check_model(mod2)
+
+
+# multicollinearity
+vif(mod2)
+
+
+
+```
