@@ -164,13 +164,13 @@ greater difference between group means.
 
 ## Relationship: correlation
 
-# Linear model
+# Linear regression
 
 $y = mx + c$
 
 ## single explanatory variable
 
-$y = \beta_0 + \beta_1 \times x_1$
+$y = \beta_0 + \beta_1 x_1 + \epsilon$
 
 ```{r LM1}
 
@@ -180,22 +180,24 @@ summary(mod1)
 
 ```
 
-## more than one explanatory variable
+## more than one explanatory variable (multiple linear regression)
 
-$y = \beta_0 + \beta_1 \times x_1 + \beta_2 \times x_2$
+$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + ... + \epsilon$
 
-```{r LM1}
+```{r LM2}
 
-mod2 <- lm(bill_length_mm ~ species + body_mass_g + year, data = penguins)
+mod2 <- lm(bill_length_mm ~ species + body_mass_g + sex, data = penguins)
 
 summary(mod2)
 
 ```
 
+## predicting from model
+
 We can quickly plot the modelled relationship by predicting from the model. We
 could obtain a predicted bill length for a given species, body mass, and year,
 from our model using the formula
-$bill \ length = \beta_0 + \beta_1 \times species + \beta_2 \times body \ mass + \beta_3 \times year$.
+$bill \ length = \beta_0 + \beta_1 \times species + \beta_2 \times body \ mass + \beta_3 \times sex$.
 If we want plot the relationship between
 
 ```{r predicting}
@@ -206,7 +208,97 @@ pred <- ggpredict(mod2, terms = "species", ci_level = 0.95)
 
 ggplot(data = pred, aes(x = x, y = predicted)) +
   geom_point() +
-  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.4)
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.1) +
+  labs(x = "Species", y = "Predicted bill length [mm]") +
+  theme_classic()
+
+
+pred <- ggpredict(mod2, terms = "body_mass_g", ci_level = 0.95)
+
+ggplot(data = pred, aes(x = x, y = predicted)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), 
+              fill = "grey50", alpha = 0.4) +
+  labs(x = "Body mass [g]", y = "Predicted bill length [mm]") +
+  theme_classic()
+
+```
+
+```{r extra predicting, eval = FALSE}
+## ADDITIONAL INFO
+## By default, ggpredict() will predict across the range of the variable, 
+## you can also get prediction for specific value(s). 
+
+## e.g. if you wanted to predict for two species of penguin only:
+ggpredict(mod2, terms = "species [Gentoo, Adelie]", ci_level = 0.95)
+
+## or for a specifc range of values
+p1 <- ggpredict(mod2, terms = "body_mass_g [3000:4000]", ci_level = 0.95)
+
+ggplot(data = p1, aes(x = x, y = predicted)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), 
+              fill = "grey50", alpha = 0.4) +
+  labs(x = "Body mass [g]", y = "Predicted bill length [mm]") +
+  theme_classic()
+
+## if you want to make sure that the function is predicting for all values of the
+## variable, you can use:
+# ggpredict(mod2, terms = "species [all]", ci_level = 0.95)
+
+```
+
+## Interaction
+
+$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \beta_3 x_1 x_2 + \epsilon$
+
+**Note formula** in R you can specify an interaction in two equivalent ways (the
+output will be exactly the same): $y \sim x_1 * x_2$ OR
+$y \sim x_1 + x_2 + x_1:x_2$ Unless you know what you're doing and have a good
+reason, your model needs to contain both the lower order (additive, i.e.
+$x_1 + x_2$) and higher order (interaction) terms.
+
+```{r LM3}
+
+mod3 <- lm(bill_length_mm ~ flipper_length_mm * species + sex, data = penguins)
+
+summary(mod3)
+
+
+# I prefer to use '*' to specify interactions, but I've left this here if you 
+# would like to check that both methods give the same output
+
+# mod3 <- lm(bill_length_mm ~ species + flipper_length_mm + flipper_length_mm:species,
+#            data = penguins)
+
+# summary(mod3)
+
+
+```
+
+Interpretation of the interaction terms gets slightly trickier, but the general
+idea is the same. However, the easiest way to figure out what is happening is to
+plot it. We will again use our model (mod3) to get the predicted bill length for
+a range of flipper length values across the three species.
+
+**Important** do not interpret the lower order terms (main effects) when higher
+order terms present, i.e. in our case, because we have an interactive effect of
+body mass and species we should not be interpreting the coefficients related to
+species or body mass.
+
+```{r pred mod with int}
+# library(ggplot2)
+# library(ggeffects)
+
+pred <- ggpredict(mod3, terms = c("flipper_length_mm", "species"), ci_level = 0.95)
+
+ggplot(data = pred, aes(x = x, y = predicted, fill = group)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.2) +
+  labs(x = "Flipper length [mm]", y = "Predicted bill length [mm]") +
+  scale_fill_brewer(name = "Species", palette = "Dark2") +
+  theme_classic()
+
 
 ```
 
@@ -216,9 +308,11 @@ ggplot(data = pred, aes(x = x, y = predicted)) +
 
 # install.packages(car)
 # install.packages(performance)
+# install.packages(corrplot)
 
 library(car)
 library(performance)
+library(corrplot)
 
 
 par(mfrow = c(2, 2))
@@ -228,9 +322,19 @@ plot(mod2)
 check_model(mod2)
 
 
+
 # multicollinearity
+
+## variance inflation factor
 vif(mod2)
 
+## you can also make a correlation matrix and plot to check how correlated 
+## continuous variables are
+## N.B. in the models above we only ever include one of these variables so the 
+## below is not relevant for our example models
+mtr <- cor(penguins[ , c("body_mass_g", "bill_depth_mm", "flipper_length_mm")],
+           use = "complete.obs")
+mtr
 
-
+corrplot(mtr, method = "ellipse", type = "lower")
 ```
