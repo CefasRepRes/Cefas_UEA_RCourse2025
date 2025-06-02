@@ -1,0 +1,400 @@
+---
+title: "Advanced statistics in R"
+author: "Teresa Vaz Martins and Karolina Zalewska"
+output: 
+  html_document:
+    theme: flatly 
+    code_folding: show
+    toc: true
+    toc_float: true
+editor_options: 
+  markdown: 
+    wrap: 80
+    canonical: true
+date: ""
+---
+
+```{css, echo=FALSE}
+
+.lightgrey {
+background-color:#F6F6F6;
+color: #000; 
+font-size:16px; 
+text-align:left;
+vertical-align: middle;
+border-radius: 5px;
+padding: 20px; 
+80px
+
+}
+
+body{
+font-family: Helvetica;
+font-size: 14pt;
+}
+
+
+```
+
+# Dimensionality reduction
+
+## Principal component analysis (PCA)
+
+To visualize high-dimensional data, we use PCA to map data to lower dimensions.
+The method is particularly useful when the variables within the data set are
+highly correlated. Due to this redundancy, PCA can be used to reduce the
+original variables into a smaller number of new variables ( = *principal
+components*). These will not be a reduced portion of the original variables, it
+will be different variables!
+
+We can do PCA in R in different ways, for instance
+
+\- `prcomp`() [built-in R `stats` package],
+
+\- `PCA`() [`FactoMineR` package, useful for visualisation],
+
+**The basic syntax is:**
+
+::: {style="callout:default"}
+prcomp(x, ...)
+:::
+
+Arguments for `prcomp()`:
+
+-   x: a numeric matrix or data frame
+
+::: {style="callout:warning"}
+**Note:** run `?prcomp` on the console to check for other possible arguments,
+besides `x`
+
+Of the possible arguments, note that `scale` is set as FALSE. This is a logical
+value indicating whether the variables should be scaled to have unit variance
+before the analysis takes place.
+:::
+
+However, it is recommended to set the argument `scale=TRUE` to standardise the
+input data so that it has zero mean and variance one before doing PCA. This is
+particularly recommended when variables are measured in different scales (e.g:
+kilograms, grams).
+
+Therefore, we will set the `scale` parameter to TRUE.
+
+::: {style="callout:default"}
+prcomp(x, scale = TRUE)
+:::
+
+::: {style="callout:primary"}
+**Practice:** run PCA on 4 columns of the iris data.
+
+\- which four columns? (Hint: run `?prcomp)` **x:**a numeric or complex matrix
+(or data frame) which provides the data for the principal components analysis.)
+
+\- replace \`---\` below by the appropriate terms.
+:::
+
+```{r, error=TRUE}
+
+
+#' focus on the four columns
+iris_4 <- iris_orig %>%
+  select(- ___) #' which column to deselect?
+
+#' do PCA
+iris_pca <- prcomp( --- , scale = ---)
+
+```
+
+::: {style="callout:default"}
+**Solution:** click Show button
+:::
+
+```{r, class.source = 'fold-hide'}
+
+#' (do ?prcomp in the console), data x (eg iris_orig) must be numeric. Use `str` to see the type of each column: Species is a factor 
+
+iris_orig %>% str()
+
+#' focus on the first four columns, which are numeric
+iris_4 <- iris_orig %>%
+  select(-Species) #' deselect (using minus) non-numeric Species
+
+#' do PCA on the numeric columns. Don't forget scale=TRUE
+iris_pca <- prcomp(iris_4, scale = TRUE)
+
+# Look at the results.
+iris_pca 
+
+```
+
+### Visualise results
+
+Although the default `stats` package includes options to produce many PCA
+visualisations, I find it easier to customise `factoextra`. We will run just a
+few examples, but you can find other options online, for instance here:
+
+[PCA - Principal Component Analysis Essentials - Articles
+-STHDA](%5Bhttp://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/112-pca-principal-component-analysis-essentials/)](<http://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/112-pca-principal-component-analysis-essentials/>))
+
+#### Scree plot
+
+Visualizing the variance explained by each component helps us to visually
+identify how many principal components are needed.
+
+The percentage of variances captured by each of the new coordinates,
+
+```{r}
+
+var_explained = iris_pca$sdev^2 / sum(iris_pca$sdev^2)
+
+#create scree plot
+qplot(c(1:4), var_explained) + 
+  geom_line() 
+
+#calculate total variance explained by each principal component
+
+factoextra::fviz_eig(iris_pca, addlabels = TRUE, ylim = c(0, 50))
+
+#'?screeplot
+
+```
+
+```{r}
+
+fviz_pca_ind(iris_pca ,
+             geom.ind = "point", # show points
+             col.ind = iris$Species, # color by species, iris$Species
+             palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+             addEllipses = TRUE, # Concentration ellipses
+             legend.title = "Groups")
+```
+
+--------------------------------------------------------------------------------
+
+#### Variable correlation plot
+
+In this plot:
+
+\- Positively correlated variables are grouped together: Petal length and Petal
+width
+
+\- Negatively correlated variables are positioned on opposite sides of the plot
+origin (opposed quadrants): sepal width and petal length?
+
+```{r}
+
+fviz_pca_var(iris_pca, col.var = "black")
+```
+
+We can do a correlation plot to check if the interpretation of the plot above
+sounds right: petal length is very positively correlated with petal width and
+anticorrelated with sepal width.
+
+```{r}
+#' correlation
+M <- cor(iris[,-5])
+
+corrplot::corrplot(M, method = 'ellipse', type = 'lower', diag = FALSE)
+```
+
+We are not investigating correlations between features in the same flower. In
+this case, the results reflect the fact that Iris Virginica often have longer
+petal length and width than Iris setosa, but Iris setosa often have the greatest
+sepal width. The same result is confirmed looking at the column Species
+(boxplots) of the first plot in the ANOVA section.
+
+The function \`fviz_contrib()\` can be used to draw a bar plot of variable
+contributions to the principal components.
+
+```{r}
+# Contributions of variables to PC1
+
+fviz_contrib(iris_pca, choice = "var", axes = 1)
+
+# Contributions of variables to PC2
+fviz_contrib(iris_pca, choice = "var", axes = 2)
+```
+
+::: {style="callout:warning"}
+**Note:** we have been using the default method for `prcomp`. But you may see a
+formula being used instead of data. See documentation `?prcomp`
+
+For instance, PCA on penguins dataset may look like:
+:::
+
+```{r}
+
+penguins_visl <- penguins_orig %>%
+  mutate(species = as.factor(species),
+         island = as.factor(island),
+         sex = as.factor(substr(sex,1,1))) %>%
+  na.omit()
+
+
+#' Notice the formula: ~bill_length_mm + bill_depth_mm + ...
+penguins_pca <- prcomp(~ bill_length_mm + bill_depth_mm + 
+                               flipper_length_mm + body_mass_g,
+                             data=penguins_visl,
+                             na.action=na.omit,  
+                             scale. = TRUE)
+
+
+
+penguins_pca
+```
+
+--------------------------------------------------------------------------------
+
+**Further reading:**
+
+PCA using the
+[recipes](%5Bhttps://recipes.tidymodels.org/)](<https://recipes.tidymodels.org/>))
+package from
+
+[tidymodels](%5Bhttps://www.tidymodels.org/)](<https://www.tidymodels.org/>))
+
+[PCA with penguins and recipes •
+palmerpenguins(allisonhorst.github.io)](%5Bhttps://allisonhorst.github.io/palmerpenguins/articles/pca.html)](<https://allisonhorst.github.io/palmerpenguins/articles/pca.html>))
+
+Using the factoextra package
+
+[PCA - Principal Component Analysis Essentials - Articles
+-STHDA](%5Bhttp://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/112-pca-principal-component-analysis-essentials/)](<http://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/112-pca-principal-component-analysis-essentials/>))
+
+[PCA with tidyverse - Benjamin
+Nowak(bjnnowak.netlify.app)](%5Bhttps://bjnnowak.netlify.app/2021/09/15/r-pca-with-tidyverse/)](<https://bjnnowak.netlify.app/2021/09/15/r-pca-with-tidyverse/>))
+
+# Going beyond the Gaussian error distribution: Generalized linear models (GLM)
+
+These can be used to model data that is not normally distributed. The different
+types are based on the probability distribution of the response variable: eg
+Poisson if the response variable represents counts or binomial for a binary
+outcome.
+
+::: {style="callout:default"}
+\`glm\` Used to fit generalized linear models with the following syntax:
+
+glm(formula, family , data, ...)
+:::
+
+formula and data: same as in the linear model \`lm\`
+
+Additional parameter
+
+**family:** The statistical family to use to fit the model. Default is gaussian,
+as in a linear model, but other options include binomial, Gamma, and poisson
+among others. Examples:
+
+::: {style="callout:default"}
+glm(y \~ model, data = data, \*\*\`family = "binomial"\`\*\*)
+
+glm(y \~ model, data = data, \*\*\`family = "poisson"\`\*\*)
+:::
+
+## I have count data / I'm interested in the rate : Poisson distribution
+
+## Logistic regression
+
+\> **Question:** which variables significantly contribute to determining the
+gender of penguins.
+
+Before beginning to build the model, double-check that all qualitative variables
+have been saved as factors.
+
+::: {style="callout:primary"}
+**Practice:** Fill the \`---\` below: what is the outcome variable?
+:::
+
+```{r fitglm, error=TRUE, message=FALSE}
+
+fit <- glm(--- ~ species + island + bill_length_mm + bill_depth_mm + flipper_length_mm + body_mass_g, data = penguins_omit, family="binomial")
+
+#' view summary of the model
+
+#summary(fit)
+
+```
+
+::: {style="callout:default"}
+**Solution:** Click Show button
+:::
+
+```{r, class.source = 'fold-hide'}
+
+fit <- glm(sex ~ species + island + bill_length_mm + bill_depth_mm + flipper_length_mm + body_mass_g, data = penguins_omit, family="binomial")
+
+#' view summary of the model
+
+summary(fit)
+
+```
+
+\`The "Estimate" column in the output above corresponds to the log-odds.
+
+The odd ratios can be obtained as follows:
+
+```{r, error=TRUE, message=FALSE}
+
+#calculate odds ratio and 95% confidence interval for each predictor variable 
+
+exp(cbind(Odds_Ratio = coef(fit), confint(fit)))
+```
+
+The odds ratio for each coefficient represents the average increase in the odds
+of an individual defaulting, assuming all other predictor variables are held
+constant.
+
+# Mixed Effects Models in R with lme4
+
+Mixed effects models, also known as multilevel models or hierarchical models,
+are statistical models that are used to analyze data with nested or hierarchical
+structures. These models are particularly useful when dealing with data that has
+multiple levels of variation or when there is a need to account for the
+correlation between observations within the same group.
+
+In R, the \`lme4\` package provides functions for fitting mixed effects models.
+The \`lmer()\` function is commonly used to fit linear mixed effects models
+
+::: lightgrey
+model \<- lmer(y \~ a + b + \*\*(1\|group)\*\*, data = data)
+:::
+
+Run \`?lmer\` to understand the syntax:
+
+-   `y` is the outcome variable,
+
+-   `a` and `b` are the fixed effects variables,
+
+-   `group` is the random effects variable.
+
+-   The `(1 | group)` term specifies that the random effects are intercepts that
+    vary across different levels of the \`group\` variable.
+
+::: {style="callout:primary"}
+**Practice:** Analyze the effect of different diets on chick growth, using the
+in-built dataset `chick_orig <- datasets::ChickWeight`.
+
+Given the following model, could you comment the code, filling \`---\` with the
+right term or terms:
+:::
+
+```{r, error=TRUE, warning=FALSE, message=FALSE}
+
+#library(lme4) # already loaded at start
+
+m <- lmer(weight ~ Time + Diet + Time:Diet + (1 + Time | Chick), data = chick_orig)
+
+# formula: weight ~ Time + Diet + Time:Diet + (1 + Time | Chick)
+
+# fixed effects: --- 
+
+# random effects: ---
+
+#summary(m)
+
+```
+
+The random effects terms `(1 + Time | Chick)` allows individual chicks to vary
+randomly in terms of their intercept (starting weight) and their effect of Time
+(weight change over time.
+
+# Non-linear relationships: GAM

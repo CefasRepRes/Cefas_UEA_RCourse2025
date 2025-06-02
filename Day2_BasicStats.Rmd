@@ -69,7 +69,7 @@ dependent on the data itself (e.g. the type of variables present). While I look
 at only two variables, you should always check all variables that you are
 planning to include in your analysis.
 
-```{r EDA, eval = FALSE}
+```{r EDA}
 
 # install.packages("palmerpenguins") # uncomment (remove '#' at the start of the line) only if {palmerpenguins} not installed on your machine
 library(palmerpenguins)
@@ -160,13 +160,68 @@ different from the others. The F-statistic measures the ratio of the variance
 between group means to the variance within groups. A higher F-value indicates a
 greater difference between group means.
 
-## Association: chi-square
+## I want to test the association between factors or compare counts: chi-square test
+
+Chi-square (or $\chi^2$) test is used to check for association (e.g. ), or
+compare counts across multiple groups. The test is formulated via a contingency
+table. Imagine you carried out a survey of three species (1-3) across three
+field sites (A-C). The contingency table may look something like this:
+
+```{r chi-square table, results = 'asis'}
+
+# install.packages("knitr")
+
+library(knitr)
+
+df <- data.frame(sp1 = c(16, 8, 22, 46),
+                 sp2 = c(5, 30, 12, 47),
+                 sp3 = c(21, 19, 6, 46),
+                 row.names = c("A", "B", "C", "column_total"))
+
+
+df$row_total <- rowSums(df)
+
+kable(df)
+
+```
+
+You want to know whether a species occurs at any site more frequently.
+
+```{r chisquare}
+
+
+df <- data.frame(sp1 = c(16, 8, 22),
+                 sp2 = c(5, 30, 12),
+                 sp3 = c(21, 19, 6),
+                 row.names = c("A", "B", "C"))
+
+res <- chisq.test(df)
+summary(res)
+
+# the test statistic is calculated using the observed and expected values, have a look at these
+res$observed
+res$expected
+
+# we can use the residuals to further interpret the results
+res$residuals
+
+```
+
+Residuals sign: positive = observed \> expected; negative = observed \< expected
+
+absolute value = magnitude of difference between observed and expected
 
 ## Relationship: correlation
 
 # Linear regression
 
 $y = mx + c$
+
+Where: m is the slope (change in y per 1 unit increase in x) AND c is the
+y-interecept (i.e. where x = 0)
+
+**What is it that we're testing?** $H_0:$ there is no effect of x on y (i.e. b
+is not different from 0)
 
 ## single explanatory variable
 
@@ -303,6 +358,22 @@ ggplot(data = pred, aes(x = x, y = predicted, fill = group)) +
 ```
 
 ## Checking model assumptions
+
+Below are the assumptions of a linear model:
+
+<ol>
+
+<li>Linearity: the relationship between the response variable and the
+explanatory variables is linear</li>
+
+<li>Homoscedasticity: the variance is equal across range/all levels of
+explanatory (independent) variable(s)</li>
+
+<li>Normality:the errors are normally distributed</li>
+
+<li>Independence of observations: no residual correlation</li>
+
+</ol>
 
 ```{r assumptions}
 
