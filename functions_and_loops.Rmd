@@ -1,0 +1,246 @@
+---
+title: "r_functions_loops"
+output: html_document
+date: "2025-06-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Functions
+
+An example of a function in excel might be =SUM(A1:A5), this is code! in R they work the same way, except we can make custom functions to suit our needs.
+
+We use functions in R to make code reusable, so we don’t have to rewrite the same logic multiple times.
+
+They help organize code into clear, manageable sections, making it easier to read and debug.
+
+Functions also allow us to test and reuse specific tasks—like calculating averages or filtering data—across different projects.
+
+The syntax of a function in R is:
+
+```{r function synatx}
+
+function_name <- function(arguments) {
+  # code to execute
+  return(value) # optional
+}
+
+```
+
+#### This function takes a single argument 'name' and returns a greeting message.
+
+```{r basic function}
+
+# Basic function structure
+greet <- function(name) {
+  
+  paste("Hello,", name)
+  # the paste commmand concatenates strings together
+
+}
+
+
+# Try it
+greet("James")
+
+greet("Ben")
+
+```
+
+#### We can also supply two arguments to a function, which allows us to perform operations that require more than one input.
+
+```{r double argument function}
+
+# Function with multiple arguments
+multiplytwonumbers <- function(a, b) {
+  
+  product <- a * b
+  
+  # the return command is used to return a value from the function
+  return(product)
+  
+}
+
+# Try it
+multiplytwonumbers(3, 4)
+
+# Try it
+multiplytwonumbers(300, 4450)
+
+```
+
+#### Finally, we might want two outputs from a function, such as both the sum and product of two numbers.
+
+Below we can see how to create a function that returns multiple values using a list.
+
+```{r double argument function with return}
+
+# Function with multiple arguments
+add_multiply <- function(a, b) {
+  
+  sum <- a + b
+  product <- a * b
+  return(list(sum = sum, product = product))
+}
+
+# Try it
+add_multiply(3, 4)
+
+```
+
+Functions can get extremely complex, but the basic structure remains the same. We define a function with `function_name <- function(arguments) { ... }`, and we can use `return()` to specify what the function should output. So not matter what happens in the middle, we can always return a value OR an error.
+
+Error handling is also an important part of functions. We can use `stop()` to throw an error if something goes wrong, or `warning()` to give a warning without stopping execution.
+
+Lsets trying making our own function.
+
+```{r make your own function}
+
+# Create your own function here
+
+# Example: Function to calculate the square of a number
+# Or do whatever
+
+```
+
+But we don't have time to cover that today, so let's move on to loops.
+
+# Loops
+
+Loops are used to repeat (or iterate) a block of code multiple times, which is useful when we want to perform the same operation on different data points or when we need to iterate through a sequence.
+
+We might use for loops to iterate over a vector or list, or while loops to repeat a block of code until a certain condition is met.
+
+We can iterate over anything, it could be a vector, a list, or even a data frame, or even a list of files!
+
+This is a NIGHTMARE to do in excel.
+
+### For Loops
+
+A for loop is used to iterate over a sequence (like a vector or list) and perform an operation on each element.
+
+```{r for loop}
+
+# For loop example
+for (i in 1:5) {
+  print(paste("Iteration:", i))
+}
+
+```
+
+Notice the syntax: `for (variable in sequence) { ... }`. The loop will run for each element in the sequence, assigning the current element to the variable.
+
+```{loops}
+
+
+# lets say we want to add 1 to each number in a vector
+for (i in 1:5) {
+  
+  result <- i + 1
+  
+  print(result)
+  
+  # we can add as much code as we want inside the loop
+
+}
+
+```
+ 
+The above was on a list of numbers, perhaps we want to iterate over a vector of names instead.
+
+```{r for loop with names}
+
+# For loop with a vector
+my_vector <- c("apple", "banana", "cherry")
+
+for (fruit in my_vector) {
+  print(paste("Fruit:", fruit))
+}
+
+```
+
+or finally a dataframe.
+
+```{r for loop with data frame}
+
+# For loop with a data frame
+my_data <- data.frame(
+  Name = c("Alice", "Bob", "Charlie"),
+  Age = c(25, 30, 35)
+)
+
+for (i in 1:nrow(my_data)) { # nrow(my_data) gives the number of rows in the data frame
+  print(paste("Name:", my_data$Name[i], "- Age:", my_data$Age[i]))
+  # print(paste("Name:", my_data[i, "Name"], "- Age:", my_data[i, "Age"]))
+}
+
+
+```
+
+### While Loops
+
+These exist in R but might be more frequently used in other languages. They repeat a block of code as long as a specified condition is true. 
+
+```{r while loop}
+
+# While loop example  
+counter <- 1
+
+while (counter <= 5) {
+  print(paste("Counter:", counter))
+  counter <- counter + 1 # Increment the counter
+}
+
+
+```
+# Using a funtion inside a loop!
+
+It is often that we might want to perform multiple functions (built in or otherwise) on a single object to transfor it as we go. For example we might start with a number, want to multiple it, then add it to the end of a string. 
+
+But we might have a sequence of numbers to do that too. 
+
+```{r function in loop}
+
+# Function to process a number
+# Here we will double it
+
+process_number <- function(x) {
+  
+  return(x * 2)
+  
+}
+
+# Now we need a function to add the " is the result" to the end of a string
+add_suffix <- function(x) {
+  
+  return(paste(x, "is the result"))
+  
+}
+
+# Then we can use both functions in a loop, iterating over numbers
+numbers <- c(1, 2, 3, 4, 5)
+
+for (num in numbers) {
+  
+  processed_num <- process_number(num) # Process the number
+  
+  # Now we can add the suffix to the processed number
+  result_string <- add_suffix(processed_num) # Add suffix to the result
+  
+  print(result_string) # Print the final result
+  
+}
+
+```
+
+The above is much like a normal workflow in R. As you have seen earlier and tomorrow. 
+
+
+
+
+
+
+
+
