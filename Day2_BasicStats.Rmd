@@ -125,15 +125,129 @@ statistical tests come with assumptions that need to be met for any inference
 drawn from them to be valid. In particular, parametric tests make an assumption
 about the distribution of the data
 
-**A quick note on hypothesis testing** one-way vs two-way
-
 ## Comparing groups
 
 ### I want to compare my data to a single value: 1-sample t-test / Wilcoxon rank test
 
-### I want to compare before and after data: paired t-test / Wilcoxon rank test
+We want to compare populations of Adelie penguins on different islands, and test
+whether there is a difference in bill length across the populations.
+
+What if we had individual measurements for one island and wanted to know how it
+differs from an average Adelie penguin bill length that we found from
+literature?
+
+```{r 1-sample test}
+
+# extract the data from the penguins dataset
+a1 <- penguins[penguins$species == "Adelie" & penguins$island == "Dream", ] 
+
+mu <- 38.79 # this is our average bill length obtained from literature
+
+t.test(a1$bill_length_mm, alternative = "two.sided", mu = mu) # two-tailed (two-sided)
+
+# t.test(a1$bill_length_mm, alternative = c("less"), mu = mu) # if our H was that the population's bill length is shorter than average
+# t.test(a1$bill_length_mm, alternative = c("greater"), mu = mu) # if our H was that the population's bill length is longer than average
+
+# is our data normally distributed?
+hist(a1$bill_length_mm)
+
+# we can perform a Shapiro-Wilk test to find out if data follows normal distribution
+# H0: distribution of sample data no different to normal distribution
+
+# NOTE: the Shapiro-Wilk test is a TEST so the same caveats and potential pitfalls 
+# of any statistical testing also apply to it. It can be useful but always
+# interpret with caution and always in addition to other ways of checking
+# normality. Also, it is not useful for large samples: the maximum sample size
+# is only 5,000 observations. 
+shapiro.test(a1$bill_length_mm)
+
+
+### NON-PARAMETRIC ALTERNATIVE
+
+wilcox.test(a1$bill_length_mm, alternative = "two.sided", mu = mu)
+
+
+```
 
 ### I want to compare values between two independent groups: (unpaired) t-test / Mann Whitney U test
+
+This time, we went to two different islands and collected individual
+measurements of Adelie penguin bill lengths. We want to test whether there is a
+difference between the two populations inhabiting the different islands.
+
+```{r two-sample t-test, warning = FALSE}
+
+# extract the data from the penguins dataset
+a1 <- penguins[penguins$species == "Adelie" & penguins$island == "Dream", ]
+a2 <- penguins[penguins$species == "Adelie" & penguins$island == "Torgersen", ]
+
+
+t.test(x = a1$bill_length_mm, y = a2$bill_length_mm, 
+       alternative = "two.sided", 
+       var.equal = TRUE) 
+# the var.equal argument -> are we assuming equal variance between the two samples?
+
+
+## check if variances equal: F-test
+var.test(x = a1$bill_length_mm, y = a2$bill_length_mm, 
+         alternative = "two.sided")
+
+# unequal variance between the samples? -> welch's t-test 
+# t.test(a1$bill_length_mm, a2$bill_length_mm, alternative = "two.sided", var.equal = FALSE)
+
+# check normality assumption
+a <- rbind(a1, a2)
+
+library(ggplot2)
+
+ggplot(data = a) +
+  geom_histogram(aes(x = bill_length_mm), fill = "white", color = "black") +
+  facet_wrap(~island) +
+  xlab("Bill length [mm]") +
+  theme_classic()
+
+
+## NON-PARAMETRIC
+wilcox.test(x = a1$bill_length_mm, y = a2$bill_length_mm,
+            alternative = "two.sided")
+
+```
+
+### I want to compare before and after data: paired t-test / Wilcoxon rank test
+
+In this example we are responsible for the management of multiple sites, on
+which we carry out regular surveys of a species of conservation concern. We want
+to know if a recently implemented change in land management had an effect on
+individual counts. To do that, we repeat the survey after the management has
+changed and compare our counts to those collected before the change.
+
+```{r paired t-test}
+
+## create the example dataset
+df <- data.frame(site = 1:100,
+                 before = round(runif(n = 100, min = 0, max = 10)), 
+                 after = round(runif(n = 100, min = 0 , max = 10)))
+
+
+head(df)
+
+# NOTE: 
+# runif() generates n random samples from the uniform distribution. 
+# You can get samples from e.g. the Normal distribution using rnorm(), 
+# and equivalent functions exist for other distributions. 
+# round() rounds the values to a specified number of decimal places, by default 0
+# ceiling() and floor() round to integer (either "up" or "down")
+
+t.test(x = df$before, y = df$after, alternative = "two.sided",
+       paired = TRUE, var.equal = TRUE)
+
+
+# NON-PARAMETRIC ALTERNATIVE
+wilcox.test(x = df$before, y = df$after, alternative = "two.sided",
+            paired = TRUE)
+
+
+```
 
 ### I want to compare more than two independent groups: ANOVA / Kruskal-Wallis
 
@@ -144,14 +258,20 @@ group means. The code snippet below performs an ANOVA test using the
 will compare the bill length (measured in mm) among the species. (`formula`
 parameter defines the relationship to be tested).
 
-```{r}
+```{r anova}
 
 anova_model <- aov(formula = bill_length_mm ~ species, data = penguins)
 
 summary(anova_model)
 
-#' you could plot the model to check if it meets some ANOVA assumptions (eg normality)
+#' you could plot the model to check if it meets some ANOVA assumptions (eg normality) - we will be discussing those plots later
 # plot(anova_model)
+
+# NON-PARAMETRIC ALTERNATIVE
+kruskal.test(x = penguins$bill_length_mm, g = penguins$species)
+kruskal.test(formula = bill_length_mm ~ species, data = penguins)
+
+
 ```
 
 The low p-value ($<2 \times 10^{-16}$) indicates strong evidence against the
@@ -212,6 +332,28 @@ Residuals sign: positive = observed \> expected; negative = observed \< expected
 absolute value = magnitude of difference between observed and expected
 
 ## Relationship: correlation
+
+Are penguin bill lengths and depths correlated?
+
+```{r correlation coefficient}
+## linear and normally distributed - pearson
+
+cor(x = penguins$bill_length_mm, y = penguins$bill_depth_mm, use = "complete.obs",
+    method = "pearson")
+
+cor.test(x = penguins$bill_length_mm, y = penguins$bill_depth_mm,
+         alternative = "two.sided", method = "pearson")
+
+
+## non-linear and not normally distributed = spearman
+cor(x = penguins$bill_length_mm, y = penguins$bill_depth_mm, use = "complete.obs",
+    method = "spearman")
+
+```
+
+Interpretation: - sign = positive/negative correlation - value: the values of
+the correlation coefficient are [-1, 1], the closer to \|1\| the stronger the
+correlation
 
 # Linear regression
 
