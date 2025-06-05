@@ -822,11 +822,11 @@ str(ea_sf)
 
 ```
 
-We will go into spatial data analysis in more detail in week 2.
+We will go into spatial data analysis in more detail on day 2.
 
 ### Reading in spatial data
 
 You may also have data which is already in a spatial format, for example
-a shapefile. sf has functions to read these data types in.
+a shapefile or geojson. sf has functions to read these data types in.
 
 
