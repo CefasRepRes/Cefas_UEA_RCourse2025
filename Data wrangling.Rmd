@@ -829,4 +829,13 @@ We will go into spatial data analysis in more detail on day 2.
 You may also have data which is already in a spatial format, for example
 a shapefile or geojson. sf has functions to read these data types in.
 
+### Exercise:
+Now it's over to you! Have a look at your own data, or alternatively use the `mtcars` dataset to practice what you have learned in this session. Some prompts to think about when exploring and wrangling your data:
 
+- Are your data in tidy format?
+
+- Can you select a single column?
+
+- Can you filter the data?
+
+- Can you summarise your data?
