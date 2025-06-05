@@ -14,6 +14,19 @@ editor_options:
 date: ""
 ---
 
+```{r setup, include=FALSE}
+library(knitr)
+library(see)
+library(DataExplorer)
+library(palmerpenguins)
+library(ggplot2)
+library(ggeffects)
+library(car)
+library(performance)
+library(corrplot)
+
+```
+
 ```{css, echo=FALSE}
 
 .lightgrey {
@@ -70,10 +83,6 @@ at only two variables, you should always check all variables that you are
 planning to include in your analysis.
 
 ```{r EDA}
-
-# install.packages("palmerpenguins") # uncomment (remove '#' at the start of the line) only if {palmerpenguins} not installed on your machine
-library(palmerpenguins)
-
 str(penguins) # the structure function gives a summary of the dataset
 
 # check for missing values
@@ -104,8 +113,6 @@ and to get ideas on what to explore, you can use packages such as
 {DataExplorer}. This will give you a summarised report of your data.
 
 ```{r DataExplorer, eval = FALSE}
-
-# install.packages("DataExplorer")
 
 DataExplorer::create_report(penguins)
 
@@ -198,8 +205,6 @@ var.test(x = a1$bill_length_mm, y = a2$bill_length_mm,
 # check normality assumption
 a <- rbind(a1, a2)
 
-library(ggplot2)
-
 ggplot(data = a) +
   geom_histogram(aes(x = bill_length_mm), fill = "white", color = "black") +
   facet_wrap(~island) +
@@ -288,10 +293,6 @@ table. Imagine you carried out a survey of three species (1-3) across three
 field sites (A-C). The contingency table may look something like this:
 
 ```{r chi-square table, results = 'asis'}
-
-# install.packages("knitr")
-
-library(knitr)
 
 df <- data.frame(sp1 = c(16, 8, 22, 46),
                  sp2 = c(5, 30, 12, 47),
@@ -398,9 +399,6 @@ $bill \ length = \beta_0 + \beta_1 \times species + \beta_2 \times body \ mass +
 If we want plot the relationship between
 
 ```{r predicting}
-library(ggplot2)
-library(ggeffects)
-
 pred <- ggpredict(mod2, terms = "species", ci_level = 0.95)
 
 ggplot(data = pred, aes(x = x, y = predicted)) +
@@ -484,9 +482,6 @@ body mass and species we should not be interpreting the coefficients related to
 species or body mass.
 
 ```{r pred mod with int}
-# library(ggplot2)
-# library(ggeffects)
-
 pred <- ggpredict(mod3, terms = c("flipper_length_mm", "species"), ci_level = 0.95)
 
 ggplot(data = pred, aes(x = x, y = predicted, fill = group)) +
@@ -518,16 +513,6 @@ explanatory (independent) variable(s)</li>
 </ol>
 
 ```{r assumptions}
-
-# install.packages(car)
-# install.packages(performance)
-# install.packages(corrplot)
-
-library(car)
-library(performance)
-library(corrplot)
-
-
 par(mfrow = c(2, 2))
 plot(mod2)
 
