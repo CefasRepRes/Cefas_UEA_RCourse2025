@@ -14,6 +14,13 @@ editor_options:
 date: ""
 ---
 
+```{r setup, include=FALSE}
+library(knitr)
+library(tidyverse)
+
+knitr::opts_chunk$set(eval = FALSE)
+```
+
 ```{css, echo=FALSE}
 
 .lightgrey {

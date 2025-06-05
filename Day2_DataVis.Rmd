@@ -9,6 +9,9 @@ output:
 
 ```{r setup, include=FALSE}
 library(knitr)
+library(plotly)
+library(ggplot2)
+
 knitr::opts_chunk$set(echo = TRUE)
 # knitr::opts_chunk$set(eval = FALSE) ## have set this to FALSE for now, might have to change that if we want to show outputs
 ```
@@ -59,12 +62,6 @@ In this session we will look at:
 ## **Basic example plots**
 
 Let's visualise our data using three different types of plots. This can also be a great way to explore your data, for example by plotting a simple histogram or boxplot. You have already heard of the package 'ggplot2'. This is a very powerful package to create great looking plots very quickly. However, sometimes base R code is perfectly sufficient - and may actually give you more flexibility to fully customise your plots - and therefore we will also cover some base R functions as well.
-
-First we will load the `ggplot2` package so we can compare base R functions with `ggplot` functions:
-
-```{r package, warning=FALSE, message=FALSE}
-library(ggplot2)
-```
 
 Now let's start with some simple examples for different types of plots. Using the `iris` example data, we can plot some simple histograms, boxplots and scatter plots which allow us to explore our data.
 
@@ -342,8 +339,6 @@ ggplot(data = iris) +
 It is possible to create interactive plots using packages such as `plotly`. This is a whole universe in its own which we won't go into in any detail, but if you want to keep it simple you can just pass a ggplot object to plotly
 
 ```{r plotly}
-
-library(plotly)
 p <- ggplot() +
   geom_line(data = ChickWeight[ChickWeight$Chick < 20,], aes(x = Time, y = weight, col = Chick))
 
@@ -359,13 +354,8 @@ ggplotly(p)
 There are several options to save plots. In an R script, you can use the 'save plot' button above the plotting window. For ggplot, you can use `ggsave()` where you can define the location, format (jpeg, png, pdf) and dimensions of your outputs. You can also "print" to pdfs and pngs.
 
 ```{r ggsave, eval=FALSE}
-ggplot(quakes_sf) +
-  geom_polygon(data = map_data("world"),
-                 aes(x=long, y=lat, group = group),
-                 color = '#9c9c9c', fill = 'green') +
-  geom_sf(size = 1, color = 'dark grey') +
-  xlim(165, 190)+
-  ylim(-40, -10 )
+ggplot() +
+  geom_line(data = ChickWeight[ChickWeight$Chick < 20,], aes(x = Time, y = weight, col = Chick))
 
 ggsave("plot.png")
 ```
@@ -425,6 +415,7 @@ ________________________________________________________________________________
 So, what does this mean for us as R coders in practice when creating content like maps and charts, or even markdown documents like this one? A few notes on this topic...
 
 <br>
+
 ### Hyperlinks
 
 An accessible link is one which makes sense without any context. For example in the paragraph above I linked to a blog. Rather than just pasting the url or saying click [here](https://accessibility.blog.gov.uk/2016/05/16/what-we-mean-when-we-talk-about-accessibility-2/) for info, I hyperlinked it with the text ["government accessibility blog"](https://accessibility.blog.gov.uk/2016/05/16/what-we-mean-when-we-talk-about-accessibility-2/) so that it would be clear to anyone using a **screen reader** where the link is going to take them.
