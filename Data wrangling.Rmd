@@ -815,7 +815,7 @@ st_crs(quakes_sf)
 
 # BNG example 
 
-ea <- read.csv("../data/ENS-2023.csv")
+ea <- read.csv("./data/ENS-2023.csv")
 ea_sf <- sf::st_as_sf(ea, coords = c("sample.samplingPoint.easting","sample.samplingPoint.northing"), crs = st_crs(27700)) #27700 is the EPSG code for BNG
 st_crs(ea_sf)
 str(ea_sf)
