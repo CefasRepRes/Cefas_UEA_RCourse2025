@@ -132,7 +132,7 @@ for (i in 1:5) {
 
 Notice the syntax: `for (variable in sequence) { ... }`. The loop will run for each element in the sequence, assigning the current element to the variable.
 
-```{loops}
+```{r loops}
 
 
 # lets say we want to add 1 to each number in a vector
