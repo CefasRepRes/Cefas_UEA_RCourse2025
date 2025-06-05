@@ -548,15 +548,19 @@ Animals_df[["Diet"]] <- c("Omnivore", "Carnivore", "Pescitarian", "Krill", "Omni
 
 Animals_df
 
-Df_2 <- rbind(Animals_df, c("Cow", 3, 10, "Herbivore"))
+Animals_df_2 <- rbind(Animals_df, c("Cow", 3, 10, "Herbivore"))
 
-Df_2
+Animals_df_2
 
-Df_3 <- cbind(Df_2, 
-              Habitat = c("Sofa", "House", "Marine", "Marine", "Arboreal", "Grassland")
+Animals_df_3 <- cbind(
+              Animals_df_2, 
+              Habitat = c("Sofa", "House", "Marine", "Marine", "Arboreal", "Grassland"),
+              common_name = c("Dog","Cat","Shark","Whale","Bear","Cow"),
+              latin_name = c("Canis lupus familiaris", "Felis catus", "Carcharhinus longimanus", "Megaptera novaeangliae", "Ursus arctos", "Bos taurus")
               )
 
-Df_3
+Animals_df_3
+
 
 ```
 
@@ -578,11 +582,11 @@ We can find the dimensions of a data frame with `dim()`. As well as `ncol()` and
 
 ```{r dimensions of dataframes}
 
-dim(Animal_Df_4)
+dim(Animals_df_3)
 
-ncol(Animal_Df_4)
+ncol(Animals_df_3)
 
-nrow(Animal_Df_4)
+nrow(Animals_df_3)
 
 ```
 
@@ -590,15 +594,15 @@ We can also find out the names of the columns or rows with `colnames()` and `row
 
 ```{r names in dataframes}
 
-colnames(Animal_Df_4)
+colnames(Animals_df_3)
 
-rownames(Animal_Df_4)
+rownames(Animals_df_3)
 
 ### We can change these too 
 
-colnames(Animal_Df_4)
+colnames(Animals_df_3)
 
-colnames(Animal_Df_4) <- c("Animal",
+colnames(Animals_df_3) <- c("Animal",
                            "Length.m",
                            "Age.years",
                            "Diet",
@@ -606,7 +610,7 @@ colnames(Animal_Df_4) <- c("Animal",
                            "Common_name",
                            "Latin_name")
 
-colnames(Animal_Df_4)
+colnames(Animals_df_3)
 
 ```
 
