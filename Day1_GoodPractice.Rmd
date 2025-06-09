@@ -1,8 +1,11 @@
 ---
 title: "Day1_BestCoding"
 author: "Ellie Harris"
-date: '`r Sys.Date()`'
-output: html_document
+date: "`r Sys.Date()`"
+output: 
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
 ---
 
 ```{r setup, include=FALSE}
