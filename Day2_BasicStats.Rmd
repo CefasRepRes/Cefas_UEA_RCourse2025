@@ -300,10 +300,10 @@ greater difference between group means.
 
 ## I want to test the association between factors or compare counts: chi-square test
 
-Chi-square (or $\chi^2$) test is used to check for association (e.g. ), or
-compare counts across multiple groups. The test is formulated via a contingency
-table. Imagine you carried out a survey of three species (1-3) across three
-field sites (A-C). The contingency table may look something like this:
+Chi-square (or $\chi^2$) test is used to check for association, or compare
+counts across multiple groups. The test is formulated via a contingency table.
+Imagine you carried out a survey of three species (1-3) across three field sites
+(A-C). The contingency table may look something like this:
 
 ```{r chi-square table, results = 'asis'}
 

@@ -25,6 +25,7 @@ library(mgcv)
 library(performance)
 library(palmerpenguins)
 library(gamair)
+library(ggpubr)
 
 ```
 
@@ -148,22 +149,22 @@ fviz_pca_ind(iris_pca ,
 
 **Further reading:**
 
-PCA using the
-[recipes](%5Bhttps://recipes.tidymodels.org/)](<https://recipes.tidymodels.org/>))
-package from
+<ul>
 
-[tidymodels](%5Bhttps://www.tidymodels.org/)](<https://www.tidymodels.org/>))
+<li>PCA using the [recipes](https://recipes.tidymodels.org) package from
+[tidymodels](https://www.tidymodels.org)</li>
 
-[PCA with penguins and recipes •
-palmerpenguins(allisonhorst.github.io)](%5Bhttps://allisonhorst.github.io/palmerpenguins/articles/pca.html)](<https://allisonhorst.github.io/palmerpenguins/articles/pca.html>))
+<li>[PCA with penguins and
+recipes](https://allisonhorst.github.io/palmerpenguins/articles/pca.html)</li>
 
-Using the factoextra package
+<li>Using the factoextra package: [PCA - Principal Component Analysis
+Essentials -
+Articles-STHDA](http://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/112-pca-principal-component-analysis-essentials)</li>
 
-[PCA - Principal Component Analysis Essentials - Articles
--STHDA](%5Bhttp://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/112-pca-principal-component-analysis-essentials/)](<http://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/112-pca-principal-component-analysis-essentials/>))
+<li>[PCA with tidyverse - Benjamin
+Nowak](https://bjnnowak.netlify.app/2021/09/15/r-pca-with-tidyverse)</li>
 
-[PCA with tidyverse - Benjamin
-Nowak(bjnnowak.netlify.app)](%5Bhttps://bjnnowak.netlify.app/2021/09/15/r-pca-with-tidyverse/)](<https://bjnnowak.netlify.app/2021/09/15/r-pca-with-tidyverse/>))
+</ul>
 
 # Going beyond the Gaussian error distribution: Generalized linear models (GLM)
 
@@ -242,7 +243,9 @@ summary(mod2)
 
 ```
 
-The odd ratios can be obtained as follows:
+The odds ratio for each coefficient represents the average increase in the odds
+of an individual defaulting, assuming all other predictor variables are held
+constant.
 
 ```{r, error=TRUE, message=FALSE}
 
@@ -251,9 +254,18 @@ The odd ratios can be obtained as follows:
 exp(cbind(Odds_Ratio = coef(mod2), confint(mod2)))
 ```
 
-The odds ratio for each coefficient represents the average increase in the log
-odds of an individual defaulting, assuming all other predictor variables are
-held constant.
+**Be careful with interpretation!!**Odds ratio is notorious for not being very
+intuitive to interpret. Below, I've listed some potentially useful resources
+
+<ul>
+
+<li>[Introduction to Regression Methods
+Ch.6](https://www.bookdown.org/rwnahhas/RMPH/blr-interp.html)</li>
+
+<li>[RPubs Interpreting the Output of a Logistic Regression
+Model](https://rpubs.com/raoulbia/interpreting_glm_logistic_regression_output)</li>
+
+</ul>
 
 # Mixed Effects Models in R with lme4
 
@@ -349,31 +361,132 @@ the same name, to make sure that your code is doing what you think it is doing.
 
 # Non-linear relationships: polynomials and GAMs
 
-```{r poly, fig.width = 12, fig.height = 12}
+We will look at the number of death from larynx cancer across regions in Germany
+between 1986 and 1990 and levels of smoking.
+
+```{r poly}
+
+data(larynx)
  
-mod4 <- lm(sleep_total ~ brainwt + vore, data = msleep)
+mod4 <- glm(Y ~ x, family = "poisson", data = Larynx)
 
 summary(mod4)
 
-check_model(mod4)
 
-# removing missing brainwt values
-mslp <- msleep[!is.na(msleep$brainwt), ]
-
-mod5 <- lm(sleep_total ~ poly(brainwt, 2) + vore, data = mslp)
+mod5 <- glm(Y ~ poly(x, 2), data = Larynx)
 
 summary(mod5)
+
+```
+
+Polynomials are global functions, so they do not offer much flexibility.
+Sometimes this may be a good thing - too much flexibility increases the risk of
+overfitting.
+
+The formula syntax for GAMs is the same as for LMs and GLMs. To specify a smooth
+term, we use the `s()` function within the formula.
+
+You can fit different types of basis (smooth). This is specified using the `bs`
+argument within `s()`. By default, thin plate regression splines are used. What
+to use depends on the data: e.g. cyclic cubic splies (`bs = "cc"`) for temporal
+data, or even smooth random effects (`bs="re"`). See `?smooth.terms` for more
+information.
+
+You can control the "wiggliness" by specifying the number of dimensions of the
+basis to be used. This is done using the `k` argument within `s()`. The optimal
+smoothing is estimated, and the method to do so can be specified using the
+`method` argument in `gam()`.
+
+Similarly to GLMs, we can specify a `family` argument
+
+```{r GAM}
+
+mod6 <- mgcv::gam(Y ~ s(x, bs = "tp"), family = "poisson",
+                  data = Larynx)
+
+summary(mod6)
 
 
 ```
 
-Polynomials are global functions
+EDF (effective degrees of freedom) gives us (kind of) the number of basis used
+to produce the smooth. An EDF = 1 indicates that the relationships is linear.
 
-```{r GAM}
+```{r GAM plotting, fig.width = 6, fig.height = 6}
+
+plot(mod6) # default plot.gam() 
+
+pred <- ggpredict(mod6, terms = "x")
+
+ggplot(data = pred, aes(x = x, y = predicted)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), 
+              fill = "grey50", alpha = 0.2) +
+  labs(x = "Smoking level", y = "Predicted camcer deaths") +
+  theme_classic()
+
+
+```
+
+GAMs are also very useful when working in two-dimensions. For example, if we
+have survey data and we want to predict species occurrences spatially.
+
+Below is an oversimplified example using sample data from the Portuguese Atlas
+of Breeding Birds. This is a systematic survey of 2x2 km squares. The dataset
+contains occurrences of crested larks or linnets across all surveyed tetrads. We
+will focus on crested lark:
+
+```{r GAM spatial, fig.width = 12, fig.height = 8}
 
 # install.package("gamair")
 
+data("bird")
 
+brd <- bird[!is.na(bird$crestlark), ]
+
+brd$crestlark <- as.factor(brd$crestlark)
+
+g1 <- ggplot(data = brd, aes(x = x, y = y, colour = crestlark)) +
+  geom_point() +
+  scale_color_manual(values = c("#DC3220", "#005AB5")) +
+    theme(axis.line = element_line(color = "black"),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        panel.background = element_blank(),
+        plot.background = element_rect(fill = NULL,
+                                       color = NA_character_),
+        panel.grid = element_line(color = "grey50"),
+        plot.margin = unit(c(0, 0, 0, 0), "pt"),
+        legend.key.width = unit(1, "cm"),
+        legend.key.height = unit(1, "cm"),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14),
+        legend.position = "bottom")
+
+mod7 <- gam(crestlark ~ s(x,y), family = "binomial", data = brd)
+
+
+brd$pred <- predict(mod7, newdata = brd, type = "response")
+
+g2 <- ggplot(data = brd, aes(x = x, y = y, colour = pred)) +
+  geom_point() +
+  scale_color_viridis_c(option = "D", direction = 1) +
+  theme(axis.line = element_line(color = "black"),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        panel.background = element_blank(),
+        plot.background = element_rect(fill = NULL,
+                                       color = NA_character_),
+        panel.grid = element_line(color = "grey50"),
+        plot.margin = unit(c(0, 0, 0, 0), "pt"),
+        legend.key.width = unit(1, "cm"),
+        legend.key.height = unit(0.5, "cm"),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14),
+        legend.position = "bottom")
+
+  
+ggpubr::ggarrange(g1, g2, nrow = 1, ncol = 2)
 
 
 ```
