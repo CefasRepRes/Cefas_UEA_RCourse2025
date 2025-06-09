@@ -78,7 +78,8 @@ categorical variables are factors)</li>
 plot histograms. Does everything look as expected?</li>
 
 <li>how many observations are there? are there any missing values? how are
-missing values coded in your data?</li>
+missing values coded in your data? How should they be treated/could they be
+removed?</li>
 
 </ul>
 
@@ -97,6 +98,7 @@ at only two variables, you should always check all variables that you are
 planning to include in your analysis.
 
 ```{r EDA}
+
 str(penguins) # the structure function gives a summary of the dataset
 
 # check for missing values
@@ -123,10 +125,9 @@ table(penguins$species)
 
 ```
 
-There are also more efficient ways of checking your data - have a look at the
-materials from other sessions of this course. Additionally, as a starting point
-and to get ideas on what to explore, you can use packages such as
-{DataExplorer}. This will give you a summarised report of your data.
+Additionally, as a starting point and to get ideas on what to explore, you can
+use packages such as {DataExplorer}. This will give you a summarised report of
+your data.
 
 ```{r DataExplorer, eval = FALSE}
 
@@ -239,6 +240,10 @@ changed and compare our counts to those collected before the change.
 
 ```{r paired t-test}
 
+set.seed(123) 
+# I am generating random numbers, running the above means that we get the same
+# numbers every time
+
 ## create the example dataset
 df <- data.frame(site = 1:100,
                  before = round(runif(n = 100, min = 0, max = 10)), 
@@ -266,6 +271,9 @@ wilcox.test(x = df$before, y = df$after, alternative = "two.sided",
 ```
 
 ### I want to compare more than two independent groups: ANOVA / Kruskal-Wallis
+
+We've not seen any differences in bill lengths within the Adelie penguins on
+different islands, are there bill lengths different between the three species?
 
 ```{r anova}
 
@@ -388,8 +396,17 @@ Where:
 
 </ul>
 
-**What is it that we're testing?** $H_0:$ there is no effect of x on y (i.e. m
-is not different from 0)
+<br>
+
+**Quick note on terminology:** I use the below terms interchangeably:
+
+<ul>
+
+<li>response variable = outcome variable = dependent variable = y</li>
+
+<li>explanatory variable = predictor variable = independent variable = x</li>
+
+</ul>
 
 ## single explanatory variable
 
@@ -405,6 +422,12 @@ summary(mod1)
 
 The sign of the coefficient (positive or negative) indicates the direction of
 the relationship, while the magnitude reflects the strength of the relationship.
+R-squared (coefficient of determination) gives the proportion of variance within
+the response variable that is explained by the explanatory variable. Including
+more explanatory variables will increase the R-squared, however, this may not be
+because of true relationships between those variables and the response, but just
+chance. An attempt to prevent that is the adjusted R-squared, which is
+calculated taking into account the number of explanatory variables (predictors).
 
 ## more than one explanatory variable (multiple linear regression)
 
@@ -412,7 +435,7 @@ $y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + ... + \epsilon$
 
 ```{r LM2}
 
-mod2 <- lm(bill_length_mm ~ species + body_mass_g + sex, data = penguins)
+mod2 <- lm(bill_length_mm ~ species + flipper_length_mm + sex, data = penguins)
 
 summary(mod2)
 
@@ -421,10 +444,10 @@ summary(mod2)
 ## predicting from model
 
 We can quickly plot the modelled relationship by predicting from the model. We
-could obtain a predicted bill length for a given species, body mass, and year,
-from our model using the formula
-$bill \ length = \beta_0 + \beta_1 \times species + \beta_2 \times body \ mass + \beta_3 \times sex$.
-If we want plot the relationship between
+obtain a predicted bill length for a given species, flipper length, and sex,
+from our model using the formula: <br>
+$bill \ length = \beta_0 + \beta_1 \times species + \beta_2 \times flipper \ length + \beta_3 \times sex$.
+<br>
 
 ```{r predicting}
 pred <- ggpredict(mod2, terms = "species", ci_level = 0.95)
@@ -436,18 +459,18 @@ ggplot(data = pred, aes(x = x, y = predicted)) +
   theme_classic()
 
 
-pred <- ggpredict(mod2, terms = "body_mass_g", ci_level = 0.95)
+pred <- ggpredict(mod2, terms = "flipper_length_mm", ci_level = 0.95)
 
 ggplot(data = pred, aes(x = x, y = predicted)) +
   geom_line() +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), 
               fill = "grey50", alpha = 0.4) +
-  labs(x = "Body mass [g]", y = "Predicted bill length [mm]") +
+  labs(x = "Filpper length [mm]", y = "Predicted bill length [mm]") +
   theme_classic()
 
 ```
 
-```{r extra predicting, eval = FALSE}
+```{r extra predicting, eval = FALSE, include = TRUE}
 ## ADDITIONAL INFO
 ## By default, ggpredict() will predict across the range of the variable, 
 ## you can also get prediction for specific value(s). 
@@ -456,13 +479,13 @@ ggplot(data = pred, aes(x = x, y = predicted)) +
 ggpredict(mod2, terms = "species [Gentoo, Adelie]", ci_level = 0.95)
 
 ## or for a specifc range of values
-p1 <- ggpredict(mod2, terms = "body_mass_g [3000:4000]", ci_level = 0.95)
+p1 <- ggpredict(mod2, terms = "flipper_length_mm [200:300]", ci_level = 0.95)
 
 ggplot(data = p1, aes(x = x, y = predicted)) +
   geom_line() +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), 
               fill = "grey50", alpha = 0.4) +
-  labs(x = "Body mass [g]", y = "Predicted bill length [mm]") +
+  labs(x = "Flipper length [mm]", y = "Predicted bill length [mm]") +
   theme_classic()
 
 ## if you want to make sure that the function is predicting for all values of the
@@ -476,10 +499,13 @@ ggplot(data = p1, aes(x = x, y = predicted)) +
 $y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \beta_3 x_1 x_2 + \epsilon$
 
 **Note formula** in R you can specify an interaction in two equivalent ways (the
-output will be exactly the same): $y \sim x_1 * x_2$ OR
-$y \sim x_1 + x_2 + x_1:x_2$ Unless you know what you're doing and have a good
-reason, your model needs to contain both the lower order (additive, i.e.
-$x_1 + x_2$) and higher order (interaction) terms.
+output will be exactly the same):
+
+$y \sim x_1 * x_2$ OR $y \sim x_1 + x_2 + x_1:x_2$
+
+Unless you know what you're doing and have a good reason, your model needs to
+contain both the lower order (additive, i.e. $x_1 + x_2$) and higher order
+(interaction) terms.
 
 ```{r LM3}
 
@@ -503,11 +529,6 @@ Interpretation of the interaction terms gets slightly trickier, but the general
 idea is the same. However, the easiest way to figure out what is happening is to
 plot it. We will again use our model (mod3) to get the predicted bill length for
 a range of flipper length values across the three species.
-
-**Important** do not interpret the lower order terms (main effects) when higher
-order terms present, i.e. in our case, because we have an interactive effect of
-body mass and species we should not be interpreting the coefficients related to
-species or body mass.
 
 ```{r pred mod with int}
 pred <- ggpredict(mod3, terms = c("flipper_length_mm", "species"), ci_level = 0.95)
