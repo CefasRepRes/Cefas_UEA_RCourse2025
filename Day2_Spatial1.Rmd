@@ -52,17 +52,15 @@ In contrast to vector data, in raster data the geometry is not explicitly stored
 
 In R, we tend to use the package 'sf' to analyse vector data, and 'terra' to analyse raster data (although 'terra' also has functionality to work with vectors).
 
-```{r install packages}
+```{r install packages, eval = FALSE}
 
-#install.packages("terra")
-#install.packages("sf")
+install.packages("terra")
+install.packages("sf")
 ```
 
 # Reading and writing spatial data
 
 ```{r, echo = FALSE, include = FALSE}
-library(knitr)
-opts_chunk$set(fig.width = 5, fig.height = 5, fig.cap = '', collapse = TRUE)
 library(terra)
 library(sf)
 ```
@@ -97,6 +95,28 @@ If we print the first 6 features, we see their attribute values and an abridged 
 ```{r, echo=TRUE, eval=FALSE}
 
 head(nc1)
+
+```
+
+If we have a dataframe object, with a column of longitude and latitude, we can turn it into a spatial object:
+
+```{r quakes}
+
+# Let's use the quakes dataset, which contains the locations of earthquakes off Fiji
+
+data("quakes")
+str(quakes)
+
+# You can see this data includes latitude and longitude, so it is spatial, but these are just stored as numeric, R does not know they are coordinates.
+
+quakes_sf <- sf::st_as_sf(quakes, coords = c("long","lat")) # your x coordinate goes first, y second. Make sure to get this right or your data will be sideways!
+
+str(quakes_sf)
+
+# We can now see it has geometry
+
+plot(st_geometry(quakes_sf))
+
 
 ```
 
@@ -231,14 +251,14 @@ Sometimes we have data without a CRS. This can be because the file used was inco
 We can use **terra** to read and get the CRS, and transform the data to a new CRS of a raster as follows:
 
 ```{r}
-pp <- vect(p)
-crs(pp) <- ""
-crs(pp)
-crs(pp) <- "EPSG:4326"
-crs(pp)
+p2 <- vect(p)
+crs(p2) <- ""
+crs(p2)
+crs(p2) <- "EPSG:4326"
+crs(p2)
 ```
 
-Note that you should **not** use this approach to change the CRS of a data set from what it **is** to what you **want it to be**. Assigning a CRS is like labeling something. You need to provide the label that corresponds to the item. Not to what you would like it to be. For example if you label a bicycle, you can write "bicycle". Perhaps you would prefer a motorbike, and you can label your bicycle as "motobike" but that would not do you any good. It is still a bicycle, you haven't added an engine or anything else that would transform it into a motorbike!
+Note that you should **not** use this approach to change the CRS of a data set from what it **is** to what you **want it to be**. Assigning a CRS is like labeling something. You need to provide the label that corresponds to the item. Not to what you would like it to be.
 
 ## Transforming vector data
 
