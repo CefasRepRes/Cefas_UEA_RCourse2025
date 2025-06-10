@@ -1,8 +1,10 @@
 ---
-title: "Week 1, Day 1: Basic Data Wrangling"
-author: "Kate Collingridge and Kathrin Vossen"
+title: "Basic Data Wrangling"
+author: "Kate Collingridge, Kate Dewally and Kathrin Vossen"
 date: "`r format(Sys.time(), '%d/%m/%y')`"
-output: html_document
+output: 
+  html_document:
+    theme: flatly
 editor_options: 
   markdown: 
     wrap: 72
@@ -16,17 +18,50 @@ Sys.setenv(tz="UTC") #set environment time zone to utc
 
 ```
 
-## Basic data wrangling
+```{css, echo=FALSE, eval = TRUE}
 
-In this session, we will take a look at functions and packages that will
-help you do some basic data exploration. We will investigate some
-example data, take a look at pivoting data, learn how to merge two
-datasets and create subsets of data. All the data we will be using are
-example datasets that are built into R, so there is no need to import
-external datasets.
+.lightgrey {
 
-We will need to make sure we have installed and loaded the following
-packages:
+background-color:#F6F6F6;
+
+color: #000; font-size:
+
+16px; text-align:left;
+
+font-family: Helvetica;
+
+vertical-align: middle;
+
+border-radius: 5px;
+
+padding: 20px;
+
+80px
+
+}
+
+
+body{
+  font-family: Helvetica;
+  font-size: 14pt;
+}
+
+```
+
+::: lightgrey
+**In this session we will:**
+
+- Take a look at functions and packages that will help you do some basic data exploration. 
+
+- Investigate some example data
+
+- Learn how to pivot data, how to merge two datasets and how to create subsets of data. 
+
+All the data we will be using are example datasets that are built into R, so there is no need to import external datasets.
+:::
+
+<br>
+First, load the following packages:
 
 ```{r packages}
 library(tidyverse)
@@ -34,14 +69,16 @@ library(reshape2)
 library(ViewPipeSteps)
 ```
 
+<br>
+
 ### Investigating your data
 
-Let's start by taking a look at the `iris` dataset:
+Let's start by taking a look at the `iris` dataset. This is a dataset that is built into R, so we can simply load it:
 
 ```{r investigate1}
 data("iris")
 
-# It can be useful to make a copy of your original dataset. That way, if something goes wrong, you can go back to a previous version of your data.
+# It can be useful to make a copy of your original dataset. That way, if something goes wrong, you can go back to a previous version of your data without having to reload it into your R session.
 
 iris_ori <- iris
 
@@ -57,7 +94,7 @@ tail(iris)
 
 ```
 
-Let's take a closer look at our dataset
+Let's gather some more information about our dataset.
 
 ```{r investigate2}
 
@@ -94,11 +131,11 @@ View(iris)
 # You can also do this by clicking on it in the environment section of R studio.
 ```
 
+<br>
+
 ### Making basic changes to your data
 
-We can change things such as column names, or set them to all lower or
-upper case. This can be useful when we want to merge different datasets
-together.
+We can change things such as column names, or set them to all lower or upper case. This can be useful when we want to merge different datasets together.
 
 ```{r change}
 # Let's change a column name
@@ -111,7 +148,7 @@ str(iris)
 names(iris) <- gsub("\\.", "_", names(iris))
 str(iris)
 
-# What if we want to change column names or rows to all upper or all lower case
+# What if we want to change column names or rows to all upper or all lower case?
 
 names(iris) <- toupper(names(iris))
 str(iris)
@@ -128,16 +165,16 @@ iris <- iris_ori
 
 ```
 
+Notice the use of `gsub()` in the code above - this is an example of one way that you can manipulate character data. Functions like `gsub`, `grep` and more, allow you to search for a pattern in a string and then either find the position of it, or replace it.
 
-Notice the use of 'gsub()' in the code above - this is an example of one way that you can manipulate character data. Functions like gsub, grep and more, allow you to search for a pattern in a string and then either find the position of it, or replace it. 
-
-Pattern matching uses regular expressions such as   **.**  ,   **\***   or   **^**   which act as wildcards or placement matching tools for the pattern.
-
+Pattern matching uses regular expressions such as `.` , `*` or `^` which act as wildcards or placement matching tools for the
+pattern. Here is an example:
 
 ```{r regex, eval=TRUE}
 # make a string
 example <- c("let us", "find", "a", "pattern")
 example
+
 # find a string
 grep(pattern = "pattern", example) # found in the 4th element
 
@@ -152,6 +189,7 @@ grep(pattern = ".*ern", example) # found in the 4th element
 example3 <- gsub(".*ern", "cat", example)
 example3
 ```
+
 We can also use string tools on character columns in a dataset. Say we wanted to add the genus name to the iris dataset
 
 ```{r genus}
@@ -173,48 +211,41 @@ iris %>%
 
 ```
 
+There are many pattern matching tools and regular expressions to get your head around - this [cheat
+sheet](https://rstudio.github.io/cheatsheets/html/strings.html?_gl=1*1bshcje*_ga*MTg0OTY1NjUzMi4xNjk4MTYwNTAz*_ga_2C0WZ1JHG0*MTcwNDM4NTAxMy41LjAuMTcwNDM4NTAxMy4wLjAuMA..#regular-expressions) has a list of regular expressions and their meanings.
 
-There are many pattern matching tools and regular expressions to get your head around - this [cheat sheet](https://rstudio.github.io/cheatsheets/html/strings.html?_gl=1*1bshcje*_ga*MTg0OTY1NjUzMi4xNjk4MTYwNTAz*_ga_2C0WZ1JHG0*MTcwNDM4NTAxMy41LjAuMTcwNDM4NTAxMy4wLjAuMA..#regular-expressions) has a list of regex and their meanings.
-
-
+<br>
 
 ### Expanding vs reducing your datasets
 
-Now that we have explored the `iris` data a bit, let's try subsetting it
-based on different conditions. First, let's try making a new dataframe
-where we only select data for the species "setosa". There are two ways
-you can do this - using R base functions or using a Tidyverse pipeline.
+Now that we have explored the `iris` data a bit, let's try subsetting it based on different conditions. First, let's try making a new dataframe where we only select data for the species "setosa". There are two ways you can do this - using R base functions or using a Tidyverse pipeline.
 
 Let's try a conditional statement using square brackets first:
 
 ```{r subset1}
+# let's revert back to our original dataframe:
+iris <- iris_ori
+
 setosa <- iris[iris$Species == "setosa",]
 str(setosa)
 unique(setosa$Species) # Note R still knows there are 3 levels for this factor, but the dataset only includes 1
 ```
 
-You can read this statement as: "Assign an object called 'setosa' using
-the 'iris' dataset, selecting all rows where the factor Species has the
-value 'setosa', and selecting all columns". We are selecting **rows**
-because our conditional statement is *before* the comma.
+You can read this statement as: "Assign an object called 'setosa' using the 'iris' dataset, selecting all rows where the factor Species has the value 'setosa', and selecting all columns". We are selecting **rows** because our conditional statement is *before* the comma.
 
-We can select **columns** if the conditional statement is *after* the
-comma. For example, we can only select two of the columns:
+We can select **columns** if the conditional statement is *after* the comma. For example, we can only select two of the columns:
 
 ```{r subset2}
 # To select the first three columns:
-
 subset1 <- iris[,1:3]
 str(subset1)
 
 # Or to select by column name:
-
 subset2 <- iris[,c("Sepal.Length", "Sepal.Width")]
 str(subset2)
 ```
 
-Now let's try the same using a Tidyverse function. First, this is how to
-select specific **rows** based on a factor:
+Now let's try the same using a Tidyverse function. First, this is how to select specific **rows** based on a factor:
 
 ```{r subset3}
 setosa <- iris %>%
@@ -226,33 +257,25 @@ And this is how to select specific **columns**:
 
 ```{r subset4}
 # Select first three columns:
-
 subset3 <- iris %>%
   select(1:3)
 
 #Select by column name:
-
 subset4 <- iris %>%
   select(Sepal.Length, Sepal.Width)
 ```
 
-The next thing we want to try is expanding our dataset by adding a new
-column, Let's say we want to calculate the petal length to width ratio.
-We can do this calculation and automatically save this in a new column
-that we will call "LWRatio":
+The next thing we want to try is expanding our dataset by adding a new column, Let's say we want to calculate the petal length to width ratio. We can do this calculation and automatically save this in a new column that we will call "LWRatio":
 
 ```{r column1}
 iris$LWRatio <- iris$Petal.Length / iris$Petal.Width
 ```
 
+<br>
+
 ### Duplicates
 
-It is important to check your dataset for duplicate data.
-In the case of the `iris` dataset, we expect to see duplicate entries when we look
-at individual columns -- we would assume that the same petal length or
-width will show up multiple times. However, sometimes we need to check
-if we have true duplicates in our data. We can do this by creating a
-'unique identifier' and then using this column to check for duplicates.
+It is important to check your dataset for duplicate data. In the case of the `iris` dataset, we expect to see duplicate entries when we look at individual columns -- we would assume that the same petal length or width will show up multiple times. However, sometimes we need to check if we have true duplicates in our data. We can do this by creating a 'unique identifier' and then using this column to check for duplicates.
 
 ```{r duplicates}
 # Let's create a unique identifier by pasting together information from the different rows: (KC think we could have a better example here)
@@ -295,9 +318,9 @@ nrow(iris) # We now have only 149 rows, we have lost the duplicate.
 
 ### Wide vs long format
 
-As explained in the tidyverse session, there are two main ways to store datasets - wide and long. Datasets are
-usually easier to work with in R in long format, but you may need to
-switch between them.
+As explained in the tidyverse session, there are two main ways to store
+datasets - wide and long. Datasets are usually easier to work with in R
+in long format, but you may need to switch between them.
 
 Long format is where you have data in an identifying column (or columns)
 which repeats, and then your response data all in one column. For
@@ -343,7 +366,7 @@ reshape2::dcast(ChickWeight, Chick + Diet ~ Time, value.var = "weight")
 ```
 
 There are various terms for converting between these formats. The most
-common are `pivot_long` or `melt`  for wide\>long, and `pivot_wider` or
+common are `pivot_long` or `melt` for wide\>long, and `pivot_wider` or
 `cast` for long\>wide.
 
 Casting a dataset is simple where each unique entity only has one of
@@ -380,7 +403,6 @@ ChickWeight_wide <- dcast(ChickWeight, Chick + Diet ~ Time, value.var = "weight"
 
 ```
 
-
 There may also be situations where you want to go from wide to long
 format
 
@@ -406,8 +428,6 @@ ChickWeight_long <- ChickWeight_long[!is.na(ChickWeight_long$weight),]
 ```
 
 Now we are back to the orginal 578 rows.
-
-
 
 ### Merging datasets
 
@@ -497,7 +517,8 @@ schools3 <- cbind(schools2, NewRating)
 
 #### Sorting
 
-Sometimes we need to sort a data frame. Say we wanted to have the town names in alphabetical order
+Sometimes we need to sort a data frame. Say we wanted to have the town
+names in alphabetical order
 
 ```{r sort}
 data(mtcars)
@@ -669,7 +690,6 @@ date4 <- "8th Jan 2024"
 
 ```
 
-
 What about when we also have times? Let's look at how to format these
 
 ```{r datetime parsing}
@@ -756,7 +776,6 @@ course_dates$day <- format(course_dates$StartDateTime,"%d")
 Read in the example dataset and create a posixct datetime field. Create
 a "Year" and "Month" column
 
-
 ```{r exercise datetime}
 # This data is part of the environment agencies water quality archive https://environment.data.gov.uk/water-quality/view/download
 ea <- read.csv("./data/ENS-2023.csv")
@@ -776,7 +795,7 @@ data thanks to packages that have been developed over the years. Up
 until very recently, the packages most people were using to import and
 handle spatial data were `rgdal`, `rgeos` and `terra`. These packages
 are being retired and are being replaced by [`sf` - Simple
-Features](<https://r-spatial.github.io/sf/>).
+Features](https://r-spatial.github.io/sf/).
 
 ```{r quakes}
 library(sf)
@@ -830,12 +849,15 @@ You may also have data which is already in a spatial format, for example
 a shapefile or geojson. sf has functions to read these data types in.
 
 ### Exercise:
-Now it's over to you! Have a look at your own data, or alternatively use the `mtcars` dataset to practice what you have learned in this session. Some prompts to think about when exploring and wrangling your data:
 
-- Are your data in tidy format?
+Now it's over to you! Have a look at your own data, or alternatively use
+the `mtcars` dataset to practice what you have learned in this session.
+Some prompts to think about when exploring and wrangling your data:
 
-- Can you select a single column?
+-   Are your data in tidy format?
 
-- Can you filter the data?
+-   Can you select a single column?
 
-- Can you summarise your data?
+-   Can you filter the data?
+
+-   Can you summarise your data?
