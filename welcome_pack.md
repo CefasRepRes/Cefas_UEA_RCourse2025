@@ -121,6 +121,8 @@ but we encourage you to explore R ahead of the course using the below informatio
 
 ## The layout of RStudio
 
+[Rstudio](pics/rstudio.png)
+
 1. **The console**: Here you can directly type code, but it won’t get saved so you’ll lose it at the end of a session
 
 2. **Scripts**: Think of scripts like pages of a notebook – you can give them names, save them, edit, add comments.
