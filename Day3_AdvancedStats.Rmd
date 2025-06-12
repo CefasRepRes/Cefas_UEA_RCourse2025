@@ -58,18 +58,15 @@ font-size: 14pt;
 To visualize high-dimensional data, we use PCA to map data to lower dimensions.
 The method is particularly useful when the variables within the data set are
 highly correlated. Due to this redundancy, PCA can be used to reduce the
-original variables into a smaller number of new variables ( = *principal
-components*). These will not be a reduced portion of the original variables, it
-will be different variables!
+original variables into a smaller number of new variables (i.e. *principal
+components*). These are not a reduced portion of the original variables, but
+different variables!
 
 We can do PCA in R in different ways, for instance
 
 \- `prcomp`() [built-in R `stats` package],
 
 \- `PCA`() [`FactoMineR` package, useful for visualisation],
-
-**Note:** run `?prcomp` on the console to check for other possible arguments,
-besides `x`
 
 Of the possible arguments, note the `scale` and `center` arguemnts. These
 standardise the input data so that it has a mean of zero and variance of one.
@@ -98,16 +95,20 @@ components to retain.
 ### Visualise results
 
 Although the default `stats` package includes options to produce many PCA
-visualisations, I find it easier to customise `factoextra`. We will run just a
-few examples, but you can find other options online, for instance here:
+visualisations, I find it easier to customise using `factoextra`. We will create
+a few examples, but you can find other options online, for instance here:
 
 [PCA - Principal Component Analysis Essentials - Articles
 -STHDA](%5Bhttp://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/112-pca-principal-component-analysis-essentials/)](<http://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/112-pca-principal-component-analysis-essentials/>))
 
 #### Scree plot and variable contributions
 
-Visualizing the variance explained by each component helps us to visually
-identify how many principal components are needed.
+Visualising the variance explained by each component helps us to assess how many
+principal components are needed. We want to retain as much of the variation in
+the original data as possible. Where the scree plot stops "dropping" shows a
+good number of dimensions. Another rule of thumb for deciding how many principal
+components to retain is to retain the components that cumulatively contain 70%
+of the original variance.
 
 ```{r scree, warning = FALSE}
 
@@ -243,11 +244,12 @@ summary(mod2)
 
 ```
 
-The odds ratio for each coefficient represents the average increase in the odds
-of an individual defaulting, assuming all other predictor variables are held
-constant.
+The odds ratio for each coefficient represents the average change in odds,
+assuming all other predictor variables are held constant.
 
 ```{r, error=TRUE, message=FALSE}
+
+coef(mod2)
 
 #calculate odds ratio and 95% confidence interval for each predictor variable 
 
@@ -299,8 +301,8 @@ The random effect structure to use will dependent on the hierarchical structure
 of the data.
 
 **Note**Forums such as StackOverflow or StackExchange are not only good places
-to look for code advice but also stats questions and application in R. As an
-example, here is a link to a very good answer about the difference between
+to look for code advice but also stats questions and their application in R. As
+an example, here is a link to a very good answer about the difference between
 [crossed and nested random
 effects](https://stats.stackexchange.com/questions/228800/crossed-vs-nested-random-effects-how-do-they-differ-and-how-are-they-specified)
 
