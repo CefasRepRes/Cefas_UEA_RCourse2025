@@ -77,7 +77,7 @@ and communicate their findings.
 
 A typical data science life cycle consists of the following stages:
 
-![](data_pipeline.png)
+![](pics/data_pipeline.png)
 
 Source: [R for Data Science (2e) (hadley.nz)](https://r4ds.hadley.nz/),
 Hadley Wickham.
@@ -97,7 +97,7 @@ grammar, and data structures." Specifically, it is:
     set of core packages that provide consistent solutions to various
     steps of the data life cycle
 
-![](data-science.png)
+![](pics/data-science.png)
 
 Source:
 <https://www.tidyverse.org/blog/2023/08/teach-tidyverse-23/#improved-and-expanded-_join-functionality>
@@ -111,7 +111,7 @@ Source:
     and others, like for instance Shiny and rmarkdown are not yet part
     of the official tidyverse)
 
-![](tidypipe.png)
+![](pics/tidypipe.png)
 
 ------------------------------------------------------------------------
 
@@ -308,7 +308,7 @@ https://www.tidyverse.org/
 
 • Each value has its own cell
 
-![](tidydatavov.png)
+![](pics/tidydatavov.png)
 
 ------------------------------------------------------------------------
 
@@ -361,12 +361,12 @@ summary(penguins%>%t())
 
 • **pivot_longer** -- convert to tidy
 
-![](pivot_longer.png)
+![](pics/pivot_longer.png)
 
 • **pivot_wider** -- convert to untidy (because there is nothing
 intrinsically wrong with it!)
 
-![](pivot_wider.png)
+![](pics/pivot_wider.png)
 
 ------------------------------------------------------------------------
 
@@ -400,11 +400,11 @@ often followed by summarise)
 Another very useful dplyr capability that is essential in research, is
 to help joining datasets.
 
-![](initialdata.png){width="329"}
+![](pics/initialdata.png){width="329"}
 
-![](mutatejoin.png)
+![](pics/mutatejoin.png)
 
-![](filterjoin.png)
+![](pics/filterjoin.png)
 
 #### ☝️ **There is also `fuzzyjoin::fuzzy_join`** (#allows partial and inexact matching)
 
