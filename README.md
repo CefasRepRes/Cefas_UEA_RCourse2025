@@ -10,3 +10,5 @@ The course is split into two parts. **Part One**  covers getting data into R, da
 **Part Two** will run on the final day of the course and have sessions on more specific topics such as R shiny, spatial analysis and writing functions, alongside a workshop where you can get help with applying your R skills to your data and day to day work. If you have sufficient existing knowledge of R you can attend part two only.
 
 You are encouraged to bring along your own data and learn to apply your new R skills with the goal of embedding R in your work. 
+
+For more information please see the [welcome pack](https://github.com/kcollingridge/CefasUEARCourse2025/blob/2025/welcome_pack.md)
