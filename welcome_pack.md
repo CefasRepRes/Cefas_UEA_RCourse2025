@@ -121,7 +121,7 @@ but we encourage you to explore R ahead of the course using the below informatio
 
 ## The layout of RStudio
 
-[Rstudio](pics/rstudio.png)
+<img width="853" alt ="Rstudio screenshot" src="pics/rstudio.png">
 
 1. **The console**: Here you can directly type code, but it won’t get saved so you’ll lose it at the end of a session
 
