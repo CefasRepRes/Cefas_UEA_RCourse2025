@@ -1,0 +1,159 @@
+---
+title: "Welcome to R Studio and R Markdown"
+output:
+  html_document: default
+  pdf_document: default
+date: "2024-01-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# What is R!
+
+# R Studio
+
+-   There is a million ways to do things in R!
+
+-   Fun settings and appearance!
+
+-   Restarting session
+
+    -   Needs to be done at the start of each session
+
+-   Saving and creating new documents
+
+-   Default R data <http://www.sthda.com/english/wiki/r-built-in-data-sets>
+
+## R Markdown VS R Scripts
+
+All training will be delivered using R Markdown, this is so both the instructions and explanation, code and the output can be nicely visualized.
+
+Source OR Visual
+
+R markdown also allows for a document to be produced that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r printhello}
+
+print("Hello welome to our R Course at UEA!")
+
+```
+
+The print bit here is a built in function (its much the same as the functions in excel!)
+
+We use functions to do almost everything... custom functions we will talk about tomorrow.
+
+```{r printmaths}
+
+1+1
+
+```
+
+```{r error}
+
+thiswillcauseanerror() 
+
+```
+
+### Console
+
+?help
+
+[demo]
+
+### Environment
+
+```{r envtext}
+
+sometext <- "happy new year"
+
+number <- 1
+
+```
+
+```{r calltest}
+
+sometext
+
+number + 4
+
+```
+
+```{r dfexample}
+
+dataframe_example <- mtcars
+
+```
+
+### Files, plots, packages and help!
+
+Plots in R Markdown
+
+```{r plot, echo=FALSE}
+
+plot(mtcars$wt, mtcars$mpg)
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+Plots in R Scripts
+
+# Packages and modules
+
+[package guide](https://hbctraining.github.io/Intro-to-R-flipped/lessons/04_introR_packages.html)
+
+Packages are collections of R functions, data, and compiled code in a well-defined format, created to add specific functionality. There are 10,000+ user contributed packages and growing.
+
+There are a set of standard (or base) packages which are considered part of the R source code and automatically available as part of your R installation. Base packages contain the basic functions that allow R to work, and enable standard statistical and graphical functions on datasets; for example, all of the functions that we have been using so far in our examples.
+
+However, the more you work with R, you will come to realize that there is a cornucopia of R packages that offer a wide variety of functionality. To use additional packages will require installation. Many packages can be installed from the CRAN or Bioconductor repositories.
+
+```{r findcurrentlibs_first}
+
+sessionInfo()
+
+```
+
+```{r testlib}
+
+ggplot()
+
+```
+
+```{r package install}
+
+install.packages("ggplot2")
+
+library("ggplot2")
+
+library("dynamicSDM")
+
+```
+
+```{r findcurrentlibs}
+
+sessionInfo()
+
+```
+
+```{r loadlib}
+
+ggplot2::
+
+```
+
+Versions in packages - like any software, best to keep them up to date!
+
+# Comments in code
+
+```{r codecomment}
+
+print("hello world")
+
+print("hello world again")
+
+```
+
+# Stitching a document with R Markdown to HTML
