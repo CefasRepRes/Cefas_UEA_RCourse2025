@@ -1,246 +1,473 @@
 ---
-title: "r_functions_loops"
+title: "functionsandloops"
 output: html_document
-date: "2025-06-02"
+date: "2025-06-12"
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Functions
+## Functions
 
-An example of a function in excel might be =SUM(A1:A5), this is code! in R they work the same way, except we can make custom functions to suit our needs.
+A function in R is a reusable block of code designed to perform a specific task. Instead of writing the same code repeatedly, you can define a function once and call it whenever needed. This not only saves time but also makes your code cleaner, easier to read, and less prone to errors. Functions help break down complex problems into smaller, manageable parts, making your analysis more modular and organized. They are especially useful when working with repetitive tasks, such as data transformations or calculations, and are essential for writing efficient and maintainable R scripts.
 
-We use functions in R to make code reusable, so we don’t have to rewrite the same logic multiple times.
+Writing custom functions is extremely useful.
 
-They help organize code into clear, manageable sections, making it easier to read and debug.
+It means we can repeat a process again, and again, and again
 
-Functions also allow us to test and reuse specific tasks—like calculating averages or filtering data—across different projects.
+```{r examplefun}
 
-The syntax of a function in R is:
 
-```{r function synatx}
-
-function_name <- function(arguments) {
-  # code to execute
-  return(value) # optional
+repeat_again <- function(numberoftimes) {
+  rep("and again", times = numberoftimes)
 }
 
-```
+# Call the function
+repeat_again(50)
 
-#### This function takes a single argument 'name' and returns a greeting message.
 
-```{r basic function}
 
-# Basic function structure
-greet <- function(name) {
-  
-  paste("Hello,", name)
-  # the paste commmand concatenates strings together
-
+say_hello <- function(name) {
+  message("Hello, my name is ", name, "!")
 }
 
 
-# Try it
-greet("James")
-
-greet("Ben")
+say_hello("James")
 
 ```
 
-#### We can also supply two arguments to a function, which allows us to perform operations that require more than one input.
+Breakdown of the syntax: function_name: This is the name you assign to your function so you can call it later.
 
-```{r double argument function}
+`functioname <-` The assignment operator, used to assign the function to the name.
 
-# Function with multiple arguments
-multiplytwonumbers <- function(a, b) {
+`function(...)` This declares that you're defining a function. Inside the parentheses, you list the arguments (inputs) the function will take. You can also assign default values to arguments.
+
+`{ ... }` The body of the function is enclosed in curly braces. This is where you write the code that performs the desired task.
+
+`return(...)` This is optional but commonly used to specify what value the function should output.
+
+Its functions (and loops) that make code extremly superior to excel , access etc.
+
+You can perform lots of operations in a function
+
+```{r longfun}
+
+long_arithmetic <- function(x) {
   
-  product <- a * b
+  x <- x + 5
+  x <- x - 3
+  x <- x + 12
+  x <- x - 7
+  x <- x + 20
+  x <- x - 15
+  x <- x + 8
+  x <- x - 4
+  x <- x + 10
+  x <- x - 6
+  x <- x + 14
+  x <- x - 9
+  x <- x + 11
+  x <- x - 2
+  x <- x + 7
+  x <- x - 5
+  x <- x + 13
+  x <- x - 8
+  x <- x + 6
+  x <- x - 1
   
-  # the return command is used to return a value from the function
-  return(product)
+  return(x)
   
 }
 
-# Try it
-multiplytwonumbers(3, 4)
-
-# Try it
-multiplytwonumbers(300, 4450)
+# Example usage:
+long_arithmetic(10)
 
 ```
 
-#### Finally, we might want two outputs from a function, such as both the sum and product of two numbers.
+We can add more than one argument to our function
 
-Below we can see how to create a function that returns multiple values using a list.
+```{r doublearg}
 
-```{r double argument function with return}
 
-# Function with multiple arguments
-add_multiply <- function(a, b) {
-  
-  sum <- a + b
-  product <- a * b
-  return(list(sum = sum, product = product))
+multiply_numbers <- function(a, b) {
+  result <- a * b
+  return(result)
 }
 
-# Try it
-add_multiply(3, 4)
+# Example usage:
+multiply_numbers(4, 5)
+
+
 
 ```
 
-Functions can get extremely complex, but the basic structure remains the same. We define a function with `function_name <- function(arguments) { ... }`, and we can use `return()` to specify what the function should output. So not matter what happens in the middle, we can always return a value OR an error.
+As things get more complex, we can add warnings to our functions
 
-Error handling is also an important part of functions. We can use `stop()` to throw an error if something goes wrong, or `warning()` to give a warning without stopping execution.
+```{r warningsfun}
 
-Lsets trying making our own function.
 
-```{r make your own function}
+double_number <- function(x) {
+  if (!is.numeric(x)) {
+    warning("Input must be a numeric value.")
+    return(NA)
+ }
+ return(x * 2)
+}
 
-# Create your own function here
-
-# Example: Function to calculate the square of a number
-# Or do whatever
+# Example usage:
+double_number("a")
 
 ```
 
-But we don't have time to cover that today, so let's move on to loops.
+## If statements (bonus)
 
-# Loops
+An if statement in R is a way to make decisions in your code. It allows you to execute certain code only if a specific condition is true. This is useful when you want your program to behave differently depending on the input or situation.
 
-Loops are used to repeat (or iterate) a block of code multiple times, which is useful when we want to perform the same operation on different data points or when we need to iterate through a sequence.
+```{r ifstatement}
 
-We might use for loops to iterate over a vector or list, or while loops to repeat a block of code until a certain condition is met.
 
-We can iterate over anything, it could be a vector, a list, or even a data frame, or even a list of files!
+target = "sun"
 
-This is a NIGHTMARE to do in excel.
+weather = "rainy"
 
-### For Loops
 
-A for loop is used to iterate over a sequence (like a vector or list) and perform an operation on each element.
+if(target != weather){
+  
+  print("no sun today :( ")
+  
+}
 
-```{r for loop}
 
-# For loop example
+```
+
+We can add lots of conditions!
+
+We do this using if else (.... else, else etc.)
+
+```{r ifstatementong}
+
+
+target = "sun"
+
+weather = "sun"
+
+if(target != weather){
+  
+  print("no sun today :( ")
+  
+} else if (target == weather){
+  
+  print("Sun today :D")
+  
+}
+
+
+```
+
+Another example of an if statement in a function with a warning!
+
+```{r ifelsenuma}
+
+
+check_number <- function(x) {
+  if (!is.numeric(x)) {
+    warning("Please enter a number.")
+  } else if (x > 0) {
+    print("The number is positive.")
+  } else if (x < 0) {
+    print("The number is negative.")
+  } else {
+    print("The number is zero.")
+ }
+}
+
+
+check_number(0)
+
+check_number(1)
+
+check_number(-1)
+
+check_number("hello")
+
+
+
+```
+
+Finally we can save the output to a new object
+
+```{r ifelsenum}
+
+
+check_number <- function(x) {
+  if (!is.numeric(x)) {
+    warning("Please enter a number.")
+  } else if (x > 0) {
+    print("The number is positive.")
+  } else if (x < 0) {
+    print("The number is negative.")
+  } else {
+    print("The number is zero.")
+ }
+}
+
+output <- check_number(1)
+
+output
+
+
+```
+
+## Loops!
+
+A `loop` in R is a programming structure that allows you to repeat a block of code multiple times, which is especially useful when performing repetitive tasks. Instead of writing the same code over and over, you can use a loop to automate the repetition. The most common types of loops in R are `for` loops and `while`loops. A `for` loop runs a set number of times, typically over a sequence like a vector or a range of numbers. A `while` loop continues running as long as a specified condition remains true. Loops are powerful tools for tasks like processing data, generating output, or applying the same operation to multiple items—making your code more efficient, concise, and easier to manage.
+
+```{r simpleloop}
+
+
 for (i in 1:5) {
-  print(paste("Iteration:", i))
+  
+ print(i)
+  
 }
 
 ```
 
-Notice the syntax: `for (variable in sequence) { ... }`. The loop will run for each element in the sequence, assigning the current element to the variable.
-
-```{r loops}
+```{r whilesimple}
 
 
-# lets say we want to add 1 to each number in a vector
-for (i in 1:5) {
+count <- 1
+
+while (count <= 8) {
   
-  result <- i + 1
+  print(count)
+  
+  count <- count + 1
+  
+}
+
+```
+We can put anything in a loop, for example:
+
+```{r nameloop}
+
+# Vector of names
+names <- c("Alice", "Ben", "Charlie", "Diana")
+
+# Loop through each name and create a custom greeting
+for (name in names) {
+  
+  greeting <- paste("Hello", name, "- welcome to the plankton workshop!")
+  print(greeting)
+  
+  # you can put anything in here! make is as long as you lil
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  # STUFF
+  
+}
+
+
+```
+
+## TryExcempt
+
+```{r try}
+
+
+# Create a test vector with a problematic element
+test_vector <- list(10, 5, "error", 2)
+
+# Loop with tryCatch to handle errors
+for (val in test_vector) {
+  
+  result <- tryCatch({
+    
+    sqrt(val)  # Will fail on the "error" string
+    
+  }, warning = function(w) {
+    
+    paste("Warning:", w$message)
+    
+  }, error = function(e) {
+    
+    paste("Error:", e$message)
+    
+  })
   
   print(result)
-  
-  # we can add as much code as we want inside the loop
-
 }
 
-```
- 
-The above was on a list of numbers, perhaps we want to iterate over a vector of names instead.
-
-```{r for loop with names}
-
-# For loop with a vector
-my_vector <- c("apple", "banana", "cherry")
-
-for (fruit in my_vector) {
-  print(paste("Fruit:", fruit))
-}
-
-```
-
-or finally a dataframe.
-
-```{r for loop with data frame}
-
-# For loop with a data frame
-my_data <- data.frame(
-  Name = c("Alice", "Bob", "Charlie"),
-  Age = c(25, 30, 35)
-)
-
-for (i in 1:nrow(my_data)) { # nrow(my_data) gives the number of rows in the data frame
-  print(paste("Name:", my_data$Name[i], "- Age:", my_data$Age[i]))
-  # print(paste("Name:", my_data[i, "Name"], "- Age:", my_data[i, "Age"]))
-}
 
 
 ```
 
-### While Loops
+# Some examples of all
 
-These exist in R but might be more frequently used in other languages. They repeat a block of code as long as a specified condition is true. 
+Using mt cars database!
 
-```{r while loop}
+## Function
 
-# While loop example  
-counter <- 1
+```{r fundemo}
 
-while (counter <= 5) {
-  print(paste("Counter:", counter))
-  counter <- counter + 1 # Increment the counter
+
+# Define the function
+high_mpg_cars <- function(threshold) {
+  rownames(mtcars)[mtcars$mpg > threshold]
+}
+
+# Example usage
+high_mpg_cars(20)
+
+
+```
+
+
+## If else
+
+```{r ifdemo}
+
+
+# Select a specific car's mpg value
+mpg_value <- mtcars["Mazda RX4", "mpg"]
+
+# Classify the car based on mpg
+if (mpg_value > 25) {
+  category <- "very fuel efficient"
+} else if (mpg_value > 20) {
+  category <- "moderately fuel efficient"
+} else {
+  category <- "not fuel efficient"
+}
+
+# Print the result
+print(paste("Mazda RX4: ", mpg_value, " mpg - ", category))
+
+
+```
+
+## Loop
+
+```{r loopdemp}
+
+
+# Load the mtcars dataset
+data(mtcars)
+
+# Loop through each row
+for (i in 1:nrow(mtcars)) {
+  
+  model <- rownames(mtcars)[i]
+  mpg <- mtcars$mpg[i]
+  
+  if (mpg > 20) {
+    
+    status <- "fuel efficient"
+    
+  } else {
+    
+    status <- "not fuel efficient"
+    
+  }
+  
+  print(paste(model, ": ", mpg, " mpg - This car is ", status, "."))
 }
 
 
 ```
-# Using a funtion inside a loop!
 
-It is often that we might want to perform multiple functions (built in or otherwise) on a single object to transfor it as we go. For example we might start with a number, want to multiple it, then add it to the end of a string. 
+## All three
 
-But we might have a sequence of numbers to do that too. 
+```{r example}
 
-```{r function in loop}
-
-# Function to process a number
-# Here we will double it
-
-process_number <- function(x) {
+# Define the function
+label_above_mean <- function(data, colname) {
   
-  return(x * 2)
+  # empty vector
+  result <- c()
   
+  # for each value in the col
+  for (val in data[[colname]]) {
+    
+    aroundthemean <- if(val > mean(data[[colname]])) {
+      "Above Mean"
+    } else {
+      "Below or Equal"
+    }
+    
+    result <- c(result, aroundthemean)
+    
+    
+  }
+  return(result)
 }
 
-# Now we need a function to add the " is the result" to the end of a string
-add_suffix <- function(x) {
-  
-  return(paste(x, "is the result"))
-  
-}
+# Example usage with mtcars and the 'mpg' column
+label_above_mean(mtcars, "mpg")
 
-# Then we can use both functions in a loop, iterating over numbers
-numbers <- c(1, 2, 3, 4, 5)
+# put as a new column
 
-for (num in numbers) {
-  
-  processed_num <- process_number(num) # Process the number
-  
-  # Now we can add the suffix to the processed number
-  result_string <- add_suffix(processed_num) # Add suffix to the result
-  
-  print(result_string) # Print the final result
-  
-}
+mtcarsnew <- mtcars
+
+mtcars$aroundmean <- label_above_mean(mtcars, "mpg")
 
 ```
 
-The above is much like a normal workflow in R. As you have seen earlier and tomorrow. 
+# Tasks
 
+🔁 Loops
+Sum all even numbers from 1 to 100
+Use a for loop to iterate through numbers and add only the even ones to a total.
 
+```{r task1}
 
+```
 
+Print each column name in the mtcars dataset
+Loop through colnames(mtcars) and print each name on a new line.
 
+```{r task2}
 
+```
 
+🧠 If Statements
+Check if a number is positive, negative, or zero
+Write a simple if, else if, else block to classify a number.
 
+```{r task3}
+
+```
+
+Flag cars with mpg over 30 in mtcars
+Use an if statement inside a loop to print a message for each car that meets the condition.
+
+```{r task4}
+
+```
+
+🧰 Functions
+Create a function that converts Celsius to Fahrenheit
+Takes one argument and returns the converted temperature.
+
+```{r task5}
+
+```
+
+Write a function that returns the square of a number
+Simple math function that demonstrates input/output.
+
+```{r task6}
+
+```
