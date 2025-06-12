@@ -70,15 +70,15 @@ things to think about:
 
 <ul>
 
-<li>how many variables are there? what type of data are they? check the *class*
-of each variable and make sure that all data is coded as expected (e.g.
-categorical variables are factors)</li>
+<li>How many variables are there? what type of data are they? Check the
+`class()` of each variable and make sure that all data is coded as expected
+(e.g. that categorical variables are factors)</li>
 
-<li>calculate some summary statistics of the variables (mean, minimum, maximum),
-plot histograms. Does everything look as expected?</li>
+<li>Calculate some summary statistics of the variables (such as the mean,
+minimum, maximum), plot histograms. Is everything as expected?</li>
 
-<li>how many observations are there? are there any missing values? how are
-missing values coded in your data? How should they be treated/could they be
+<li>How many observations are there? Are there any missing values? If so, how
+are they coded in the data? How should they be treated/could they be
 removed?</li>
 
 </ul>
@@ -104,7 +104,7 @@ str(penguins) # the structure function gives a summary of the dataset
 # check for missing values
 # is.na(penguins$bill_length_mm) # the output of this will be a boolean 
 # (true/false) vector of the same size as there are rows in the dataset
-table(is.na(penguins$bill_length_mm))
+table(is.na(penguins$bill_length_mm)) # this gives a count of TRUE/FALSE in vector
 
 # summary statistics 
 mean(penguins$bill_length_mm) # what is the issue here?
@@ -135,9 +135,9 @@ DataExplorer::create_report(penguins)
 
 ```
 
-**Further reading:**
-<a href = "https://towardsdatascience.com/four-r-packages-for-automated-exploratory-data-analysis-you-might-have-missed-c38b03d4ee16/">Four
-R packages for Automated Exploratory Data Analysis you might have missed</a>
+**Further reading:** [Four R packages for Automated Exploratory Data Analysis
+you might have
+missed](https://towardsdatascience.com/four-r-packages-for-automated-exploratory-data-analysis-you-might-have-missed-c38b03d4ee16/)
 
 # Parametric and non-parametrics tests
 
@@ -168,6 +168,9 @@ t.test(a1$bill_length_mm, alternative = "two.sided", mu = mu)
 
 # is our data normally distributed?
 hist(a1$bill_length_mm)
+
+qqnorm(a1$bill_length_mm)
+qqline(a1$bill_length_mm, lty = "dashed")
 
 # we can perform a Shapiro-Wilk test to find out if data follows normal distribution
 # H0: distribution of sample data no different to normal distribution
@@ -201,9 +204,17 @@ a2 <- penguins[penguins$species == "Adelie" & penguins$island == "Torgersen", ]
 
 
 t.test(x = a1$bill_length_mm, y = a2$bill_length_mm, 
-       alternative = "two.sided", 
+       alternative = "two.sided", paired = FALSE,
        var.equal = TRUE) 
-# the var.equal argument -> are we assuming equal variance between the two samples?
+# the var.equal argument -> we are assuming equal variance between the two samples
+
+## you do not need to have two vectors of data, but instead can have a grouping
+## variable in your dataframe (I am separating into two dataframes because the 
+## original island variable has three groups and the maximum we can compare with 
+## a t-test is two at a time)
+# a <- rbind(a1, a2)
+# t.test(bill_length_mm ~ island, data = a,
+#        alternative = "two.sided", var.equal = TRUE)
 
 
 ## check if variances equal: F-test
@@ -214,12 +225,12 @@ var.test(x = a1$bill_length_mm, y = a2$bill_length_mm,
 # t.test(a1$bill_length_mm, a2$bill_length_mm, alternative = "two.sided", 
 # var.equal = FALSE)
 
-# check normality assumption
+# check histogram - normality assumption
 a <- rbind(a1, a2)
 
 ggplot(data = a) +
   geom_histogram(aes(x = bill_length_mm), fill = "white", color = "black") +
-  facet_wrap(~island) +
+  facet_wrap(~ island) +
   xlab("Bill length [mm]") +
   theme_classic()
 
@@ -273,7 +284,7 @@ wilcox.test(x = df$before, y = df$after, alternative = "two.sided",
 ### I want to compare more than two independent groups: ANOVA / Kruskal-Wallis
 
 We've not seen any differences in bill lengths within the Adelie penguins on
-different islands, are there bill lengths different between the three species?
+different islands, are the bill lengths different between the three species?
 
 ```{r anova}
 
@@ -287,7 +298,8 @@ summary(anova_model)
 
 # NON-PARAMETRIC ALTERNATIVE
 kruskal.test(x = penguins$bill_length_mm, g = penguins$species)
-kruskal.test(formula = bill_length_mm ~ species, data = penguins)
+# same as above but using the 'formula' method
+# kruskal.test(formula = bill_length_mm ~ species, data = penguins) 
 
 
 ```
@@ -398,7 +410,7 @@ Where:
 
 <br>
 
-**Quick note on terminology:** I use the below terms interchangeably:
+**Quick note on terminology:** I use these terms interchangeably:
 
 <ul>
 
@@ -441,7 +453,7 @@ summary(mod2)
 
 ```
 
-## predicting from model
+## Predicting from the model
 
 We can quickly plot the modelled relationship by predicting from the model. We
 obtain a predicted bill length for a given species, flipper length, and sex,
