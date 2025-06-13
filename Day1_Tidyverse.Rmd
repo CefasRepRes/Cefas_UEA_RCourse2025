@@ -160,7 +160,7 @@ community of people who use them.")*
         function because it\'s guaranteed never to change (for better or
         for worse).*
 
-![](lifecycle.svg)
+![](pics/lifecycle.svg)
 
 ------------------------------------------------------------------------
 
