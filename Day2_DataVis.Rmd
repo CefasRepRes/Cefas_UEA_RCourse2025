@@ -179,7 +179,7 @@ mtext(side=3, line=2, at=0.5, adj=0, cex=2, "Sepal width as a function of sepal 
 
 What if we want to change the colour of our points? Or change the type of symbol completely? R has the following options built in for point symbols:
 
-![Point types](./pch.png)
+![Point types](pics/pch.png)
 
 To use one of these options in our plot, here is how we do it:
 
@@ -200,7 +200,7 @@ plot(iris$Petal.Length, iris$Petal.Width,
 
 Just as we can change the point symbol, we can also change the line type. Here are the built in options:
 
-![Line types](./lty.png)
+![Line types](pics/lty.png)
 
 So if we want to change the line type in our chick plot from earlier it would look like this:
 
@@ -424,12 +424,12 @@ An accessible link is one which makes sense without any context. For example in 
 ### Alternative text
 When designing a figure, try to keep in mind that someone may be be looking at your figure in a document while using a screen reader, and cannot actually see it. As a starting point, "alt" text should tell the person what the figure is. For example "the logo of Rstudio".
 
-![R studio logo](./RStudio-Logo-Flat.png)
+![R studio logo](pics/RStudio-Logo-Flat.png)
 
 
 Where images are just there to fill space or look pretty it can be enough just to say "decorative image".
 
-![Decorative image showing some code on a computer screen](./code.jpg)
+![Decorative image showing some code on a computer screen](pics/code.jpg)
 
 
 However, much of the content we are producing with R is conveying information, and we need to be sure that information is as accessible as possible.
