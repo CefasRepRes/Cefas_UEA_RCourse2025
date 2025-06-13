@@ -35,7 +35,6 @@ n
 class(n)
 ```
 
-
 ### Integers
 
 Integers are numeric data formed of whole numbers, without any decimals. You should use this class of data when you are sure that you will not create a variable with any decimals.
@@ -539,8 +538,7 @@ Animals_df$Age.years
 
 #### Adding data
 
-We can add data to our data frames in a variety of ways.
-We can use the functions `rbind()` and `cbind()` to join two data frames together by their rows or columns respectively.
+We can add data to our data frames in a variety of ways. We can use the functions `rbind()` and `cbind()` to join two data frames together by their rows or columns respectively.
 
 ```{r adding data to dataframes}
 
@@ -563,7 +561,6 @@ Animals_df_3
 
 
 ```
-
 
 ### Task 5
 
@@ -1000,7 +997,7 @@ Some useful packages for reading in different types of data:
 
 `readxl` - for Excel data. <https://www.rdocumentation.org/packages/readxl/versions/0.1.1/topics/read_excel>
 
-`rjson` - Json format files.
+`rjson` - Json format files. <https://cran.r-project.org/web/packages/rjson/rjson.pdf>
 
 `RSQLite` - sqlite files. <https://www.rdocumentation.org/packages/RSQLite/versions/2.3.1>
 
