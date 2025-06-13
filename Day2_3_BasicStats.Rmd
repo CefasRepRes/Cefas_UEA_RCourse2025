@@ -1,0 +1,614 @@
+---
+title: "Basic Statistics in R"
+author: "Teresa Vaz Martins and Karolina Zalewska"
+output: 
+  html_document:
+    theme: flatly 
+    code_folding: show
+    toc: true
+    toc_float: true
+editor_options: 
+  markdown: 
+    wrap: 80
+    canonical: true
+date: ""
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+# library(see)
+library(DataExplorer)
+library(palmerpenguins)
+library(ggplot2)
+library(ggeffects)
+library(car)
+library(performance)
+library(corrplot)
+
+## if any of these produce an error message use install.packages(), e.g. 
+# install.packages(c("knitr", "DataExplorer", "palmerpenguins", "ggplot2",
+#                    "ggeffects", "car", "performance", "corrplot"))
+# (delete as needed)
+
+```
+
+```{css, echo=FALSE}
+
+.lightgrey {
+background-color:#F6F6F6;
+color: #000; 
+font-size:14px; 
+text-align:left;
+vertical-align: middle;
+border-radius: 5px;
+padding: 20px; 
+80px
+
+}
+
+body{
+font-family: Helvetica;
+font-size: 12pt;
+}
+ 
+
+```
+
+# Introduction
+
+In this session, we will give you a brief introduction and an overview of how to
+perform some basic statistics in R.
+
+**R is a statistical programming language:** by default, it includes many
+statistical functions. These are held in the {stats} package, which comes
+pre-installed with R.
+
+# Exploratory data analysis - summary statistics
+
+Before you run any tests, you should familiarise yourself with the data! Some
+things to think about:
+
+<ul>
+
+<li>How many variables are there? what type of data are they? Check the
+`class()` of each variable and make sure that all data is coded as expected
+(e.g. that categorical variables are factors)</li>
+
+<li>Calculate some summary statistics of the variables (such as the mean,
+minimum, maximum), plot histograms. Is everything as expected?</li>
+
+<li>How many observations are there? Are there any missing values? If so, how
+are they coded in the data? How should they be treated/could they be
+removed?</li>
+
+</ul>
+
+We are going to have a quick look at some data using functions you should
+already be mostly familiar with.
+
+First we will load a dataset that is stored within a package. The data were
+collected and made available by Dr. Kristen Gorman and the Palmer Station,
+Antarctica LTER [palmerpenguins
+(allisonhorst.github.io)](https://allisonhorst.github.io/palmerpenguins/index.html)
+
+Below are a few examples of things you might do to explore your data. This is by
+no means an exhaustive list - the methods you use to explore your data will be
+dependent on the data itself (e.g. the type of variables present). While I look
+at only two variables, you should always check all variables that you are
+planning to include in your analysis.
+
+```{r EDA}
+
+str(penguins) # the structure function gives a summary of the dataset
+
+# check for missing values
+# is.na(penguins$bill_length_mm) # the output of this will be a boolean 
+# (true/false) vector of the same size as there are rows in the dataset
+table(is.na(penguins$bill_length_mm)) # this gives a count of TRUE/FALSE in vector
+
+# summary statistics 
+mean(penguins$bill_length_mm) # what is the issue here?
+mean(penguins$bill_length_mm, na.rm = TRUE) # remove NAs from mean calculation
+
+summary(penguins$bill_length_mm)
+
+hist(penguins$bill_length_mm)
+
+
+class(penguins$species)
+
+# species is a categorical variable, we can see how many species are in the 
+# dataset (factor levels) and how many  observations per species
+unique(penguins$species) # list unique values of variable
+length(unique(penguins$species)) #
+table(penguins$species) 
+
+```
+
+Additionally, as a starting point and to get ideas on what to explore, you can
+use packages such as {DataExplorer}. This will give you a summarised report of
+your data.
+
+```{r DataExplorer, eval = FALSE}
+
+DataExplorer::create_report(penguins)
+
+```
+
+**Further reading:** [Four R packages for Automated Exploratory Data Analysis
+you might have
+missed](https://towardsdatascience.com/four-r-packages-for-automated-exploratory-data-analysis-you-might-have-missed-c38b03d4ee16/)
+
+# Parametric and non-parametrics tests
+
+## Comparing groups
+
+### I want to compare my data to a single value: 1-sample t-test / Wilcoxon rank test
+
+We want to compare populations of Adelie penguins on different islands, and test
+whether there is a difference in bill length across the populations.
+
+What if we had individual measurements for one island and wanted to know how it
+differs from an average Adelie penguin bill length that we found from
+literature?
+
+```{r 1-sample test}
+
+# extract the data from the penguins dataset
+a1 <- penguins[penguins$species == "Adelie" & penguins$island == "Dream", ] 
+
+mu <- 38.79 # this is our average bill length obtained from literature
+
+t.test(a1$bill_length_mm, alternative = "two.sided", mu = mu) 
+
+# if our H was that the population's bill length is shorter than average
+# t.test(a1$bill_length_mm, alternative = c("less"), mu = mu) 
+# if our H was that the population's bill length is longer than average
+# t.test(a1$bill_length_mm, alternative = c("greater"), mu = mu) 
+
+# is our data normally distributed?
+hist(a1$bill_length_mm)
+
+qqnorm(a1$bill_length_mm)
+qqline(a1$bill_length_mm, lty = "dashed")
+
+# we can perform a Shapiro-Wilk test to find out if data follows normal distribution
+# H0: distribution of sample data no different to normal distribution
+
+# NOTE: the Shapiro-Wilk test is a TEST so the same caveats and potential pitfalls 
+# of any statistical testing also apply to it. It can be useful but always
+# interpret with caution and always in addition to other ways of checking
+# normality. Also, it is not useful for large samples: the maximum sample size
+# is only 5,000 observations. 
+shapiro.test(a1$bill_length_mm)
+
+
+### NON-PARAMETRIC ALTERNATIVE
+
+wilcox.test(a1$bill_length_mm, alternative = "two.sided", mu = mu)
+
+
+```
+
+### I want to compare two independent groups: (unpaired) t-test / Mann Whitney U test
+
+This time, we went to two different islands and collected individual
+measurements of Adelie penguin bill lengths. We want to test whether there is a
+difference between the two populations inhabiting the different islands.
+
+```{r two-sample t-test, warning = FALSE, warning = FALSE, messgae = FALSE}
+
+# extract the data from the penguins dataset
+a1 <- penguins[penguins$species == "Adelie" & penguins$island == "Dream", ]
+a2 <- penguins[penguins$species == "Adelie" & penguins$island == "Torgersen", ]
+
+
+t.test(x = a1$bill_length_mm, y = a2$bill_length_mm, 
+       alternative = "two.sided", paired = FALSE,
+       var.equal = TRUE) 
+# the var.equal argument -> we are assuming equal variance between the two samples
+
+## you do not need to have two vectors of data, but instead can have a grouping
+## variable in your dataframe (I am separating into two dataframes because the 
+## original island variable has three groups and the maximum we can compare with 
+## a t-test is two at a time)
+# a <- rbind(a1, a2)
+# t.test(bill_length_mm ~ island, data = a,
+#        alternative = "two.sided", var.equal = TRUE)
+
+
+## check if variances equal: F-test
+var.test(x = a1$bill_length_mm, y = a2$bill_length_mm, 
+         alternative = "two.sided")
+
+# unequal variance between the samples? -> welch's t-test 
+# t.test(a1$bill_length_mm, a2$bill_length_mm, alternative = "two.sided", 
+# var.equal = FALSE)
+
+# check histogram - normality assumption
+a <- rbind(a1, a2)
+
+ggplot(data = a) +
+  geom_histogram(aes(x = bill_length_mm), fill = "white", color = "black") +
+  facet_wrap(~ island) +
+  xlab("Bill length [mm]") +
+  theme_classic()
+
+
+## NON-PARAMETRIC
+wilcox.test(x = a1$bill_length_mm, y = a2$bill_length_mm,
+            alternative = "two.sided")
+
+```
+
+### I want to compare before and after data: paired t-test / Wilcoxon rank test
+
+In this example we are responsible for the management of multiple sites, on
+which we carry out regular surveys of a species of conservation concern. We want
+to know if a recently implemented change in land management had an effect on
+individual counts. To do that, we repeat the survey after the management has
+changed and compare our counts to those collected before the change.
+
+```{r paired t-test}
+
+set.seed(123) 
+# I am generating random numbers, running the above means that we get the same
+# numbers every time
+
+## create the example dataset
+df <- data.frame(site = 1:100,
+                 before = round(runif(n = 100, min = 0, max = 10)), 
+                 after = round(runif(n = 100, min = 0 , max = 10)))
+
+
+head(df)
+
+# NOTE: 
+# runif() generates n random samples from the uniform distribution. 
+# You can get samples from e.g. the Normal distribution using rnorm(), 
+# and equivalent functions exist for other distributions. 
+# round() rounds the values to a specified number of decimal places, by default 0
+# ceiling() and floor() round to integer (either "up" or "down")
+
+t.test(x = df$before, y = df$after, alternative = "two.sided",
+       paired = TRUE, var.equal = TRUE)
+
+
+# NON-PARAMETRIC ALTERNATIVE
+wilcox.test(x = df$before, y = df$after, alternative = "two.sided",
+            paired = TRUE)
+
+
+```
+
+### I want to compare more than two independent groups: ANOVA / Kruskal-Wallis
+
+We've not seen any differences in bill lengths within the Adelie penguins on
+different islands, are the bill lengths different between the three species?
+
+```{r anova}
+
+anova_model <- aov(formula = bill_length_mm ~ species, data = penguins)
+
+summary(anova_model)
+
+# you could plot the model to check if it meets some ANOVA assumptions 
+# (eg normality) - we will be discussing those plots later
+# plot(anova_model)
+
+# NON-PARAMETRIC ALTERNATIVE
+kruskal.test(x = penguins$bill_length_mm, g = penguins$species)
+# same as above but using the 'formula' method
+# kruskal.test(formula = bill_length_mm ~ species, data = penguins) 
+
+
+```
+
+The low p-value ($<2 \times 10^{-16}$) indicates strong evidence against the
+null hypothesis, suggesting that at least one group mean is significantly
+different from the others. The F-statistic measures the ratio of the variance
+between groups to the variance within groups. A higher F-value indicates a
+greater difference between group means.
+
+## I want to test the association between factors or compare counts: chi-square test
+
+Chi-square (or $\chi^2$) test is used to check for association, or compare
+counts across multiple groups. The test is formulated via a contingency table.
+Imagine you carried out a survey of three species (1-3) across three field sites
+(A-C). The contingency table may look something like this:
+
+```{r chi-square table, results = 'asis'}
+
+df <- data.frame(sp1 = c(16, 8, 22, 46),
+                 sp2 = c(5, 30, 12, 47),
+                 sp3 = c(21, 19, 6, 46),
+                 row.names = c("A", "B", "C", "column_total"))
+
+
+df$row_total <- rowSums(df)
+
+kable(df, format = "html", align = "c")
+
+
+```
+
+<br>
+
+You want to know whether a species occurs at any site more frequently.
+
+```{r chisquare}
+
+df <- data.frame(sp1 = c(16, 8, 22),
+                 sp2 = c(5, 30, 12),
+                 sp3 = c(21, 19, 6),
+                 row.names = c("A", "B", "C"))
+
+res <- chisq.test(df)
+res
+
+# the test statistic is calculated using the observed and expected values, have a look at these
+res$observed
+res$expected
+
+# we can use the residuals to further interpret the results
+res$residuals
+
+```
+
+Residuals sign: positive = observed \> expected; negative = observed \< expected
+
+absolute value = magnitude of difference between observed and expected
+
+## Relationship: correlation
+
+Are penguin bill lengths and depths correlated?
+
+```{r correlation coefficient}
+## linear and normally distributed - pearson
+
+cor(x = penguins$bill_length_mm, y = penguins$bill_depth_mm, use = "complete.obs",
+    method = "pearson")
+
+cor.test(x = penguins$bill_length_mm, y = penguins$bill_depth_mm,
+         alternative = "two.sided", method = "pearson")
+
+
+## non-linear and not normally distributed = spearman
+cor(x = penguins$bill_length_mm, y = penguins$bill_depth_mm, use = "complete.obs",
+    method = "spearman")
+
+```
+
+Interpretation:
+
+<ul>
+
+<li>sign = positive/negative correlation</li>
+
+<li>value: the values of the correlation coefficient are [-1, 1], the closer to
+\|1\| the stronger the correlation</li>
+
+</ul>
+
+# Linear regression
+
+Linear regression models the relationship between a dependent variable and one
+or more independent variables. As a reminder, below is the equation of a
+straight line: <br>
+
+$y = mx + c$
+
+Where:
+
+<ul>
+
+<li>m is the slope (change in y per 1 unit increase in x)</li>
+
+<li>c is the y-interecept (i.e. where x = 0)</li>
+
+</ul>
+
+<br>
+
+**Quick note on terminology:** I use these terms interchangeably:
+
+<ul>
+
+<li>response variable = outcome variable = dependent variable = y</li>
+
+<li>explanatory variable = predictor variable = independent variable = x</li>
+
+</ul>
+
+## single explanatory variable
+
+$y = \beta_0 + \beta_1 x_1 + \epsilon$
+
+```{r LM1}
+
+mod1 <- lm(bill_length_mm ~ species, data = penguins)
+
+summary(mod1)
+
+```
+
+The sign of the coefficient (positive or negative) indicates the direction of
+the relationship, while the magnitude reflects the strength of the relationship.
+R-squared (coefficient of determination) gives the proportion of variance within
+the response variable that is explained by the explanatory variable. Including
+more explanatory variables will increase the R-squared, however, this may not be
+because of true relationships between those variables and the response, but just
+chance. An attempt to prevent that is the adjusted R-squared, which is
+calculated taking into account the number of explanatory variables (predictors).
+
+## more than one explanatory variable (multiple linear regression)
+
+$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + ... + \epsilon$
+
+```{r LM2}
+
+mod2 <- lm(bill_length_mm ~ species + flipper_length_mm + sex, data = penguins)
+
+summary(mod2)
+
+```
+
+## Predicting from the model
+
+We can quickly plot the modelled relationship by predicting from the model. We
+obtain a predicted bill length for a given species, flipper length, and sex,
+from our model using the formula: <br>
+$bill \ length = \beta_0 + \beta_1 \times species + \beta_2 \times flipper \ length + \beta_3 \times sex$.
+<br>
+
+```{r predicting}
+pred <- ggpredict(mod2, terms = "species", ci_level = 0.95)
+
+ggplot(data = pred, aes(x = x, y = predicted)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.1) +
+  labs(x = "Species", y = "Predicted bill length [mm]") +
+  theme_classic()
+
+
+pred <- ggpredict(mod2, terms = "flipper_length_mm", ci_level = 0.95)
+
+ggplot(data = pred, aes(x = x, y = predicted)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), 
+              fill = "grey50", alpha = 0.4) +
+  labs(x = "Filpper length [mm]", y = "Predicted bill length [mm]") +
+  theme_classic()
+
+```
+
+```{r extra predicting, eval = FALSE, include = TRUE}
+## ADDITIONAL INFO
+## By default, ggpredict() will predict across the range of the variable, 
+## you can also get prediction for specific value(s). 
+
+## e.g. if you wanted to predict for two species of penguin only:
+ggpredict(mod2, terms = "species [Gentoo, Adelie]", ci_level = 0.95)
+
+## or for a specifc range of values
+p1 <- ggpredict(mod2, terms = "flipper_length_mm [200:300]", ci_level = 0.95)
+
+ggplot(data = p1, aes(x = x, y = predicted)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), 
+              fill = "grey50", alpha = 0.4) +
+  labs(x = "Flipper length [mm]", y = "Predicted bill length [mm]") +
+  theme_classic()
+
+## if you want to make sure that the function is predicting for all values of the
+## variable, you can use:
+# ggpredict(mod2, terms = "species [all]", ci_level = 0.95)
+
+```
+
+## Interaction
+
+$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \beta_3 x_1 x_2 + \epsilon$
+
+**Note formula** in R you can specify an interaction in two equivalent ways (the
+output will be exactly the same):
+
+$y \sim x_1 * x_2$ OR $y \sim x_1 + x_2 + x_1:x_2$
+
+Unless you know what you're doing and have a good reason, your model needs to
+contain both the lower order (additive, i.e. $x_1 + x_2$) and higher order
+(interaction) terms.
+
+```{r LM3}
+
+mod3 <- lm(bill_length_mm ~ flipper_length_mm * species + sex, data = penguins)
+
+summary(mod3)
+
+
+# I prefer to use '*' to specify interactions, but I've left this here if you 
+# would like to check that both methods give the same output
+
+# mod3 <- lm(bill_length_mm ~ species + flipper_length_mm + flipper_length_mm:species,
+#            data = penguins)
+
+# summary(mod3)
+
+
+```
+
+Interpretation of the interaction terms gets slightly trickier, but the general
+idea is the same. However, the easiest way to figure out what is happening is to
+plot it. We will again use our model (mod3) to get the predicted bill length for
+a range of flipper length values across the three species.
+
+```{r pred mod with int}
+pred <- ggpredict(mod3, terms = c("flipper_length_mm", "species"), ci_level = 0.95)
+
+ggplot(data = pred, aes(x = x, y = predicted, fill = group)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.2) +
+  labs(x = "Flipper length [mm]", y = "Predicted bill length [mm]") +
+  scale_fill_brewer(name = "Species", palette = "Dark2") +
+  theme_classic()
+
+
+```
+
+## Checking model assumptions
+
+Below are the assumptions of a linear model:
+
+<ol>
+
+<li>Linearity: the relationship between the response variable and the
+explanatory variables is linear</li>
+
+<li>Homoscedasticity: the variance is equal across range/all levels of
+explanatory (independent) variable(s)</li>
+
+<li>Normality:the errors are normally distributed</li>
+
+<li>Independence of observations: no residual correlation</li>
+
+</ol>
+
+```{r assumptions, fig.width=12, fig.height=12}
+
+par(mfrow = c(2, 2))
+plot(mod2)
+
+
+check_model(mod2)
+
+
+# multicollinearity
+
+## variance inflation factor
+vif(mod2)
+
+## you can also make a correlation matrix and plot to check how correlated 
+## continuous variables are
+## N.B. in the models above we only ever include one of these variables so the 
+## below is not relevant for our example models
+mtr <- cor(penguins[ , c("body_mass_g", "bill_depth_mm", "flipper_length_mm")],
+           use = "complete.obs")
+mtr
+
+corrplot(mtr, method = "ellipse", type = "lower")
+```
+
+## Try it yourself: linear models
+
+You want to find out what affects the amount of sleep of mammals. To do that,
+you will use data for 83 species ('msleep'). Load the data, inspect the dataset,
+consider which variables should be included in the model, and fit a linear
+model. Check model assumptions and plot your results
+
+```{r exercise}
+
+data("msleep") # if you can't find the data, make sure you load the 'ggplot2' package
+
+
+
+```

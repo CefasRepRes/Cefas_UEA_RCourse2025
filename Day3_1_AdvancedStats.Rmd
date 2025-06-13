@@ -1,0 +1,494 @@
+---
+title: "Advanced statistics in R"
+author: "Teresa Vaz Martins and Karolina Zalewska"
+output: 
+  html_document:
+    theme: flatly 
+    code_folding: show
+    toc: true
+    toc_float: true
+editor_options: 
+  markdown: 
+    wrap: 80
+    canonical: true
+date: ""
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(tidyverse)
+library(factoextra)
+library(lme4)
+library(MASS)
+library(ggeffects)
+library(mgcv)
+library(performance)
+library(palmerpenguins)
+library(gamair)
+library(ggpubr)
+
+```
+
+```{css, echo=FALSE}
+
+.lightgrey {
+background-color:#F6F6F6;
+color: #000; 
+font-size:16px; 
+text-align:left;
+vertical-align: middle;
+border-radius: 5px;
+padding: 20px; 
+80px
+
+}
+
+body{
+font-family: Helvetica;
+font-size: 14pt;
+}
+
+
+```
+
+# Dimensionality reduction
+
+## Principal component analysis (PCA)
+
+To visualize high-dimensional data, we use PCA to map data to lower dimensions.
+The method is particularly useful when the variables within the data set are
+highly correlated. Due to this redundancy, PCA can be used to reduce the
+original variables into a smaller number of new variables (i.e. *principal
+components*). These are not a reduced portion of the original variables, but
+different variables!
+
+We can do PCA in R in different ways, for instance
+
+\- `prcomp`() [built-in R `stats` package],
+
+\- `PCA`() [`FactoMineR` package, useful for visualisation],
+
+Of the possible arguments, note the `scale` and `center` arguemnts. These
+standardise the input data so that it has a mean of zero and variance of one.
+This is particularly recommended when variables are measured in different scale
+(e.g. different units: kilograms, grams). By
+
+```{r PCA1, error=TRUE}
+
+# make sure to use numeric data and remove missing values before running PCA
+df <- iris[ , c("Sepal.Length", "Sepal.Width",
+                             "Petal.Length", "Petal.Width")]
+
+
+df <- na.omit(df)
+
+iris_pca <- prcomp(df, scale = TRUE, center = TRUE)
+
+
+iris_pca
+
+```
+
+**Note:** The `rank.` argument allows us to select the number of principal
+components to retain.
+
+### Visualise results
+
+Although the default `stats` package includes options to produce many PCA
+visualisations, I find it easier to customise using `factoextra`. We will create
+a few examples, but you can find other options online, for instance here:
+
+[PCA - Principal Component Analysis Essentials - Articles
+-STHDA](%5Bhttp://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/112-pca-principal-component-analysis-essentials/)](<http://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/112-pca-principal-component-analysis-essentials/>))
+
+#### Scree plot and variable contributions
+
+Visualising the variance explained by each component helps us to assess how many
+principal components are needed. We want to retain as much of the variation in
+the original data as possible. Where the scree plot stops "dropping" shows a
+good number of dimensions. Another rule of thumb for deciding how many principal
+components to retain is to retain the components that cumulatively contain 70%
+of the original variance.
+
+```{r scree, warning = FALSE}
+
+#calculate total variance explained by each principal component
+var_explained <- iris_pca$sdev^2 / sum(iris_pca$sdev^2)
+
+fviz_eig(iris_pca, addlabels = TRUE, ylim = c(0, 50))
+
+
+# Contributions of variables to PC1
+
+fviz_contrib(iris_pca, choice = "var", axes = 1)
+
+# Contributions of variables to PC2
+fviz_contrib(iris_pca, choice = "var", axes = 2)
+
+
+fviz_pca_var(iris_pca, axes = c(1, 2), col.var = "contrib", 
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"), repel = TRUE) +
+  xlab("PC1") +
+  ylab("PC2") +
+  theme(text = element_text(size = 14))
+
+
+
+```
+
+```{r}
+
+fviz_pca_ind(iris_pca ,
+             geom.ind = "point", # show points
+             col.ind = iris$Species, # color by species, iris$Species
+             palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+             addEllipses = TRUE, # Concentration ellipses
+             legend.title = "Groups")
+
+
+```
+
+**Further reading:**
+
+<ul>
+
+<li>PCA using the [recipes](https://recipes.tidymodels.org) package from
+[tidymodels](https://www.tidymodels.org)</li>
+
+<li>[PCA with penguins and
+recipes](https://allisonhorst.github.io/palmerpenguins/articles/pca.html)</li>
+
+<li>Using the factoextra package: [PCA - Principal Component Analysis
+Essentials -
+Articles-STHDA](http://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/112-pca-principal-component-analysis-essentials)</li>
+
+<li>[PCA with tidyverse - Benjamin
+Nowak](https://bjnnowak.netlify.app/2021/09/15/r-pca-with-tidyverse)</li>
+
+</ul>
+
+# Going beyond the Gaussian error distribution: Generalized linear models (GLM)
+
+These can be used to model data that is not normally distributed. The different
+types are based on the probability distribution of the response variable: e.g.
+Poisson if the response variable represents counts or binomial for a binary
+outcome.
+
+GLMs are fit using the `glm()` function. The formula is specified in the same
+way as for `lm()`, but there is an additional argument to pay attention to: <br>
+
+**family:** The statistical family to use to fit the model. Default is gaussian,
+as in a linear model, but other options include binomial, Gamma, and poisson
+among others. You can find more information on the types of model families
+within {stats} using `?family`.
+
+## I have count data / I'm interested in the rate : Poisson distribution
+
+Going back to our site management example: we are responsible for the management
+of multiple sites, which are regularly surveyed. On each survey, the number of
+individuals observed is recorded. The sites a mixture of forested and open
+habitats, and for each site we have the average percentage of tree cover. We
+would like to find out if the species is found more frequently on sites with a
+greater tree cover.
+
+```{r}
+
+set.seed(123)
+
+df <- data.frame(site = 1:100,
+                 count = round(runif(n = 100, min = 0, max = 10)), 
+                 trees = runif(n = 100, min = 0 , max = 100))
+
+
+mod1 <- glm(count ~ trees, family = poisson(link = "log"), data = df)
+
+
+summary(mod1)
+
+check_model(mod1)
+
+## overdispersion?
+
+mod1q <- glm(count ~ trees, family = quasipoisson(link = "log"), data = df)
+
+summary(mod1q)
+
+mod1nb <- glm.nb(count ~ trees, data = df)
+
+summary(mod1nb)
+
+
+```
+
+## I have binomial (0/1 outcome) data:
+
+What if we didn't have counts but only a presence/absence of the species?
+
+```{r}
+
+set.seed(123)
+
+df <- data.frame(site = 1:100,
+                 count = round(runif(n = 100, min = 0, max = 10)), 
+                 trees = runif(n = 100, min = 0 , max = 100))
+
+
+df <- df %>% 
+  mutate(pres = ifelse(count > 4, 1, 0))
+
+
+
+mod2 <- glm(pres ~ trees, family = binomial(link = "logit"), data = df)
+
+summary(mod2)
+
+```
+
+The odds ratio for each coefficient represents the average change in odds,
+assuming all other predictor variables are held constant.
+
+```{r, error=TRUE, message=FALSE}
+
+coef(mod2)
+
+#calculate odds ratio and 95% confidence interval for each predictor variable 
+
+exp(cbind(Odds_Ratio = coef(mod2), confint(mod2)))
+```
+
+**Be careful with interpretation!!**Odds ratio is notorious for not being very
+intuitive to interpret. Below, I've listed some potentially useful resources
+
+<ul>
+
+<li>[Introduction to Regression Methods
+Ch.6](https://www.bookdown.org/rwnahhas/RMPH/blr-interp.html)</li>
+
+<li>[RPubs Interpreting the Output of a Logistic Regression
+Model](https://rpubs.com/raoulbia/interpreting_glm_logistic_regression_output)</li>
+
+</ul>
+
+# Mixed Effects Models in R with lme4
+
+Mixed effects models, also known as multilevel models or hierarchical models,
+are statistical models that are used to analyze data with nested or hierarchical
+structures. These models are particularly useful when dealing with data that has
+multiple levels of variation or when there is a need to account for the
+correlation between observations within the same group.
+
+In R, the {lme4} package provides functions for fitting mixed effects models.
+The `lmer()` function is commonly used to fit linear mixed effects models
+
+The formula synatx is the same as for all models we have seen so far, however,
+we can specify a random effect term. <br>
+$y \sim x_1 + x_2 ... + (1|group), data = data$ <br>
+
+where `group` is the random effects variable.
+
+The `(1 | group)` term specifies that the random intercepts that vary across
+different levels of the \`group\` variable.
+
+We could also specify a random slope and random intercept term as follows:
+$y \sim x_1 + x_2 ... + (1+group \ var_1|group \ var_2), data = data$ <br>
+
+The random effects can be nested: <br>
+$y \sim x_1 + x_2 ... + (1|group \ var_1 :group \ var_2), data = data$ <br> or
+crossed: <br>
+$y \sim x_1 + x_2 ... + (1|group \ var_1) + (1|group \ var_2), data = data$ <br>
+
+The random effect structure to use will dependent on the hierarchical structure
+of the data.
+
+**Note**Forums such as StackOverflow or StackExchange are not only good places
+to look for code advice but also stats questions and their application in R. As
+an example, here is a link to a very good answer about the difference between
+[crossed and nested random
+effects](https://stats.stackexchange.com/questions/228800/crossed-vs-nested-random-effects-how-do-they-differ-and-how-are-they-specified)
+
+Going back to our penguin example: we are still interested in the bill length,
+however, we know that the individuals measured come from different islands.
+Could there be some differences across these islands that affect the
+individuals? Often we have good reason to believe that there may be additional
+sources of variation associated, for example, with differences in study sites.
+However, it is impossible to reasonably include all sources of variation in the
+model. Instead, we can try to account for these by identifying a variable that
+"encompasses" them in a way. For example, it may be safe to assume that the
+islands are different, what exactly is different about them, we do not know, but
+our goal is not to understand how they are different but just to account for
+them being potentially different.
+
+Below is the model using species, body mass, and sex to explain bill length of
+penguins. We also specify a random intercept effect of island. This means that
+
+```{r, error=TRUE, warning=FALSE, message=FALSE}
+
+#library(lme4) # already loaded at start
+
+mod3 <- lme4::lmer(bill_length_mm ~ species + body_mass_g + sex + (1|island), 
+                   data = penguins)
+
+summary(mod3)
+
+```
+
+The random effects terms `(1|island)` allows individuals to vary randomly in
+terms of their intercept depending on the island they were found on.
+
+Note that the output above does not give us p-values by default `lmer` from
+{lme4} does not calculate these, however, if you do need p-values, you can use
+either {lmerTest} or {nlme} to re-fit the model and obtain p-values. The
+parameter estimates should be the same, but some packages are built to work with
+{lme4} output rather than, e.g.{lmerTest}, so you may need to use both packages
+to produce e.g. prediction plots or check model assumptions
+
+```{r, message = FALSE, warning = FALSE}
+
+# install.packages("lmerTest")
+library(lmerTest)
+
+mod3p <- lmerTest::lmer(bill_length_mm ~ species + body_mass_g + sex + (1|island),
+                        data = penguins)
+
+summary(mod3p)
+
+```
+
+**Functions with same name from two packages:** sometimes multiple packages use
+the same names for functions that may or may not do the exactly same thing. When
+loading packages you may get warnings about functions being 'masked'. This could
+potentially cause quite a lot of issues. It is good practice to use
+`packageName::function`, when you think that there may be multiple functions of
+the same name, to make sure that your code is doing what you think it is doing.
+
+# Non-linear relationships: polynomials and GAMs
+
+We will look at the number of death from larynx cancer across regions in Germany
+between 1986 and 1990 and levels of smoking.
+
+```{r poly}
+
+data(larynx)
+ 
+mod4 <- glm(Y ~ x, family = "poisson", data = Larynx)
+
+summary(mod4)
+
+
+mod5 <- glm(Y ~ poly(x, 2), data = Larynx)
+
+summary(mod5)
+
+```
+
+Polynomials are global functions, so they do not offer much flexibility.
+Sometimes this may be a good thing - too much flexibility increases the risk of
+overfitting.
+
+The formula syntax for GAMs is the same as for LMs and GLMs. To specify a smooth
+term, we use the `s()` function within the formula.
+
+You can fit different types of basis (smooth). This is specified using the `bs`
+argument within `s()`. By default, thin plate regression splines are used. What
+to use depends on the data: e.g. cyclic cubic splies (`bs = "cc"`) for temporal
+data, or even smooth random effects (`bs="re"`). See `?smooth.terms` for more
+information.
+
+You can control the "wiggliness" by specifying the number of dimensions of the
+basis to be used. This is done using the `k` argument within `s()`. The optimal
+smoothing is estimated, and the method to do so can be specified using the
+`method` argument in `gam()`.
+
+Similarly to GLMs, we can specify a `family` argument
+
+```{r GAM}
+
+mod6 <- mgcv::gam(Y ~ s(x, bs = "tp"), family = "poisson",
+                  data = Larynx)
+
+summary(mod6)
+
+
+```
+
+EDF (effective degrees of freedom) gives us (kind of) the number of basis used
+to produce the smooth. An EDF = 1 indicates that the relationships is linear.
+
+```{r GAM plotting, fig.width = 6, fig.height = 6}
+
+plot(mod6) # default plot.gam() 
+
+pred <- ggpredict(mod6, terms = "x")
+
+ggplot(data = pred, aes(x = x, y = predicted)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), 
+              fill = "grey50", alpha = 0.2) +
+  labs(x = "Smoking level", y = "Predicted camcer deaths") +
+  theme_classic()
+
+
+```
+
+GAMs are also very useful when working in two-dimensions. For example, if we
+have survey data and we want to predict species occurrences spatially.
+
+Below is an oversimplified example using sample data from the Portuguese Atlas
+of Breeding Birds. This is a systematic survey of 2x2 km squares. The dataset
+contains occurrences of crested larks or linnets across all surveyed tetrads. We
+will focus on crested lark:
+
+```{r GAM spatial, fig.width = 12, fig.height = 8}
+
+# install.package("gamair")
+
+data("bird")
+
+brd <- bird[!is.na(bird$crestlark), ]
+
+brd$crestlark <- as.factor(brd$crestlark)
+
+g1 <- ggplot(data = brd, aes(x = x, y = y, colour = crestlark)) +
+  geom_point() +
+  scale_color_manual(values = c("#DC3220", "#005AB5")) +
+    theme(axis.line = element_line(color = "black"),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        panel.background = element_blank(),
+        plot.background = element_rect(fill = NULL,
+                                       color = NA_character_),
+        panel.grid = element_line(color = "grey50"),
+        plot.margin = unit(c(0, 0, 0, 0), "pt"),
+        legend.key.width = unit(1, "cm"),
+        legend.key.height = unit(1, "cm"),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14),
+        legend.position = "bottom")
+
+mod7 <- gam(crestlark ~ s(x,y), family = "binomial", data = brd)
+
+
+brd$pred <- predict(mod7, newdata = brd, type = "response")
+
+g2 <- ggplot(data = brd, aes(x = x, y = y, colour = pred)) +
+  geom_point() +
+  scale_color_viridis_c(option = "D", direction = 1) +
+  theme(axis.line = element_line(color = "black"),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        panel.background = element_blank(),
+        plot.background = element_rect(fill = NULL,
+                                       color = NA_character_),
+        panel.grid = element_line(color = "grey50"),
+        plot.margin = unit(c(0, 0, 0, 0), "pt"),
+        legend.key.width = unit(1, "cm"),
+        legend.key.height = unit(0.5, "cm"),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14),
+        legend.position = "bottom")
+
+  
+ggpubr::ggarrange(g1, g2, nrow = 1, ncol = 2)
+
+
+```
