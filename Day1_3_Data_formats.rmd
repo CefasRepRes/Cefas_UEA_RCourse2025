@@ -94,9 +94,8 @@ class(y)
 
 ```{r}
 #### Or by other numeric variables 
-π <- pi 
 
-t <- π/y 
+t <- pi/y 
 
 t
 
