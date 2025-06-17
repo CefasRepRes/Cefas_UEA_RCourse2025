@@ -44,20 +44,19 @@ body{
 
 ```
 
----------------------------------------------------------------------------------
+------------------------------------------------------------------------
 
 ::: lightgrey
 **Learning objectives:**
 
 In this session we will look at:
 
-- base R plotting vs the ggplot package
+-   base R plotting vs the ggplot package
 
-- some examples of how to customise your plots
+-   some examples of how to customise your plots
 
-- accessibility
+-   accessibility
 :::
-
 
 ## **Basic example plots**
 
@@ -95,6 +94,7 @@ ggplot(data = iris,aes(x = Species, y = Petal.Length)) +
   stat_boxplot(geom = "errorbar", width = 0.15) +
   geom_boxplot()
 ```
+
 <br>
 
 <u>**Scatterplot**</u>
@@ -121,8 +121,7 @@ plot(x = iris$Petal.Length) # looks a bit like a histogram? but R returns a scat
 plot(x = iris$Species, y = iris$Petal.Length) # here we get a boxplot because one of our variables is a factor
 ```
 
-<br>
-<u>**Line plot**</u>
+<br> <u>**Line plot**</u>
 
 Let's revisit the chicks from yesterday
 
@@ -390,26 +389,24 @@ Like with many other things you can do in R, there are endless resources out the
 
 <https://datacarpentry.github.io/R-ecology-lesson/visualizing-ggplot.html>
 
+For anyone wanting to go further with interactive plots, the plotly library offers a similar overview as the R graph gallery: <https://plotly.com/r/>
 
-For anyone wanting to go further with interactive plots, the plotly library offers a similar overview as the R graph gallery:
-<https://plotly.com/r/>
-
-<br>
-________________________________________________________________________________
+<br> \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
 ## **Accessibility**
+
 ::: lightgrey
+-   Accessibility = ability to access or benefit from something
 
-- Accessibility = ability to access or benefit from something
+-   In this context: to ensure that content we produce can be used by as many people as possible, regardless of any disabilities they might have. - An example: making sure that someone with impaired vision or colorblindness can access it.
 
-- In this context: to ensure that content we produce can be used by as many people as possible, regardless of any disabilities they might have. - An example: making sure that someone with impaired vision or colorblindness can access it.
+-   **For Cefas colleagues:** especially important as all public sector bodies have to meet the [2018 accessibility regulations](https://www.legislation.gov.uk/uksi/2018/852/contents/made)
 
-- **For Cefas colleagues:** especially important as all public sector bodies have to meet the [2018 accessibility regulations](https://www.legislation.gov.uk/uksi/2018/852/contents/made)
+-   good practice for everyone to make an effort to make their content accessible -- to remove barriers as far as possible and no one is excluded from using something on the basis of a disability.
 
-- good practice for everyone to make an effort to make their content accessible -- to remove barriers as far as possible and no one is excluded from using something on the basis of a disability. 
-
-- There is a [government accessibility blog](https://accessibility.blog.gov.uk/2016/05/16/what-we-mean-when-we-talk-about-accessibility-2/) which goes into more detail on this subject.
+-   There is a [government accessibility blog](https://accessibility.blog.gov.uk/2016/05/16/what-we-mean-when-we-talk-about-accessibility-2/) which goes into more detail on this subject.
 :::
+
 <br>
 
 So, what does this mean for us as R coders in practice when creating content like maps and charts, or even markdown documents like this one? A few notes on this topic...
@@ -421,23 +418,37 @@ So, what does this mean for us as R coders in practice when creating content lik
 An accessible link is one which makes sense without any context. For example in the paragraph above I linked to a blog. Rather than just pasting the url or saying click [here](https://accessibility.blog.gov.uk/2016/05/16/what-we-mean-when-we-talk-about-accessibility-2/) for info, I hyperlinked it with the text ["government accessibility blog"](https://accessibility.blog.gov.uk/2016/05/16/what-we-mean-when-we-talk-about-accessibility-2/) so that it would be clear to anyone using a **screen reader** where the link is going to take them.
 
 <br>
+
 ### Alternative text
+
 When designing a figure, try to keep in mind that someone may be be looking at your figure in a document while using a screen reader, and cannot actually see it. As a starting point, "alt" text should tell the person what the figure is. For example "the logo of Rstudio".
 
 ![R studio logo](pics/RStudio-Logo-Flat.png)
-
 
 Where images are just there to fill space or look pretty it can be enough just to say "decorative image".
 
 ![Decorative image showing some code on a computer screen](pics/code.jpg)
 
-
 However, much of the content we are producing with R is conveying information, and we need to be sure that information is as accessible as possible.
 
-A caption can provide some detail, for example "Figure 1: A bar chart showing favourite foods among participants." This is enough information for someone who can see the chart to understand what they are looking at, but is not detailed enough for alt text. Alt text might say "A bar chart showing favourite foods among participants. Pizza is the most popular food, preferred by 8/25 participants, closely followed by chocolate (6/25) and cheese (5/25). Several other food types were mentioned by one or two participants." Without seeing the figure, someone can still get a lot of information from this description.
+```{r food-barplot, fig.alt = "A bar chart showing favourite foods among participants. Pizza is the most popular food, preferred by 8/25 participants, closely followed by chocolate (6/25) and chips (5/25). Several other food types were mentioned by one or two participants."}
+Foods <- data.frame(
+  Food = c("Pizza", "Chocolate", "Chips", "Strawberries", "Cheese", "Peanut butter", "Cookies"),
+  Frequency = c(8, 6, 5, 2, 2, 1, 1)
+)
 
+# Create a barchart with the foods data
+
+library(ggplot2)
+ggplot(Foods, aes(x = reorder(Food, -Frequency), y = Frequency, fill = Food)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Figure 1: A bar chart showing favourite foods among participants", x = "Food", y = "Frequency")
+```
+
+A caption can provide some detail, for example "Figure 1: A bar chart showing favourite foods among participants." This is enough information for someone who can see the chart to understand what they are looking at, but is not detailed enough for alt text. Alt text might say "A bar chart showing favourite foods among participants. Pizza is the most popular food, preferred by 8/25 participants, closely followed by chocolate (6/25) and chips (5/25). Several other food types were mentioned by one or two participants." Without seeing the figure, someone can still get a lot of information from this description. In R markdown you can add alt text in the code chunk heading and
 
 ### Colour blindness
+
 One of the biggest issues with figures we are producing is the tendency to use colour to convey information. For example, in the following line plot, colour is used for the different series. This means that for someone who is unable to differentiate these it can be very difficult if not impossible to gain any information from.
 
 ```{r chickweight2}
@@ -447,7 +458,7 @@ cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00",
 
 
 ggplot() +
-  geom_line(data = ChickWeight[ChickWeight$Chick < 20,], aes(x = Time, y = weight, col = Chick)) +
+  geom_line(data = ChickWeight[ChickWeight$Chick < 20,], aes(x = Time, y = weight, col = Chick), size = 1.5) +
   scale_colour_manual(values=cbPalette)
 
 ```
@@ -460,24 +471,25 @@ data("ChickWeight")
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7")
 
 ggplot() +
-  geom_line(data = ChickWeight[ChickWeight$Chick < 20,], aes(x = Time, y = weight, col = Chick, lty = Chick)) +
+  geom_line(data = ChickWeight[ChickWeight$Chick < 20,], aes(x = Time, y = weight, col = Chick, lty = Chick), size = 1.5) +
   scale_colour_manual(values=cbPalette)
 
 ```
 
-In some instances it can be much harder to avoid use of colour. For example, imagine you have a map showing satellite temperature records in the North Sea. We cannot add labels or symbols to each cell without the map becoming impossible to read. However, we can carefully chose colour ramps which are colour-blind friendly. Fortunately, we do not all need to become experts in colour blindness, there are colour ramps and R packages already out there which we can make use of. In the two examples above, we actually used a colour ramp which is colour-blind-friendly. Check this website for a description of [ggplot colour ramps](http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/).
+In some instances it can be much harder to avoid use of colour. For example, imagine you have a map showing satellite temperature records in the North Sea. We cannot add labels or symbols to each cell without the map becoming impossible to read. However, we can carefully chose colour ramps which are colour-blind friendly, for example the viridis colour ramp. Fortunately, we do not all need to become experts in colour blindness, there are colour ramps and R packages already out there which we can make use of. In the two examples above, we actually used a colour ramp which is colour-blind-friendly. Check this website for a description of [ggplot colour ramps](http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/).
 
 This website gives you even more information on [colour-blind accessible ramps](https://stackoverflow.com/questions/57153428/r-plot-color-combinations-that-are-colorblind-accessible)
 
 For those of you who want to jump into more advanced topics, this website looks at [accessible shiny apps](https://www.jumpingrivers.com/blog/accessible-shiny-standards-wcag/), and why it's important.
 
-
 ## Further tools and links
+
 If you ever want to test how one of your graphic outputs will be perceived by people with different visual impairments, this nifty [colour blindness simulator](https://www.color-blindness.com/coblis-color-blindness-simulator/) allows you to test just that!
 
 You can learn more about accessibility through this [accessibilty tutorial](https://www.w3schools.com/accessibility/index.php)
 
 ## Exercise
+
 Does anyone have a plot (which includes colours) they are willing to share so we can demonstrate the colour blindness simulator? If not, Kathrin will share one of hers.
 
 <https://stackoverflow.com/questions/57153428/r-plot-color-combinations-that-are-colorblind-accessible>
