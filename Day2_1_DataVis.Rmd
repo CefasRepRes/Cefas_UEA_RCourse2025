@@ -391,7 +391,7 @@ Like with many other things you can do in R, there are endless resources out the
 
 For anyone wanting to go further with interactive plots, the plotly library offers a similar overview as the R graph gallery: <https://plotly.com/r/>
 
-<br> \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+<br> 
 
 ## **Accessibility**
 
