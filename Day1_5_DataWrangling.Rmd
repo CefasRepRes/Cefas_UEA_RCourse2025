@@ -682,6 +682,74 @@ course_dates$day <- format(course_dates$StartDateTime,"%d")
 
 <br>
 
+# Real-world example: Filtering a parameter list
+
+When working with large environmental databases you often end up with far more measurement parameters than you actually need. This example shows how to trim a long list of available parameters down to just those that align with a target set of column names.
+
+We have a water quality parameter list (`params`) containing 223 parameter–unit combinations from an environmental monitoring database. We want to keep only the parameters that correspond to columns in our harmonised water-quality dataset (`wq_aligned`).
+
+First, load the parameter list:
+
+```{r load_params}
+params <- readr::read_csv("my_data/params.csv")
+
+params |>
+  tibble::as_tibble() |>
+  print(n = Inf)
+```
+
+Now define a lookup table that maps each relevant `wq_aligned` column name to its corresponding `paramunit` string. Columns such as `survey`, `lat`, `lon` and instrument-specific columns (e.g. `FTU_arb`, `PAR_umol_m_2_s_1`) do not come from this parameter list and are excluded.
+
+```{r param_lookup}
+param_lookup <- tibble::tibble(
+  wq_col = c(
+    "depth_m",
+    "temp_c",
+    "ftu",
+    "salinity_psu",
+    "do2_mg_per_l",
+    "o2_mg_per_l",  # both dissolved oxygen columns map to the same paramunit
+    "no2_umol_per_l",
+    "chl_ug_per_l",
+    "po4_umol_per_l",
+    "sio4_umol_per_l",
+    "toxn_umol_per_l",
+    "nh4_umol_per_l",
+    "suspend_particulate_matter_mg_per_l"
+  ),
+  paramunit = c(
+    "Sample Depth below surface_METRE",
+    "Temperature of Water_CELSIUS",
+    "Turbidity : In Situ_FORMAZIN TURBIDITY UNIT",
+    "Salinity : In Situ_Parts per thousand",
+    "Oxygen, Dissolved as O2_MILLIGRAM PER LITRE",
+    "Oxygen, Dissolved as O2_MILLIGRAM PER LITRE",
+    "Nitrite, Filtered as N_MILLIGRAM PER LITRE",
+    "Chlorophyll : Acetone Extract_MICROGRAM PER LITRE",
+    "Orthophosphate, Filtered as P_MILLIGRAM PER LITRE",
+    "Silicate, Filtered as SiO2_MILLIGRAM PER LITRE",
+    "Nitrogen, Total Oxidised, Filtered as N_MILLIGRAM PER LITRE",
+    "Ammoniacal Nitrogen, Filtered as N_MILLIGRAM PER LITRE",
+    "Solids, Suspended at 105 C_MILLIGRAM PER LITRE"
+  )
+)
+```
+
+Use the lookup table to filter `params`, keeping only the rows whose `paramunit` value appears in the lookup:
+
+```{r filter_params}
+params_filtered <- params |>
+  dplyr::filter(paramunit %in% param_lookup$paramunit)
+
+params_filtered |>
+  tibble::as_tibble() |>
+  print(n = Inf)
+```
+
+The filtered tibble now contains the 12 unique paramunit strings relevant to `wq_aligned`, reducing 223 entries down to the core water-quality measurements we need. Note that `do2_mg_per_l` and `o2_mg_per_l` both map to the same paramunit, so they appear as a single row in the filtered result.
+
+<br>
+
 :::lightgrey
 # Exercises:
 
